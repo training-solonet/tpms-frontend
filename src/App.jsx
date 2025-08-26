@@ -105,17 +105,23 @@ const BORNEO_INDOBARA_GEOJSON = {
 };
 
 // API Configuration - Using environment variables
-const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+// Environment Configuration
+const ENV_CONFIG = {
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
   WS_URL: import.meta.env.VITE_WS_URL || 'http://localhost:3001',
+  APP_NAME: import.meta.env.VITE_APP_NAME || 'Fleet Monitor',
+  COMPANY_NAME: import.meta.env.VITE_COMPANY_NAME || 'PT Borneo Indobara',
+  AUTO_REFRESH_INTERVAL: parseInt(import.meta.env.VITE_AUTO_REFRESH_INTERVAL) || 30000,
+  MAX_TRUCKS_DISPLAY: parseInt(import.meta.env.VITE_MAX_TRUCKS_DISPLAY) || 100,
   ENDPOINTS: {
-    LOGIN: '/api/auth/login',
-    TRUCKS: '/api/trucks',
-    DASHBOARD: '/api/dashboard/stats',
-    MINING_AREA: '/api/mining-area',
-    REALTIME_LOCATIONS: '/api/trucks/realtime/locations'
+    LOGIN: import.meta.env.VITE_API_LOGIN_ENDPOINT || '/api/auth/login',
+    TRUCKS: import.meta.env.VITE_API_TRUCKS_ENDPOINT || '/api/trucks',
+    DASHBOARD: import.meta.env.VITE_API_DASHBOARD_ENDPOINT || '/api/dashboard/stats',
+    MINING_AREA: import.meta.env.VITE_API_MINING_AREA_ENDPOINT || '/api/mining-area',
+    REALTIME_LOCATIONS: import.meta.env.VITE_API_REALTIME_LOCATIONS_ENDPOINT || '/api/trucks/realtime/locations'
   }
 };
+
 
 // API Client
 class ApiClient {
@@ -160,8 +166,8 @@ class ApiClient {
     }
   }
 
-  async login(credentials) {
-    const response = await this.request(API_CONFIG.ENDPOINTS.LOGIN, {
+async login(credentials) {
+    const response = await this.request(ENV_CONFIG.ENDPOINTS.LOGIN, {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
@@ -175,26 +181,27 @@ class ApiClient {
 
   async getTrucks(params = {}) {
     const queryString = new URLSearchParams(params).toString();
-    const endpoint = `${API_CONFIG.ENDPOINTS.TRUCKS}${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `${ENV_CONFIG.ENDPOINTS.TRUCKS}${queryString ? `?${queryString}` : ''}`;
     return this.request(endpoint);
   }
 
   async getDashboardStats() {
-    return this.request(API_CONFIG.ENDPOINTS.DASHBOARD);
+    return this.request(ENV_CONFIG.ENDPOINTS.DASHBOARD);
   }
 
   async getMiningArea() {
-    return this.request(API_CONFIG.ENDPOINTS.MINING_AREA);
+    return this.request(ENV_CONFIG.ENDPOINTS.MINING_AREA);
   }
 
   async getRealtimeLocations(status = 'all') {
-    const endpoint = `${API_CONFIG.ENDPOINTS.REALTIME_LOCATIONS}?status=${status}`;
+    const endpoint = `${ENV_CONFIG.ENDPOINTS.REALTIME_LOCATIONS}?status=${status}`;
     return this.request(endpoint);
   }
 }
 
+
 // Initialize API client
-const apiClient = new ApiClient(API_CONFIG.BASE_URL);
+const apiClient = new ApiClient(ENV_CONFIG.API_BASE_URL);
 
 function App() {
   // Calculate center of mining area for initial map view
@@ -222,8 +229,8 @@ function App() {
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('fleet_token'));
-  // const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  // const [loginError, setLoginError] = useState('');
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
 
   // Main application state
   const [trucks, setTrucks] = useState([]);
@@ -257,7 +264,7 @@ function App() {
     if (!token) return;
 
     console.log('Connecting to WebSocket...');
-    const newSocket = io(API_CONFIG.WS_URL, {
+    const newSocket = io(ENV_CONFIG.WS_URL, {
       auth: { token },
       transports: ['websocket', 'polling']
     });
@@ -300,23 +307,23 @@ function App() {
   }, [isAuthenticated, socket, autoRefresh]);
 
   // Login function
-  // const handleLogin = async (e) => {
-  //   e.preventDefault();
-  //   setLoginError('');
-  //   setLoading(true);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoading(true);
 
-  //   try {
-  //     const response = await apiClient.login(loginForm);
-  //     if (response.success) {
-  //       setIsAuthenticated(true);
-  //       setLoginForm({ username: '', password: '' });
-  //     }
-  //   } catch (error) {
-  //     setLoginError(error.message || 'Login failed');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+    try {
+      const response = await apiClient.login(loginForm);
+      if (response.success) {
+        setIsAuthenticated(true);
+        setLoginForm({ username: '', password: '' });
+      }
+    } catch (error) {
+      setLoginError(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Logout function
   const handleLogout = () => {
@@ -450,68 +457,68 @@ function App() {
   };
 
   // Login form component
-  // if (!isAuthenticated) {
-  //   return (
-  //     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-  //       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-  //         <div className="text-center mb-8">
-  //           <h1 className="text-3xl font-bold text-gray-800 mb-2">Fleet Monitor</h1>
-  //           <p className="text-gray-600">Sistem Monitoring Truk Tambang</p>
-  //           <p className="text-sm text-blue-600 mt-2">PT Borneo Indobara</p>
-  //         </div>
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Fleet Monitor</h1>
+            <p className="text-gray-600">Sistem Monitoring Truk Tambang</p>
+            <p className="text-sm text-blue-600 mt-2">PT Borneo Indobara</p>
+          </div>
           
-  //         <form onSubmit={handleLogin}>
-  //           <div className="mb-4">
-  //             <label className="block text-gray-700 text-sm font-bold mb-2">
-  //               Username
-  //             </label>
-  //             <input
-  //               type="text"
-  //               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-  //               value={loginForm.username}
-  //               onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-  //               placeholder="Masukkan username"
-  //               required
-  //             />
-  //           </div>
+          <form onSubmit={handleLogin}>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+                placeholder="Masukkan username"
+                required
+              />
+            </div>
             
-  //           <div className="mb-6">
-  //             <label className="block text-gray-700 text-sm font-bold mb-2">
-  //               Password
-  //             </label>
-  //             <input
-  //               type="password"
-  //               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-  //               value={loginForm.password}
-  //               onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-  //               placeholder="Masukkan password"
-  //               required
-  //             />
-  //           </div>
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                placeholder="Masukkan password"
+                required
+              />
+            </div>
             
-  //           {loginError && (
-  //             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-  //               {loginError}
-  //             </div>
-  //           )}
+            {loginError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {loginError}
+              </div>
+            )}
             
-  //           <button
-  //             type="submit"
-  //             disabled={loading}
-  //             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-  //           >
-  //             {loading ? 'Connecting...' : 'Login'}
-  //           </button>
-  //         </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loading ? 'Connecting...' : 'Login'}
+            </button>
+          </form>
           
-  //         <div className="mt-4 text-center text-sm text-gray-600">
-  //           <p>Demo: username: <code>admin</code>, password: <code>admin123</code></p>
-  //           <p className="mt-2">Backend: {API_CONFIG.BASE_URL}</p>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+          <div className="mt-4 text-center text-sm text-gray-600">
+            <p>Demo: username: <code>admin</code>, password: <code>admin123</code></p>
+            <p className="mt-2">Backend: {ENV_CONFIG.API_BASE_URL}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
