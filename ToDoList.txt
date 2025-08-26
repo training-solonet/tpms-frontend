@@ -1,0 +1,10 @@
+ToDoList:
+
+-Memberikan pilihan pilih style map (satelit/image)
+-Ganti icon lokasi kendaraan
+-Menambahkan env
+-Menambahkan filter
+-Menambahkan Analisis data
+-Menambahkan Notifikasi
+-Mengganti hide sidebar button
+
