@@ -104,10 +104,10 @@ const BORNEO_INDOBARA_GEOJSON = {
   ]
 };
 
-// API Configuration - Update this IP to your backend server's IP
+// API Configuration - Using environment variables
 const API_CONFIG = {
-  BASE_URL: 'http://192.168.21.34:3001', // Replace with your backend server IP
-  WS_URL: 'http://192.168.21.34:3001',   // Replace with your backend server IP
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  WS_URL: import.meta.env.VITE_WS_URL || 'http://localhost:3001',
   ENDPOINTS: {
     LOGIN: '/api/auth/login',
     TRUCKS: '/api/trucks',
