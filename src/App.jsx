@@ -5,6 +5,105 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import io from 'socket.io-client';
 
+// Data GeoJSON untuk wilayah PT Borneo Indobara
+const BORNEO_INDOBARA_GEOJSON = {
+  "type": "FeatureCollection",
+  "name": "PT BORNEO INDOBARA",
+  "crs": {
+    "type": "name",
+    "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": " PT INDOBARA",
+        "description": "Wilayah Operasional PT Borneo Indobara",
+        "zone_type": "mining_area",
+        "company": "PT Borneo Indobara"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [115.604399949931505, -3.545400075547209, 0.0],
+            [115.604399841131098, -3.608799574004828, 0.0],
+            [115.649400029697503, -3.608799509217319, 0.0],
+            [115.649400017089704, -3.663100293456181, 0.0],
+            [115.617400059975793, -3.663099780174879, 0.0],
+            [115.617399737213503, -3.685699156803738, 0.0],
+            [115.649299960676103, -3.685699068800897, 0.0],
+            [115.649300362663595, -3.699299673460462, 0.0],
+            [115.617800049745696, -3.699300020057011, 0.0],
+            [115.6177999530113, -3.717199908413447, 0.0],
+            [115.658299919322602, -3.717200000114277, 0.0],
+            [115.6582955763173, -3.473005894715275, 0.0],
+            [115.568699602091598, -3.473001685807625, 0.0],
+            [115.568700182646694, -3.464001541662113, 0.0],
+            [115.555099828419003, -3.463999391784724, 0.0],
+            [115.555099291465098, -3.473003271644793, 0.0],
+            [115.532700208403895, -3.473001476768178, 0.0],
+            [115.532699846387402, -3.463900605411753, 0.0],
+            [115.550701359743002, -3.463902395098822, 0.0],
+            [115.5507013482556, -3.454898213912309, 0.0],
+            [115.568701230550005, -3.454902873855015, 0.0],
+            [115.568700726908006, -3.445900276606981, 0.0],
+            [115.577700266719404, -3.445900134950424, 0.0],
+            [115.577700019488205, -3.431898966201222, 0.0],
+            [115.559699638559096, -3.431899648314737, 0.0],
+            [115.559699554334102, -3.437400397522957, 0.0],
+            [115.550100512253806, -3.437398099998878, 0.0],
+            [115.550099020797404, -3.450002211390146, 0.0],
+            [115.532703272530895, -3.449999179807085, 0.0],
+            [115.532700637088993, -3.454899270607867, 0.0],
+            [115.523702194253303, -3.454899042442723, 0.0],
+            [115.523699255391406, -3.463901335023041, 0.0],
+            [115.517901076646893, -3.463899658740474, 0.0],
+            [115.517900197349306, -3.467902281514015, 0.0],
+            [115.514600138263603, -3.467902292826565, 0.0],
+            [115.514601072048507, -3.50010155304351, 0.0],
+            [115.496599227790597, -3.50009900533689, 0.0],
+            [115.496599869340898, -3.518100005601176, 0.0],
+            [115.466797471563495, -3.518103740087548, 0.0],
+            [115.466801168336701, -3.550206921843847, 0.0],
+            [115.442500430814604, -3.550203582815326, 0.0],
+            [115.442497952207603, -3.563204681010987, 0.0],
+            [115.432199323066001, -3.563200126588743, 0.0],
+            [115.432199985374197, -3.575400350745974, 0.0],
+            [115.4738011947736, -3.575400021250577, 0.0],
+            [115.473797766754501, -3.667299052802766, 0.0],
+            [115.478300326726696, -3.667298846101514, 0.0],
+            [115.478299650158803, -3.699001512244875, 0.0],
+            [115.473698702561805, -3.698999777578339, 0.0],
+            [115.473698840205799, -3.706300548298581, 0.0],
+            [115.481699037262302, -3.706400782574116, 0.0],
+            [115.4817010345688, -3.717102490691376, 0.0],
+            [115.505201004278504, -3.717098288779876, 0.0],
+            [115.505299006694997, -3.635700209735227, 0.0],
+            [115.487399266748895, -3.635701682784649, 0.0],
+            [115.487397660302193, -3.545299693708786, 0.0],
+            [115.5010009898878, -3.545299520128636, 0.0],
+            [115.500999334020705, -3.536300365773843, 0.0],
+            [115.514602134835499, -3.536297749737575, 0.0],
+            [115.514599616947706, -3.518200242642467, 0.0],
+            [115.532599668902606, -3.518200602467881, 0.0],
+            [115.532599481961398, -3.509199349853453, 0.0],
+            [115.541641655013905, -3.509228095023962, 0.0],
+            [115.541599827827795, -3.500200339853857, 0.0],
+            [115.577599166446404, -3.500199675893057, 0.0],
+            [115.577599706645202, -3.509299212907206, 0.0],
+            [115.604599070000702, -3.509301495077436, 0.0],
+            [115.604600094546797, -3.518300046458291, 0.0],
+            [115.613499987067996, -3.518300064005411, 0.0],
+            [115.613499543131596, -3.54540116002996, 0.0],
+            [115.604399949931505, -3.545400075547209, 0.0]
+          ]
+        ]
+      }
+    }
+  ]
+};
+
 // API Configuration - Update this IP to your backend server's IP
 const API_CONFIG = {
   BASE_URL: 'http://192.168.21.34:3001', // Replace with your backend server IP
@@ -98,14 +197,37 @@ class ApiClient {
 const apiClient = new ApiClient(API_CONFIG.BASE_URL);
 
 function App() {
+  // Calculate center of mining area for initial map view
+  const miningAreaCenter = useMemo(() => {
+    if (BORNEO_INDOBARA_GEOJSON.features.length > 0) {
+      const coordinates = BORNEO_INDOBARA_GEOJSON.features[0].geometry.coordinates[0];
+      const lats = coordinates.map(coord => coord[1]);
+      const lngs = coordinates.map(coord => coord[0]);
+      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+      return [centerLat, centerLng];
+    }
+    return [-3.6, 115.58]; // Default center for Borneo Indobara area
+  }, []);
+
+  // Style for mining area
+  const miningAreaStyle = {
+    color: "#2563eb",
+    weight: 3,
+    opacity: 0.8,
+    fillColor: "#3b82f6",
+    fillOpacity: 0.1,
+    dashArray: "5, 5"
+  };
+
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('fleet_token'));
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [loginError, setLoginError] = useState('');
+  // const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  // const [loginError, setLoginError] = useState('');
 
   // Main application state
   const [trucks, setTrucks] = useState([]);
-  const [miningArea, setMiningArea] = useState(null);
+  // const [miningArea, setMiningArea] = useState(null);
   const [dashboardStats, setDashboardStats] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -178,23 +300,23 @@ function App() {
   }, [isAuthenticated, socket, autoRefresh]);
 
   // Login function
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginError('');
-    setLoading(true);
+  // const handleLogin = async (e) => {
+  //   e.preventDefault();
+  //   setLoginError('');
+  //   setLoading(true);
 
-    try {
-      const response = await apiClient.login(loginForm);
-      if (response.success) {
-        setIsAuthenticated(true);
-        setLoginForm({ username: '', password: '' });
-      }
-    } catch (error) {
-      setLoginError(error.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     const response = await apiClient.login(loginForm);
+  //     if (response.success) {
+  //       setIsAuthenticated(true);
+  //       setLoginForm({ username: '', password: '' });
+  //     }
+  //   } catch (error) {
+  //     setLoginError(error.message || 'Login failed');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // Logout function
   const handleLogout = () => {
@@ -242,28 +364,28 @@ function App() {
   }, [isAuthenticated]);
 
   // Load mining area
-  const loadMiningArea = useCallback(async () => {
-    if (!isAuthenticated) return;
+  // const loadMiningArea = useCallback(async () => {
+  //   if (!isAuthenticated) return;
 
-    try {
-      const response = await apiClient.getMiningArea();
-      if (response.success) {
-        setMiningArea(response.data);
-      }
-    } catch (err) {
-      console.error('Load mining area error:', err);
-    }
-  }, [isAuthenticated]);
+  //   try {
+  //     const response = await apiClient.getMiningArea();
+  //     if (response.success) {
+  //       setMiningArea(response.data);
+  //     }
+  //   } catch (err) {
+  //     console.error('Load mining area error:', err);
+  //   }
+  // }, [isAuthenticated]);
 
   // Initialize data on authentication
   useEffect(() => {
     if (isAuthenticated) {
       loadTrucks();
       loadDashboardStats();
-      loadMiningArea();
+      // loadMiningArea();
       initializeWebSocket();
     }
-  }, [isAuthenticated, loadTrucks, loadDashboardStats, loadMiningArea, initializeWebSocket]);
+  }, [isAuthenticated, loadTrucks, loadDashboardStats, initializeWebSocket]);
 
   // Auto refresh data
   useEffect(() => {
@@ -272,7 +394,7 @@ function App() {
     const interval = setInterval(() => {
       loadTrucks();
       loadDashboardStats();
-    }, 30000); // Refresh every 30 seconds
+    }, 3000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
   }, [isAuthenticated, autoRefresh, loadTrucks, loadDashboardStats]);
@@ -328,67 +450,68 @@ function App() {
   };
 
   // Login form component
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Fleet Monitor</h1>
-            <p className="text-gray-600">Sistem Monitoring Truk Tambang</p>
-          </div>
+  // if (!isAuthenticated) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+  //       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+  //         <div className="text-center mb-8">
+  //           <h1 className="text-3xl font-bold text-gray-800 mb-2">Fleet Monitor</h1>
+  //           <p className="text-gray-600">Sistem Monitoring Truk Tambang</p>
+  //           <p className="text-sm text-blue-600 mt-2">PT Borneo Indobara</p>
+  //         </div>
           
-          <form onSubmit={handleLogin}>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={loginForm.username}
-                onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-                placeholder="Masukkan username"
-                required
-              />
-            </div>
+  //         <form onSubmit={handleLogin}>
+  //           <div className="mb-4">
+  //             <label className="block text-gray-700 text-sm font-bold mb-2">
+  //               Username
+  //             </label>
+  //             <input
+  //               type="text"
+  //               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+  //               value={loginForm.username}
+  //               onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
+  //               placeholder="Masukkan username"
+  //               required
+  //             />
+  //           </div>
             
-            <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                placeholder="Masukkan password"
-                required
-              />
-            </div>
+  //           <div className="mb-6">
+  //             <label className="block text-gray-700 text-sm font-bold mb-2">
+  //               Password
+  //             </label>
+  //             <input
+  //               type="password"
+  //               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+  //               value={loginForm.password}
+  //               onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+  //               placeholder="Masukkan password"
+  //               required
+  //             />
+  //           </div>
             
-            {loginError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {loginError}
-              </div>
-            )}
+  //           {loginError && (
+  //             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+  //               {loginError}
+  //             </div>
+  //           )}
             
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Connecting...' : 'Login'}
-            </button>
-          </form>
+  //           <button
+  //             type="submit"
+  //             disabled={loading}
+  //             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+  //           >
+  //             {loading ? 'Connecting...' : 'Login'}
+  //           </button>
+  //         </form>
           
-          <div className="mt-4 text-center text-sm text-gray-600">
-            <p>Demo: username: <code>admin</code>, password: <code>admin123</code></p>
-            <p className="mt-2">Backend: {API_CONFIG.BASE_URL}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  //         <div className="mt-4 text-center text-sm text-gray-600">
+  //           <p>Demo: username: <code>admin</code>, password: <code>admin123</code></p>
+  //           <p className="mt-2">Backend: {API_CONFIG.BASE_URL}</p>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -400,7 +523,8 @@ function App() {
             {showTruckList && (
               <div className="text-white">
                 <h2 className="font-bold text-lg">Fleet Monitor</h2>
-                <p className="text-blue-100 text-sm">{filteredTrucks.length} dari {trucks.length} truck</p>
+                <p className="text-blue-100 text-sm">PT Borneo Indobara</p>
+                <p className="text-blue-100 text-xs">{filteredTrucks.length} dari {trucks.length} truck</p>
               </div>
             )}
             <button
@@ -602,7 +726,7 @@ function App() {
         <header className="h-16 bg-white shadow-sm flex items-center justify-between px-6 border-b">
           <div>
             <h1 className="font-bold text-xl text-gray-800">Fleet Monitoring System</h1>
-            <p className="text-sm text-gray-500">Real-time truck tracking & monitoring</p>
+            <p className="text-sm text-gray-500">PT Borneo Indobara - Real-time truck tracking & monitoring</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
@@ -632,28 +756,51 @@ function App() {
         {/* Map Container */}
         <div className="flex-1 relative">
           <MapContainer
-            center={[-6.75, 107.15]}
-            zoom={12}
+            center={miningAreaCenter}
+            zoom={11}
             style={{ height: "100%", width: "100%" }}
             className="z-0"
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Tiles &copy; Esri"
+            />
+
+            
+            {/* PT Borneo Indobara Mining Area */}
+            <GeoJSON 
+              data={BORNEO_INDOBARA_GEOJSON} 
+              style={miningAreaStyle}
+              onEachFeature={(feature, layer) => {
+                if (feature.properties && feature.properties.Name) {
+                  layer.bindPopup(`
+                    <div style="font-family: Arial, sans-serif;">
+                      <h3 style="margin: 0 0 10px 0; color: #1f2937; font-size: 16px; font-weight: bold;">
+                        ${feature.properties.Name}
+                      </h3>
+                      <div style="color: #6b7280; font-size: 14px;">
+                        <p style="margin: 5px 0;"><strong>Wilayah:</strong> Area Operasional Tambang</p>
+                        <p style="margin: 5px 0;"><strong>Perusahaan:</strong> ${feature.properties.company || 'PT Borneo Indobara'}</p>
+                        <p style="margin: 5px 0;"><strong>Tipe:</strong> Area Penambangan</p>
+                      </div>
+                    </div>
+                  `);
+                }
+              }}
             />
             
-            {/* Mining Areas */}
-            {miningArea && (
+            {/* Mining Areas from API (if available) */}
+            {/* {miningArea && (
               <GeoJSON 
                 data={miningArea} 
                 style={(feature) => ({
-                  color: feature.properties.zone_type === "extraction" ? "#2563eb" : "#dc2626",
+                  color: feature.properties.zone_type === "extraction" ? "#dc2626" : "#16a34a",
                   fillOpacity: 0.15,
                   weight: 2
                 })} 
               />
             )}
-            
+             */}
             {/* Truck Markers */}
             {filteredTrucks.map((truck) => (
               <Marker
@@ -729,6 +876,12 @@ function App() {
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
                 <span>Maintenance ({dashboardStats.maintenanceTrucks || 0})</span>
+              </div>
+              <div className="border-t pt-2 mt-2">
+                <div className="flex items-center">
+                  <div className="w-4 h-1 bg-blue-500 mr-2" style={{border: '1px dashed #2563eb'}}></div>
+                  <span>Mining Area</span>
+                </div>
               </div>
             </div>
           </div>
