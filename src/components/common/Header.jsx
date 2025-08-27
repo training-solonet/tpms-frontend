@@ -1,7 +1,7 @@
 // src/components/common/Header.jsx
 import React from 'react';
 import { Bell, User } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = ({ autoRefresh, setAutoRefresh, dashboardStats }) => {
   const { logout } = useAuth();

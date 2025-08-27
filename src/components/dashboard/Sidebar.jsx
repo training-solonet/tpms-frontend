@@ -23,39 +23,30 @@ const Sidebar = ({
   error
 }) => {
   return (
-    <div className={`${showTruckList ? 'w-80' : 'w-12'} bg-white shadow-lg transition-all duration-300 flex flex-col h-full overflow-hidden shrink-0`}>
+    <div className={`${showTruckList ? 'w-80' : 'w-12'} bg-white shadow-lg transition-all duration-300 flex flex-col`}>
       {/* Sidebar Header */}
-      <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-blue-700 shrink-0">
+      <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-blue-700">
         <div className="flex items-center justify-between">
-    {showTruckList ? (
-      <>
-        <div className="text-white">
-          <h2 className="font-bold text-lg">Fleet Monitor</h2>
-          <p className="text-blue-100 text-sm">PT Borneo Indobara</p>
-          <p className="text-blue-100 text-xs">{filteredTrucks.length} dari {trucks.length} truck</p>
+          {showTruckList && (
+            <div className="text-white">
+              <h2 className="font-bold text-lg">Fleet Monitor</h2>
+              <p className="text-blue-100 text-sm">PT Borneo Indobara</p>
+              <p className="text-blue-100 text-xs">{filteredTrucks.length} dari {trucks.length} truck</p>
+            </div>
+          )}
+          <button
+            onClick={() => setShowTruckList(!showTruckList)}
+            className="p-2 text-white hover:bg-blue-500 rounded-lg transition-colors"
+          >
+            {showTruckList ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
         </div>
-        <button
-          onClick={() => setShowTruckList(!showTruckList)}
-          className="p-2 text-white hover:bg-blue-500 rounded-lg transition-colors"
-        >
-          <EyeOff size={20} />
-        </button>
-      </>
-    ) : (
-      <button
-        onClick={() => setShowTruckList(!showTruckList)}
-        className="p-2 text-white hover:bg-blue-500 rounded-lg transition-colors"
-      >
-        <Eye size={20} />
-      </button>
-    )}
-  </div>
-</div>
+      </div>
 
       {showTruckList && (
         <>
           {/* Search Bar */}
-          <div className="p-4 border-b shrink-0">
+          <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <input
@@ -69,7 +60,7 @@ const Sidebar = ({
           </div>
 
           {/* Statistics Cards */}
-          <div className="p-4 border-b shrink-0">
+          <div className="p-4 border-b">
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-green-50 p-3 rounded-lg">
                 <div className="flex items-center">
@@ -111,7 +102,7 @@ const Sidebar = ({
           </div>
 
           {/* Connection Status */}
-          <div className="p-4 border-b shrink-0">
+          <div className="p-4 border-b">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 {isConnected ? (
@@ -139,7 +130,7 @@ const Sidebar = ({
           </div>
 
           {/* Filter Controls */}
-          <div className="p-4 border-b shrink-0">
+          <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-3">
               <span className="font-semibold text-gray-700">Filter Status</span>
               <button
@@ -176,7 +167,7 @@ const Sidebar = ({
           </div>
 
           {/* Truck List */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="flex-1 overflow-y-auto">
             {error && (
               <div className="m-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                 {error}

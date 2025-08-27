@@ -1,3 +1,10 @@
 @import "tailwindcss";
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
+
+@import 'leaflet/dist/leaflet.css';
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}

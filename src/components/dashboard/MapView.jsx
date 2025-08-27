@@ -53,16 +53,12 @@ const MapView = ({
   };
 
   return (
-    <div className="absolute inset-0 h-full w-full">
+    <div className="flex-1 relative">
       <MapContainer
         center={miningAreaCenter}
         zoom={11}
-        className="h-full w-full"
         style={{ height: "100%", width: "100%" }}
-        zoomControl={true}
-        scrollWheelZoom={true}
-        doubleClickZoom={true}
-        touchZoom={true}
+        className="z-0"
       >
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -152,7 +148,7 @@ const MapView = ({
       </MapContainer>
 
       {/* Map Controls Overlay */}
-      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 z-[1000]">
+      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 z-10">
         <div className="text-sm font-semibold mb-2">Legend</div>
         <div className="space-y-1 text-xs">
           <div className="flex items-center">
@@ -178,7 +174,7 @@ const MapView = ({
 
       {/* Selected Truck Details */}
       {selectedTruck && (
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 z-[1000] w-80">
+        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 z-10 w-80">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-lg">{selectedTruck.truckNumber}</h3>
             <button 
