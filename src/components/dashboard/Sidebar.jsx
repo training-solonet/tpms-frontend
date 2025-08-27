@@ -23,7 +23,7 @@ const Sidebar = ({
   error
 }) => {
   return (
-    <div className={`${showTruckList ? 'w-80' : 'w-12'} bg-white shadow-lg transition-all duration-300 flex flex-col`}>
+    <div className={`${showTruckList ? 'w-80' : 'w-12'} bg-white shadow-lg transition-all duration-300 flex flex-col h-full overflow-hidden`}>
       {/* Sidebar Header */}
       <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-blue-700">
         <div className="flex items-center justify-between">

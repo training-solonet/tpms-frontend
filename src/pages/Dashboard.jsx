@@ -1,7 +1,6 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import io from 'socket.io-client';
-import "leaflet/dist/leaflet.css";
 
 import { apiClient, API_CONFIG } from '../api/apiClient';
 import Header from '../components/common/Header';
@@ -163,7 +162,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="h-screen w-screen flex bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         showTruckList={showTruckList}
@@ -187,7 +186,7 @@ const Dashboard = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
         <Header
           autoRefresh={autoRefresh}
@@ -196,13 +195,15 @@ const Dashboard = () => {
         />
 
         {/* Map Container */}
-        <MapView
-          trucks={filteredTrucks}
-          selectedTruck={selectedTruck}
-          handleTruckSelect={handleTruckSelect}
-          dashboardStats={dashboardStats}
-          setSelectedTruck={setSelectedTruck}
-        />
+        <div className="flex-1 h-full">
+          <MapView
+            trucks={filteredTrucks}
+            selectedTruck={selectedTruck}
+            handleTruckSelect={handleTruckSelect}
+            dashboardStats={dashboardStats}
+            setSelectedTruck={setSelectedTruck}
+          />
+        </div>
       </div>
     </div>
   );

@@ -53,12 +53,12 @@ const MapView = ({
   };
 
   return (
-    <div className="flex-1 relative">
+    <div className="h-full w-full relative">
       <MapContainer
         center={miningAreaCenter}
         zoom={11}
         style={{ height: "100%", width: "100%" }}
-        className="z-0"
+        className="h-full w-full"
       >
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
