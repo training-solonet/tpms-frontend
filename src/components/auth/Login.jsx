@@ -31,8 +31,8 @@ const Login = () => {
   };
 
   return (
-    <div className="h-screen w-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="fixed inset-0 h-screen w-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Fleet Monitor</h1>
           <p className="text-gray-600">Sistem Monitoring Truk Tambang</p>

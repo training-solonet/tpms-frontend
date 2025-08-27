@@ -79,7 +79,7 @@ const Dashboard = () => {
     return () => {
       newSocket.close();
     };
-  }, [socket, autoRefresh]);
+  }, [socket, autoRefresh, loadTrucks]);
 
   // Load trucks data
   const loadTrucks = useCallback(async () => {
@@ -162,7 +162,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex bg-gray-50 overflow-hidden">
+    <div className="fixed inset-0 h-screen w-screen flex bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         showTruckList={showTruckList}
@@ -186,7 +186,7 @@ const Dashboard = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header */}
         <Header
           autoRefresh={autoRefresh}
@@ -195,7 +195,7 @@ const Dashboard = () => {
         />
 
         {/* Map Container */}
-        <div className="flex-1 h-full">
+        <div className="flex-1 min-h-0 relative">
           <MapView
             trucks={filteredTrucks}
             selectedTruck={selectedTruck}
