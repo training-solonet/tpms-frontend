@@ -1,23 +1,13 @@
 // src/api/apiClient.js
-
-// API Configuration - Update this IP to your backend server's IP
-export const API_CONFIG = {
-  BASE_URL: 'http://192.168.21.34:3001', // Replace with your backend server IP
-  WS_URL: 'http://192.168.21.34:3001',   // Replace with your backend server IP
-  ENDPOINTS: {
-    LOGIN: '/api/auth/login',
-    TRUCKS: '/api/trucks',
-    DASHBOARD: '/api/dashboard/stats',
-    MINING_AREA: '/api/mining-area',
-    REALTIME_LOCATIONS: '/api/trucks/realtime/locations'
-  }
-};
+import { API_CONFIG } from './config';
+import { generateMockTrucks, generateMockDashboardStats } from '../data/mockData';
 
 // API Client Class
 export class ApiClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem('fleet_token');
+    this.useMock = API_CONFIG.USE_MOCK;
   }
 
   setToken(token) {
@@ -31,6 +21,12 @@ export class ApiClient {
   }
 
   async request(endpoint, options = {}) {
+    // Use mock data if configured or if backend is not available
+    if (this.useMock) {
+      console.log('Using mock data for:', endpoint);
+      return this.getMockResponse(endpoint, options);
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
     const config = {
       headers: {
@@ -52,6 +48,57 @@ export class ApiClient {
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      console.log('Falling back to mock data...');
+      // Fallback to mock data if real API fails
+      return this.getMockResponse(endpoint, options);
+    }
+  }
+
+  async getMockResponse(endpoint, options) {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    try {
+      if (endpoint === API_CONFIG.ENDPOINTS.LOGIN) {
+        const credentials = JSON.parse(options.body || '{}');
+        if (credentials.username === 'admin' && credentials.password === 'admin123') {
+          const token = 'mock-jwt-token-' + Date.now();
+          return {
+            success: true,
+            data: {
+              token,
+              user: { username: 'admin', role: 'administrator' }
+            }
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Invalid credentials'
+          };
+        }
+      } else if (endpoint.includes('/trucks')) {
+        const trucks = generateMockTrucks(50);
+        return {
+          success: true,
+          data: { trucks }
+        };
+      } else if (endpoint === API_CONFIG.ENDPOINTS.DASHBOARD) {
+        const trucks = generateMockTrucks(50);
+        const stats = generateMockDashboardStats(trucks);
+        return {
+          success: true,
+          data: stats
+        };
+      }
+      
+      // Default mock response
+      return {
+        success: true,
+        data: {},
+        message: 'Mock response'
+      };
+    } catch (error) {
+      console.error('Mock API Error:', error);
       throw error;
     }
   }

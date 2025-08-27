@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import io from 'socket.io-client';
 
-import { apiClient, API_CONFIG } from '../api/apiClient';
+import { apiClient } from '../api/apiClient';
+import { API_CONFIG } from '../api/config';
 import Header from '../components/common/Header';
 import Sidebar from '../components/dashboard/Sidebar';
 import MapView from '../components/dashboard/MapView';
@@ -30,6 +31,35 @@ const Dashboard = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showTruckList, setShowTruckList] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+
+  // Load trucks data
+  const loadTrucks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getTrucks({ limit: 1000 });
+      if (response.success) {
+        setTrucks(response.data.trucks || []);
+        setError('');
+      }
+    } catch (err) {
+      setError(`Failed to load trucks: ${err.message}`);
+      console.error('Load trucks error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Load dashboard stats
+  const loadDashboardStats = useCallback(async () => {
+    try {
+      const response = await apiClient.getDashboardStats();
+      if (response.success) {
+        setDashboardStats(response.data);
+      }
+    } catch (err) {
+      console.error('Load dashboard stats error:', err);
+    }
+  }, []);
 
   // Initialize WebSocket connection
   const initializeWebSocket = useCallback(() => {
@@ -80,35 +110,6 @@ const Dashboard = () => {
       newSocket.close();
     };
   }, [socket, autoRefresh, loadTrucks]);
-
-  // Load trucks data
-  const loadTrucks = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.getTrucks({ limit: 1000 });
-      if (response.success) {
-        setTrucks(response.data.trucks || []);
-        setError('');
-      }
-    } catch (err) {
-      setError(`Failed to load trucks: ${err.message}`);
-      console.error('Load trucks error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Load dashboard stats
-  const loadDashboardStats = useCallback(async () => {
-    try {
-      const response = await apiClient.getDashboardStats();
-      if (response.success) {
-        setDashboardStats(response.data);
-      }
-    } catch (err) {
-      console.error('Load dashboard stats error:', err);
-    }
-  }, []);
 
   // Initialize data on mount
   useEffect(() => {

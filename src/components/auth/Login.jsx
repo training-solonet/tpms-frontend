@@ -1,7 +1,7 @@
 // src/components/auth/Login.jsx
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { API_CONFIG } from '../../api/apiClient';
+import { useAuth } from '../../hooks/useAuth';
+import { API_CONFIG } from '../../api/config';
 
 const Login = () => {
   const { login } = useAuth();

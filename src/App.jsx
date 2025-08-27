@@ -1,7 +1,8 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/authContext';
+import { useAuth } from './hooks/useAuth';
 import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import "leaflet/dist/leaflet.css";
