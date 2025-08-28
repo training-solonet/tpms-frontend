@@ -11,6 +11,7 @@ import {
   BatteryIcon,
 } from '@heroicons/react/24/outline';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
+import { useWebSocket } from '../../hooks/useWebSocket.jsx';
 
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;

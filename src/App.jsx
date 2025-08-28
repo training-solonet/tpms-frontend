@@ -1,8 +1,9 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
-import ErrorBoundary from './components/common/ErrorBoundary';
+import { useAuth, AuthProvider } from './hooks/useAuth.jsx';
+import ErrorBoundary from './components/common/ErrorBoundary.jsx';
+import DebugPanel from './components/debug/DebugPanel.jsx';
 import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
@@ -165,14 +166,17 @@ function AppRoutes() {
           element={<Navigate to="/dashboard" replace />} 
         />
       </Routes>
+      <DebugPanel />
     </Router>
   );
-}
+};
 
 function App() {
   return (
     <ErrorBoundary>
-      <AppRoutes />
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

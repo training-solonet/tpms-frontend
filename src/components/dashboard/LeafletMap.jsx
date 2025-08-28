@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
+import { miningData } from '../../data/miningData.js';
+import { useWebSocket } from '../../hooks/useWebSocket.jsx';
 import {
   TruckIcon,
   MapPinIcon,
@@ -8,7 +11,6 @@ import {
   SignalIcon,
 } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
-import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
 
 // Sample vehicle data with realistic coordinates within the geofence
 const sampleVehicles = [
@@ -73,11 +75,20 @@ const sampleVehicles = [
 const LeafletMap = () => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
-  const [vehicles, setVehicles] = useState(sampleVehicles);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [legendVisible, setLegendVisible] = useState(true);
-  const [mapStyle, setMapStyle] = useState('osm'); // 'osm' or 'satellite'
+  const [mapStyle, setMapStyle] = useState('osm');
+  const [showLegend, setShowLegend] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // WebSocket integration
+  const { 
+    vehicles: liveVehicles, 
+    connectionStatus, 
+    isDemoMode, 
+    isConnected,
+    alerts 
+  } = useWebSocket();
 
   useEffect(() => {
     let markers = [];
@@ -126,90 +137,147 @@ const LeafletMap = () => {
                 weight: 3,
                 opacity: 0.8,
                 fillColor: '#3b82f6',
-                fillOpacity: 0.1,
-                dashArray: '10, 10'
               }
             }).addTo(mapInstance);
           }
 
-          // Add vehicle markers
-          vehicles.forEach(vehicle => {
-            const colors = {
-              active: '#10b981',
-              idle: '#f59e0b',
-              maintenance: '#ef4444',
-              offline: '#6b7280'
-            };
+          // Add vehicle markers with real-time updates
+          const addVehicleMarkers = (vehicleData) => {
+            // Clear existing markers
+            markers.forEach(marker => mapInstance.removeLayer(marker));
+            markers = [];
 
-            const icon = L.default.divIcon({
-              html: `
-                <div style="
-                  background: ${colors[vehicle.status] || colors.offline};
-                  border: 3px solid white;
-                  border-radius: 50%;
-                  width: 24px;
-                  height: 24px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                ">
-                  <svg width="12" height="12" fill="white" viewBox="0 0 24 24">
-                    <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-                  </svg>
-                </div>
-              `,
-              className: 'custom-truck-icon',
-              iconSize: [24, 24],
-              iconAnchor: [12, 12],
+            vehicleData.forEach(vehicle => {
+              const colors = {
+                active: '#10b981',
+                warning: '#f59e0b', 
+                maintenance: '#ef4444',
+                offline: '#6b7280'
+              };
+
+              const icon = L.default.divIcon({
+                html: `
+                  <div style="
+                    background: ${colors[vehicle.status] || colors.offline};
+                    border: 3px solid white;
+                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                  ">
+                    <svg width="12" height="12" fill="white" viewBox="0 0 24 24">
+                      <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                    </svg>
+                  </div>
+                `,
+                className: 'custom-div-icon',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+              });
+
+              const marker = L.default.marker([vehicle.lat, vehicle.lng], { icon })
+                .addTo(mapInstance)
+                .bindPopup(`
+                  <div class="p-3 min-w-[200px]">
+                    <h3 class="font-bold text-lg mb-2">${vehicle.id}</h3>
+                    <div class="space-y-1 text-sm">
+                      <p><strong>Driver:</strong> ${vehicle.driver}</p>
+                      <p><strong>Status:</strong> <span class="capitalize">${vehicle.status}</span></p>
+                      <p><strong>Speed:</strong> ${vehicle.speed} km/h</p>
+                      <p><strong>Fuel:</strong> ${vehicle.fuel}%</p>
+                      <p><strong>Load:</strong> ${vehicle.load}</p>
+                      <p><strong>Route:</strong> ${vehicle.route}</p>
+                      <p><strong>Last Update:</strong> ${vehicle.lastUpdate.toLocaleTimeString()}</p>
+                    </div>
+                  </div>
+                `);
+
+              markers.push(marker);
             });
+          };
 
-            const marker = L.default.marker(vehicle.position, { icon }).addTo(mapInstance);
-            markers.push(marker);
-            
-            marker.bindPopup(`
-              <div class="p-3 min-w-64">
-                <div class="flex items-center justify-between mb-3">
-                  <h4 class="font-bold text-gray-900">${vehicle.id}</h4>
-                  <span class="px-2 py-1 rounded-full text-xs font-medium bg-${vehicle.status === 'active' ? 'green' : vehicle.status === 'idle' ? 'yellow' : 'red'}-100 text-${vehicle.status === 'active' ? 'green' : vehicle.status === 'idle' ? 'yellow' : 'red'}-600">
-                    ${vehicle.status}
-                  </span>
-                </div>
-                <div class="space-y-2 text-sm">
-                  <div><strong>Driver:</strong> ${vehicle.driver}</div>
-                  <div><strong>Route:</strong> ${vehicle.route}</div>
-                  <div><strong>Load:</strong> ${vehicle.load}</div>
-                  <div><strong>Speed:</strong> ${vehicle.speed} km/h</div>
-                  <div><strong>Fuel:</strong> ${vehicle.fuel}%</div>
-                  <div><strong>Signal:</strong> ${vehicle.signal}</div>
-                </div>
-              </div>
-            `);
-
-            marker.on('click', () => {
-              setSelectedVehicle(vehicle);
-            });
-          });
-
+          // Initial load with static data
+          addVehicleMarkers(vehicleData);
+          setLoading(false);
           setMap(mapInstance);
         } catch (error) {
           console.error('Error initializing map:', error);
+          setError('Failed to initialize map');
+          setLoading(false);
         }
       }
     };
 
     initializeMap();
-
-    return () => {
-      // Remove all markers
-      markers.forEach(marker => {
-        marker.remove();
-      });
-      if (map) {
-        map.remove();
-      }
-    };
   }, []);
+
+  // Update markers when live data changes
+  useEffect(() => {
+    if (map && liveVehicles.length > 0) {
+      const colors = {
+        active: '#10b981',
+        warning: '#f59e0b', 
+        maintenance: '#ef4444',
+        offline: '#6b7280'
+      };
+
+      // Clear existing markers
+      map.eachLayer((layer) => {
+        if (layer.options && layer.options.isVehicleMarker) {
+          map.removeLayer(layer);
+        }
+      });
+
+      liveVehicles.forEach(vehicle => {
+        const L = window.L;
+        const icon = L.divIcon({
+          html: `
+            <div style="
+              background: ${colors[vehicle.status] || colors.offline};
+              border: 3px solid white;
+              border-radius: 50%;
+              width: 24px;
+              height: 24px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            ">
+              <svg width="12" height="12" fill="white" viewBox="0 0 24 24">
+                <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+              </svg>
+            </div>
+          `,
+          className: 'custom-div-icon',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const marker = L.marker([vehicle.lat, vehicle.lng], { 
+          icon,
+          isVehicleMarker: true
+        })
+          .addTo(map)
+          .bindPopup(`
+            <div class="p-3 min-w-[200px]">
+              <h3 class="font-bold text-lg mb-2">${vehicle.id}</h3>
+              <div class="space-y-1 text-sm">
+                <p><strong>Driver:</strong> ${vehicle.driver}</p>
+                <p><strong>Status:</strong> <span class="capitalize">${vehicle.status}</span></p>
+                <p><strong>Speed:</strong> ${vehicle.speed} km/h</p>
+                <p><strong>Fuel:</strong> ${vehicle.fuel}%</p>
+                <p><strong>Load:</strong> ${vehicle.load || 'N/A'}</p>
+                <p><strong>Route:</strong> ${vehicle.route || 'N/A'}</p>
+                <p><strong>Last Update:</strong> ${new Date(vehicle.lastUpdate).toLocaleTimeString()}</p>
+              </div>
+            </div>
+          `);
+      });
+    }
+  }, [map, liveVehicles]);
 
   // Simulate real-time updates
   useEffect(() => {
@@ -279,151 +347,72 @@ const LeafletMap = () => {
     }
   };
 
-  return (
-    <div className="h-full flex">
-      {/* Toggle Button */}
-      <button
-        onClick={() => setSidebarVisible(!sidebarVisible)}
-        className={`fixed top-1/2 -translate-y-1/2 z-50 bg-white hover:bg-gray-50 border border-gray-300 rounded-r-lg px-2 py-3 shadow-lg transition-all duration-300 ${
-          sidebarVisible ? 'left-[608px]' : 'left-72'
-        }`}
-        style={{ zIndex: 1000 }}
-      >
-        <svg 
-          className={`w-4 h-4 text-gray-600 transition-transform duration-300 ${
-            sidebarVisible ? 'rotate-180' : ''
-          }`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
-      {/* Vehicle List Sidebar */}
-      <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
-        sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
-      }`}>
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-lg font-semibold text-gray-900">Vehicle List</h4>
-            <button
-              onClick={resetMapView}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Reset View
-            </button>
-          </div>
-
-          {selectedVehicle && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="text-blue-900 text-sm font-medium">
-                Tracking: {selectedVehicle.id}
-              </div>
-              <div className="text-blue-700 text-xs">
-                {selectedVehicle.driver} - {selectedVehicle.route}
-              </div>
-            </div>
-          )}
+  // Loading and error states
+  if (loading) {
+    return (
+      <div className="relative h-full w-full flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading map...</p>
         </div>
-        
-        {/* Vehicle List */}
-        <div className="flex-1 p-3 space-y-2 overflow-y-auto">
-          {vehicles.map((vehicle) => (
-            <div
-              key={vehicle.id}
-              className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
-                selectedVehicle?.id === vehicle.id
-                  ? 'border-blue-500 bg-blue-50 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}
-              onClick={() => focusOnVehicle(vehicle)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">
-                      {vehicle.id.split('-')[1]}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">{vehicle.id}</div>
-                    <div className="text-xs text-gray-500">{vehicle.driver}</div>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}>
-                  {vehicle.status}
-                </span>
-              </div>
-              
-              <div className="space-y-1 text-xs text-gray-600">
-                <div className="flex justify-between">
-                  <span>Speed:</span>
-                  <span className="font-semibold">{vehicle.speed} km/h</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Fuel:</span>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${vehicle.fuel > 30 ? 'bg-green-500' : 'bg-red-500'}`}
-                        style={{ width: `${vehicle.fuel}%` }}
-                      />
-                    </div>
-                    <span className="font-semibold">{vehicle.fuel}%</span>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span>Updated:</span>
-                  <span className="font-semibold">{formatLastUpdate(vehicle.lastUpdate)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="relative h-full w-full flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <ExclamationTriangleIcon className="h-12 w-12 mx-auto" />
+          </div>
+          <p className="text-red-600 mb-2">Failed to load map</p>
+          <p className="text-gray-500 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-full w-full">
+      {/* Connection Status */}
+      <div className="absolute top-4 left-4 z-[1000]">
+        <div className={`px-3 py-2 rounded-lg text-xs font-medium ${
+          connectionStatus === 'connected' ? 'bg-green-100 text-green-800' :
+          connectionStatus === 'demo' ? 'bg-orange-100 text-orange-800' :
+          'bg-red-100 text-red-800'
+        }`}>
+          {connectionStatus === 'connected' && ' Live Data'}
+          {connectionStatus === 'demo' && ' Demo Mode'}
+          {connectionStatus === 'disconnected' && ' Offline'}
+          {connectionStatus === 'error' && ' Connection Error'}
         </div>
       </div>
 
-      {/* Map Area - Full Screen */}
-      <div className="flex-1 relative">
-        <div 
-          ref={mapRef}
-          className="absolute inset-0 w-full h-full"
-          style={{ cursor: 'grab' }}
-        />
-        
-        {/* Map Style Switcher - Top Center */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3" style={{ zIndex: 1000 }}>
-          <div className="flex items-center gap-2">
+      {/* Map Container */}
+      <div ref={mapRef} className="h-full w-full" />
+      
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 z-[1000] space-y-2">
+        {/* Style Switcher */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2">
+          <div className="flex space-x-1">
             <button
-              onClick={() => {
-                setMapStyle('osm');
-                if (map) {
-                  map.removeLayer(map.satelliteLayer);
-                  map.addLayer(map.osmLayer);
-                }
-              }}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                mapStyle === 'osm' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              onClick={() => switchMapStyle('osm')}
+              className={`px-3 py-1 text-xs rounded ${
+                mapStyle === 'osm'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              Map
+              Street
             </button>
             <button
-              onClick={() => {
-                setMapStyle('satellite');
-                if (map) {
-                  map.removeLayer(map.osmLayer);
-                  map.addLayer(map.satelliteLayer);
-                }
-              }}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                mapStyle === 'satellite' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              onClick={() => switchMapStyle('satellite')}
+              className={`px-3 py-1 text-xs rounded ${
+                mapStyle === 'satellite'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               Satellite
@@ -431,100 +420,39 @@ const LeafletMap = () => {
           </div>
         </div>
 
-        {/* Top Right Controls */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2" style={{ zIndex: 1000 }}>
-          {/* Compass */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2">
-            <div className="flex flex-col items-center relative">
-              <span className="text-xs font-bold text-gray-700 mb-1">N</span>
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8" stroke="#374151" strokeWidth="1" fill="white"/>
-                <polygon points="12,6 13.5,11 12,10.5 10.5,11" fill="#ef4444" stroke="#dc2626" strokeWidth="0.5"/>
-                <polygon points="12,18 10.5,13 12,13.5 13.5,13" fill="#6b7280" stroke="#4b5563" strokeWidth="0.5"/>
-                <circle cx="12" cy="12" r="1" fill="#374151"/>
-              </svg>
-            </div>
+        {/* Show legend toggle when hidden */}
+        {!showLegend && (
+          <div className="absolute bottom-4 right-4 z-[1000]">
+            <button
+              onClick={() => setShowLegend(true)}
+              className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 text-gray-600 hover:text-gray-800"
+            >
+              <MapPinIcon className="w-5 h-5" />
+            </button>
           </div>
-
-          {/* Fleet Status Legend */}
-          <div className={`bg-white/90 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-300 ${
-            legendVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
-          }`}>
-            <div className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-semibold text-gray-900">Fleet Status</h4>
-                <button
-                  onClick={() => setLegendVisible(!legendVisible)}
-                  className="text-gray-400 hover:text-gray-600 ml-2"
-                >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
-                <div className="text-lg font-bold text-green-600">
-                  {vehicles.filter(v => v.status === 'active').length}
-                </div>
-                <div className="text-xs text-green-700 font-medium">Active</div>
-              </div>
-              <div className="text-center p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="text-lg font-bold text-yellow-600">
-                  {vehicles.filter(v => v.status === 'idle').length}
-                </div>
-                <div className="text-xs text-yellow-700 font-medium">Idle</div>
-              </div>
-              <div className="text-center p-2 bg-red-50 rounded-lg border border-red-200">
-                <div className="text-lg font-bold text-red-600">
-                  {vehicles.filter(v => v.status === 'maintenance').length}
-                </div>
-                <div className="text-xs text-red-700 font-medium">Maint.</div>
-              </div>
-              <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="text-lg font-bold text-blue-600">
-                  {vehicles.length}
-                </div>
-                <div className="text-xs text-blue-700 font-medium">Total</div>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs border-t border-gray-200 pt-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-gray-700">Active Vehicle</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-gray-700">Idle Vehicle</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-gray-700">Maintenance</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-0.5 bg-blue-500 border-dashed border border-blue-500"></div>
-                <span className="text-gray-700">Mining Area</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        </div>
-
-        {/* Show Legend Button */}
+        )}
         <button
-          onClick={() => setLegendVisible(true)}
+          onClick={() => setLegendVisible(!legendVisible)}
           className={`absolute top-20 right-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 shadow-lg transition-opacity duration-300 ${
             legendVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
           style={{ zIndex: 1000 }}
         >
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <svg
+            className="w-4 h-4 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
+
 
         {/* Auto Correct Location Button */}
         <button

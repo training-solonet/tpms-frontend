@@ -1,160 +1,189 @@
 // src/components/auth/Login.jsx
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth.jsx';
+import { EyeIcon, EyeSlashIcon, CogIcon } from '@heroicons/react/24/outline';
 
 const Login = () => {
-  const navigate = useNavigate();
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, error, debugMode, toggleDebugMode } = useAuth();
 
-  // Immediate redirect without loading screen to prevent flickering
-  useEffect(() => {
-    navigate('/dashboard', { replace: true });
-  }, [navigate]);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const result = await login(credentials);
+      if (!result.success) {
+        // Error is handled by useAuth hook
+        console.error('Login failed:', result.error);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Return null to prevent any rendering
-  return null;
+  const handleChange = (e) => {
+    setCredentials({
+      ...credentials,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Debug Mode Toggle */}
+        <div className="flex justify-center">
+          <button
+            onClick={toggleDebugMode}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              debugMode 
+                ? 'bg-orange-100 text-orange-800 border border-orange-200' 
+                : 'bg-gray-100 text-gray-600 border border-gray-200'
+            }`}
+          >
+            <CogIcon className="w-3 h-3 mr-1" />
+            Debug Mode: {debugMode ? 'ON' : 'OFF'}
+          </button>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/20">
+          <div>
+            <div className="mx-auto h-20 w-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-6">
+              <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+              </svg>
+            </div>
+            <h2 className="text-center text-3xl font-bold text-gray-900 mb-2">
+              Borneo Fleet
+            </h2>
+            <p className="text-center text-sm text-gray-600">
+              Live Tracking System
+            </p>
+            {debugMode && (
+              <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-xs text-orange-700 text-center">
+                  🔧 Debug Mode Active - Login bypassed
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {!debugMode && (
+            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-700 text-center">{error}</p>
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                    Username
+                  </label>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition-colors"
+                    placeholder="Enter your username"
+                    value={credentials.username}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      className="appearance-none relative block w-full px-3 py-3 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition-colors"
+                      placeholder="Enter your password"
+                      value={credentials.password}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={isLoading}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
+                </button>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-xs text-gray-500">
+                  Demo credentials: admin / password123
+                </p>
+                <p className="text-xs text-gray-400">
+                  Backend URL: http://localhost:3001/api
+                </p>
+                <p className="text-xs text-blue-600">
+                  💡 If backend is down, use Debug Mode or demo login
+                </p>
+              </div>
+            </form>
+          )}
+          
+          {debugMode && (
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-600 mb-4">
+                Debug mode is active. You can access the application without authentication.
+              </p>
+              <button
+                onClick={() => window.location.href = '/dashboard'}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+              >
+                Continue to Dashboard
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Login;
-
-//   const handleChange = (e) => {
-//     setFormData({
-//       ...formData,
-//       [e.target.name]: e.target.value
-//     });
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setError('');
-//     setLoading(true);
-
-//     const result = await login(formData);
-    
-//     if (!result.success) {
-//       setError(result.message || 'Login failed');
-//     }
-    
-//     setLoading(false);
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-//       {/* Background Pattern */}
-//       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:32px_32px]"></div>
-      
-//       <div className="relative w-full max-w-md">
-//         {/* Company Logo Card */}
-//         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
-//           {/* Company Header */}
-//           <div className="text-center mb-8">
-//             {/* Company Logo */}
-//             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl mb-4 shadow-lg">
-//               <Building2 className="w-8 h-8 text-white" />
-//             </div>
-            
-//             {/* Company Info */}
-//             <h1 className="text-2xl font-bold text-gray-900 mb-2">Fleet Monitor</h1>
-//             <p className="text-gray-600 mb-1">Sistem Monitoring Truk Tambang</p>
-            
-//             {/* Company Badge */}
-//             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-//               <MapPin className="w-4 h-4" />
-//               PT Borneo Indobara
-//             </div>
-//           </div>
-          
-//           {/* Login Form */}
-//           <form onSubmit={handleSubmit} className="space-y-6">
-//             {/* Username Field */}
-//             <div>
-//               <label className="block text-sm font-semibold text-gray-700 mb-2">
-//                 Username
-//               </label>
-//               <div className="relative">
-//                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-//                 <input
-//                   type="text"
-//                   name="username"
-//                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-//                   value={formData.username}
-//                   onChange={handleChange}
-//                   placeholder="Masukkan username"
-//                   required
-//                 />
-//               </div>
-//             </div>
-            
-//             {/* Password Field */}
-//             <div>
-//               <label className="block text-sm font-semibold text-gray-700 mb-2">
-//                 Password
-//               </label>
-//               <div className="relative">
-//                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-//                 <input
-//                   type={showPassword ? "text" : "password"}
-//                   name="password"
-//                   className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-//                   value={formData.password}
-//                   onChange={handleChange}
-//                   placeholder="Masukkan password"
-//                   required
-//                 />
-//                 <button
-//                   type="button"
-//                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-//                   onClick={() => setShowPassword(!showPassword)}
-//                 >
-//                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-//                 </button>
-//               </div>
-//             </div>
-            
-//             {/* Error Message */}
-//             {error && (
-//               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-//                 <Shield className="w-5 h-5 flex-shrink-0" />
-//                 <span className="text-sm">{error}</span>
-//               </div>
-//             )}
-            
-//             {/* Submit Button */}
-//             <button
-//               type="submit"
-//               disabled={loading}
-//               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
-//             >
-//               {loading ? (
-//                 <div className="flex items-center justify-center gap-2">
-//                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-//                   Connecting...
-//                 </div>
-//               ) : (
-//                 'Login'
-//               )}
-//             </button>
-//           </form>
-          
-//           {/* Demo Credentials */}
-//           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-//             <div className="text-center text-sm text-gray-600">
-//               <p className="font-medium mb-2">Demo Credentials:</p>
-//               <div className="space-y-1">
-//                 <p>Username: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin</code></p>
-//                 <p>Password: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin123</code></p>
-//               </div>
-//               <p className="mt-3 text-xs text-gray-500">Backend: {API_CONFIG.BASE_URL}</p>
-//             </div>
-//           </div>
-//         </div>
-        
-//         {/* Footer */}
-//         <div className="text-center mt-6">
-//           <p className="text-white/70 text-sm">© 2024 PT Borneo Indobara. All rights reserved.</p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Login;

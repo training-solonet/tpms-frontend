@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
+import { useAuth } from '../../hooks/useAuth.jsx';
 import {
   Bars3Icon,
   BellIcon,
@@ -14,6 +15,7 @@ function classNames(...classes) {
 }
 
 const TailwindHeader = ({ setSidebarOpen }) => {
+  const { user, logout, debugMode } = useAuth();
   const notifications = [
     { id: 1, title: 'Vehicle BRN-001 Alert', message: 'Speed limit exceeded', time: '5 min ago', type: 'warning' },
     { id: 2, title: 'Maintenance Due', message: 'Vehicle BRN-003 requires service', time: '1 hour ago', type: 'info' },
@@ -132,11 +134,13 @@ const TailwindHeader = ({ setSidebarOpen }) => {
             <Menu.Button className="-m-1.5 flex items-center p-1.5">
               <span className="sr-only">Open user menu</span>
               <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
-                <span className="text-sm font-medium text-white">JD</span>
+                <span className="text-sm font-medium text-white">
+                  {user?.username?.substring(0, 2).toUpperCase() || 'U'}
+                </span>
               </div>
               <span className="hidden lg:flex lg:items-center">
                 <span className="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
-                  John Doe
+                  {user?.username || 'User'}
                 </span>
                 <svg
                   className="ml-2 h-5 w-5 text-gray-400"
@@ -163,8 +167,11 @@ const TailwindHeader = ({ setSidebarOpen }) => {
             >
               <Menu.Items className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                 <div className="px-3 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">John Doe</p>
-                  <p className="text-xs text-gray-500">Fleet Manager</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.username || 'User'}</p>
+                  <p className="text-xs text-gray-500">{user?.role || 'Fleet Manager'}</p>
+                  {debugMode && (
+                    <p className="text-xs text-orange-600 font-medium">🔧 Debug Mode</p>
+                  )}
                 </div>
                 <Menu.Item>
                   {({ active }) => (
@@ -197,16 +204,16 @@ const TailwindHeader = ({ setSidebarOpen }) => {
                 <div className="border-t border-gray-100">
                   <Menu.Item>
                     {({ active }) => (
-                      <a
-                        href="#"
+                      <button
+                        onClick={logout}
                         className={classNames(
                           active ? 'bg-gray-50' : '',
-                          'flex items-center px-3 py-2 text-sm text-gray-700'
+                          'flex items-center px-3 py-2 text-sm text-gray-700 w-full text-left'
                         )}
                       >
                         <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
                         Sign out
-                      </a>
+                      </button>
                     )}
                   </Menu.Item>
                 </div>

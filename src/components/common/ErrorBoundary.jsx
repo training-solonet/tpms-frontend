@@ -1,6 +1,11 @@
 // src/components/common/ErrorBoundary.jsx
 import React from 'react';
-import { AlertTriangle, RefreshCw, Trash2, Building2 } from 'lucide-react';
+import { 
+  ExclamationTriangleIcon as AlertTriangle, 
+  ArrowPathIcon as RefreshCw, 
+  TrashIcon as Trash2, 
+  BuildingOffice2Icon as Building2 
+} from '@heroicons/react/24/outline';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
