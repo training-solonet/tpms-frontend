@@ -1,16 +1,16 @@
-// src/pages/Dashboard.jsx
+// src/pages/LiveTracking.jsx
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import TailwindFleetOverview from '../components/dashboard/TailwindFleetOverview';
+import LeafletMap from '../components/dashboard/LeafletMap';
 
-const Dashboard = () => {
+const LiveTracking = () => {
   return (
     <TailwindLayout>
       <div className="h-full">
-        <TailwindFleetOverview />
+        <LeafletMap />
       </div>
     </TailwindLayout>
   );
 };
 
-export default Dashboard;
+export default LiveTracking;

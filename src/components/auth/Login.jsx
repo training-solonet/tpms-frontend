@@ -1,97 +1,160 @@
 // src/components/auth/Login.jsx
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { API_CONFIG } from '../../api/apiClient';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({ username: '', password: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  // Immediate redirect without loading screen to prevent flickering
+  useEffect(() => {
+    navigate('/dashboard', { replace: true });
+  }, [navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const result = await login(formData);
-    
-    if (!result.success) {
-      setError(result.message || 'Login failed');
-    }
-    
-    setLoading(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Fleet Monitor</h1>
-          <p className="text-gray-600">Sistem Monitoring Truk Tambang</p>
-          <p className="text-sm text-blue-600 mt-2">PT Borneo Indobara</p>
-        </div>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              name="username"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.username}
-              onChange={handleChange}
-              placeholder="Masukkan username"
-              required
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Masukkan password"
-              required
-            />
-          </div>
-          
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {loading ? 'Connecting...' : 'Login'}
-          </button>
-        </form>
-        
-        <div className="mt-4 text-center text-sm text-gray-600">
-          <p>Demo: username: <code>admin</code>, password: <code>admin123</code></p>
-          <p className="mt-2">Backend: {API_CONFIG.BASE_URL}</p>
-        </div>
-      </div>
-    </div>
-  );
+  // Return null to prevent any rendering
+  return null;
 };
 
 export default Login;
+
+//   const handleChange = (e) => {
+//     setFormData({
+//       ...formData,
+//       [e.target.name]: e.target.value
+//     });
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setError('');
+//     setLoading(true);
+
+//     const result = await login(formData);
+    
+//     if (!result.success) {
+//       setError(result.message || 'Login failed');
+//     }
+    
+//     setLoading(false);
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+//       {/* Background Pattern */}
+//       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:32px_32px]"></div>
+      
+//       <div className="relative w-full max-w-md">
+//         {/* Company Logo Card */}
+//         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+//           {/* Company Header */}
+//           <div className="text-center mb-8">
+//             {/* Company Logo */}
+//             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl mb-4 shadow-lg">
+//               <Building2 className="w-8 h-8 text-white" />
+//             </div>
+            
+//             {/* Company Info */}
+//             <h1 className="text-2xl font-bold text-gray-900 mb-2">Fleet Monitor</h1>
+//             <p className="text-gray-600 mb-1">Sistem Monitoring Truk Tambang</p>
+            
+//             {/* Company Badge */}
+//             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+//               <MapPin className="w-4 h-4" />
+//               PT Borneo Indobara
+//             </div>
+//           </div>
+          
+//           {/* Login Form */}
+//           <form onSubmit={handleSubmit} className="space-y-6">
+//             {/* Username Field */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Username
+//               </label>
+//               <div className="relative">
+//                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+//                 <input
+//                   type="text"
+//                   name="username"
+//                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+//                   value={formData.username}
+//                   onChange={handleChange}
+//                   placeholder="Masukkan username"
+//                   required
+//                 />
+//               </div>
+//             </div>
+            
+//             {/* Password Field */}
+//             <div>
+//               <label className="block text-sm font-semibold text-gray-700 mb-2">
+//                 Password
+//               </label>
+//               <div className="relative">
+//                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+//                 <input
+//                   type={showPassword ? "text" : "password"}
+//                   name="password"
+//                   className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+//                   value={formData.password}
+//                   onChange={handleChange}
+//                   placeholder="Masukkan password"
+//                   required
+//                 />
+//                 <button
+//                   type="button"
+//                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+//                   onClick={() => setShowPassword(!showPassword)}
+//                 >
+//                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+//                 </button>
+//               </div>
+//             </div>
+            
+//             {/* Error Message */}
+//             {error && (
+//               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+//                 <Shield className="w-5 h-5 flex-shrink-0" />
+//                 <span className="text-sm">{error}</span>
+//               </div>
+//             )}
+            
+//             {/* Submit Button */}
+//             <button
+//               type="submit"
+//               disabled={loading}
+//               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+//             >
+//               {loading ? (
+//                 <div className="flex items-center justify-center gap-2">
+//                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+//                   Connecting...
+//                 </div>
+//               ) : (
+//                 'Login'
+//               )}
+//             </button>
+//           </form>
+          
+//           {/* Demo Credentials */}
+//           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+//             <div className="text-center text-sm text-gray-600">
+//               <p className="font-medium mb-2">Demo Credentials:</p>
+//               <div className="space-y-1">
+//                 <p>Username: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin</code></p>
+//                 <p>Password: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin123</code></p>
+//               </div>
+//               <p className="mt-3 text-xs text-gray-500">Backend: {API_CONFIG.BASE_URL}</p>
+//             </div>
+//           </div>
+//         </div>
+        
+//         {/* Footer */}
+//         <div className="text-center mt-6">
+//           <p className="text-white/70 text-sm">© 2024 PT Borneo Indobara. All rights reserved.</p>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Login;
