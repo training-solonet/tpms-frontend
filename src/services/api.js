@@ -104,12 +104,12 @@ export const authAPI = {
 
 // Dashboard APIs
 export const dashboardAPI = {
-  getOverview: async () => {
+  getStats: async () => {
     try {
-      const response = await api.get('/dashboard/overview');
+      const response = await api.get('/dashboard/stats');
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Failed to fetch dashboard overview' };
+      return { success: false, message: 'Failed to fetch dashboard stats', error };
     }
   },
 
@@ -145,10 +145,18 @@ export const trucksAPI = {
 
   updateStatus: async (truckId, statusData) => {
     try {
-      const response = await api.patch(`/trucks/${truckId}/status`, statusData);
+      const response = await api.put(`/trucks/${truckId}/status`, statusData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Failed to update truck status' };
+      return { success: false, message: 'Failed to update truck status', error };
+    }
+  },
+  getTirePressures: async (truckId) => {
+    try {
+      const response = await api.get(`/trucks/${truckId}/tires`);
+      return response.data;
+    } catch (error) {
+      return { success: false, message: 'Failed to fetch tire pressures', error };
     }
   },
 
@@ -164,12 +172,12 @@ export const trucksAPI = {
 
 // Real-Time Tracking APIs
 export const trackingAPI = {
-  getLiveLocations: async (params = {}) => {
+  getRealtimeLocations: async () => {
     try {
-      const response = await api.get('/tracking/live', { params });
+      const response = await api.get('/trucks/realtime/locations');
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Failed to fetch live locations' };
+      return { success: false, message: 'Failed to fetch realtime locations', error };
     }
   },
 

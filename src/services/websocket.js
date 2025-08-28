@@ -23,8 +23,9 @@ class WebSocketService {
 
       this.ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
-          this.emit(data.type, data.payload);
+            const message = JSON.parse(event.data);
+            // API documentation: message has { type, data, requestId, timestamp }
+            this.emit(message.type, message);
         } catch (error) {
           console.error('WebSocket message parse error:', error);
         }
