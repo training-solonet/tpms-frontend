@@ -19,6 +19,8 @@ import './App.css';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
+  console.log('🛡️ ProtectedRoute - isAuthenticated:', isAuthenticated, 'loading:', loading);
+  
   // Skip loading screen to prevent flickering
   if (loading) {
     return null;

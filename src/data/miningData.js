@@ -1,0 +1,50 @@
+export const sampleVehicles = [
+  {
+    id: 'truck-1',
+    name: 'HD 785',
+    status: 'active',
+    location: { lat: -2.5, lng: 115.5 },
+    fuel: 75,
+    speed: 0,
+    driver: 'John Doe',
+    lastUpdate: new Date().toISOString(),
+    route: 'Pit A → Stockpile',
+    load: 'Coal',
+    loadStatus: 'loaded',
+    tirePressure: 35,
+    battery: 85,
+    signal: 'strong'
+  },
+  {
+    id: 'truck-2',
+    name: 'HD 785',
+    status: 'active',
+    location: { lat: -2.51, lng: 115.52 },
+    fuel: 60,
+    speed: 15,
+    driver: 'Jane Smith',
+    lastUpdate: new Date().toISOString(),
+    route: 'Pit B → Crusher',
+    load: 'Ore',
+    loadStatus: 'empty',
+    tirePressure: 32,
+    battery: 90,
+    signal: 'medium'
+  },
+  {
+    id: 'truck-3',
+    name: 'HD 785',
+    status: 'inactive',
+    location: { lat: -2.49, lng: 115.48 },
+    fuel: 20,
+    speed: 0,
+    driver: 'Bob Johnson',
+    lastUpdate: new Date().toISOString(),
+    route: 'Maintenance',
+    load: 'None',
+    loadStatus: 'empty',
+    tirePressure: 30,
+    battery: 45,
+    signal: 'weak'
+  }
+];
