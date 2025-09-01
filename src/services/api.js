@@ -19,6 +19,8 @@ const checkBackendConnection = async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     
+    console.log(`🔌 Checking backend connection to: ${API_CONFIG.BASE_URL}`);
+    
     const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/stats`, {
       method: 'GET',
       signal: controller.signal,
@@ -30,11 +32,23 @@ const checkBackendConnection = async () => {
     clearTimeout(timeoutId);
     isOnline = response.ok;
     connectionAttempts = 0;
+    
+    if (response.ok) {
+      console.log(`✅ Backend connection successful`);
+    } else {
+      console.error(`❌ Backend responded with status: ${response.status} ${response.statusText}`);
+    }
+    
     return response.ok;
   } catch (error) {
     isOnline = false;
     connectionAttempts++;
-    console.warn(`Backend connection failed (attempt ${connectionAttempts}):`, error.message);
+    console.error(`❌ Backend connection failed (attempt ${connectionAttempts}):`, error.message);
+    console.log(`🔍 Possible issues:
+    - Backend server not running on ${API_CONFIG.BASE_URL}
+    - Network connectivity issues
+    - CORS configuration problems
+    - Firewall blocking the connection`);
     return false;
   }
 };
@@ -155,13 +169,71 @@ export const trucksAPI = {
   },
   
   getRealTimeLocations: async () => {
-    return await apiRequest('/api/trucks/realtime/locations');
+    console.log(`🚛 Loading real-time truck locations...`);
+    
+    const result = await apiRequest('/api/trucks/realtime/locations');
+    
+    if (result.success) {
+      console.log(`✅ Real-time locations loaded: ${result.data?.features?.length || 0} trucks`);
+    } else {
+      console.error(`❌ Failed to load real-time locations:`, result.error);
+      console.log(`🔄 Trying alternative endpoints for real-time data...`);
+      
+      // Try alternative endpoints for real-time data
+      const alternatives = [
+        '/api/trucks/locations',
+        '/api/vehicles/realtime',
+        '/api/tracking/realtime',
+        '/api/fleet/locations'
+      ];
+      
+      for (const altEndpoint of alternatives) {
+        console.log(`🔄 Trying alternative endpoint: ${altEndpoint}`);
+        const altResult = await apiRequest(altEndpoint);
+        if (altResult.success) {
+          console.log(`✅ Success with alternative endpoint: ${altEndpoint}`);
+          return altResult;
+        }
+      }
+    }
+    
+    return result;
   },
   
   getLocationHistory: async (id, params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = `/api/trucks/${id}/history${queryString ? `?${queryString}` : ''}`;
-    return await apiRequest(endpoint);
+    
+    console.log(`🔍 Loading location history for truck ${id} from: ${endpoint}`);
+    console.log(`📊 Parameters:`, params);
+    
+    const result = await apiRequest(endpoint);
+    
+    if (result.success) {
+      console.log(`✅ Location history loaded for ${id}: ${result.data?.length || 0} points`);
+    } else {
+      console.error(`❌ Failed to load location history for ${id}:`, result.error);
+      console.log(`🔄 Trying alternative endpoints...`);
+      
+      // Try alternative endpoints
+      const alternatives = [
+        `/api/location-history/${id}`,
+        `/api/trucks/${id}/locations`,
+        `/api/tracking/${id}/history`,
+        `/api/vehicles/${id}/history`
+      ];
+      
+      for (const altEndpoint of alternatives) {
+        console.log(`🔄 Trying alternative endpoint: ${altEndpoint}`);
+        const altResult = await apiRequest(altEndpoint + (queryString ? `?${queryString}` : ''));
+        if (altResult.success) {
+          console.log(`✅ Success with alternative endpoint: ${altEndpoint}`);
+          return altResult;
+        }
+      }
+    }
+    
+    return result;
   }
 };
 
