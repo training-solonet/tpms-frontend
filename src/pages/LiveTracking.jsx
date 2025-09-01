@@ -2,6 +2,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import LiveTrackingMap from '../components/dashboard/LiveTrackingMap';
+import '../styles/tracking.css'; // Import tracking styles
 
 const LiveTracking = () => {
   return (
