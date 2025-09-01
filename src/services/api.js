@@ -1,10 +1,9 @@
 // src/services/api.js
-import { sampleVehicles } from '../data/miningData.js';
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:3001',
-  WS_URL: 'ws://localhost:3001/ws',
+  BASE_URL: 'http://192.168.21.14:3001',
+  WS_URL: 'ws://192.168.21.14:3001/ws',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000
@@ -40,7 +39,7 @@ const checkBackendConnection = async () => {
   }
 };
 
-// Generic API request with fallback
+// Generic API request
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   const token = localStorage.getItem('authToken');
@@ -84,162 +83,30 @@ const apiRequest = async (endpoint, options = {}) => {
     
     console.warn(`API request failed for ${endpoint}:`, error.message);
     
-    // Return fallback data based on endpoint
-    return getFallbackData(endpoint, error);
+    return {
+      success: false,
+      data: null,
+      online: false,
+      error: error.message
+    };
   }
 };
 
-// Fallback data for offline mode
-const getFallbackData = (endpoint, error) => {
-  console.log(`Using fallback data for ${endpoint}`);
-  
-  if (endpoint.includes('/trucks/realtime/locations')) {
-    return {
-      success: true,
-      data: {
-        type: "FeatureCollection",
-        features: sampleVehicles.map(vehicle => ({
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [vehicle.position[1], vehicle.position[0]] // [lng, lat]
-          },
-          properties: {
-            truckNumber: vehicle.id,
-            status: vehicle.status,
-            fuel: vehicle.fuel,
-            speed: vehicle.speed,
-            heading: vehicle.heading
-          }
-        }))
-      },
-      online: false,
-      error: error.message
-    };
-  }
-  
-  if (endpoint.includes('/trucks')) {
-    return {
-      success: true,
-      data: {
-        trucks: sampleVehicles.map(vehicle => ({
-          id: vehicle.id,
-          truckNumber: vehicle.id,
-          status: vehicle.status,
-          fuel: vehicle.fuel,
-          location: {
-            latitude: vehicle.position[0],
-            longitude: vehicle.position[1],
-            address: "Mining Area (Offline Mode)"
-          },
-          lastUpdate: vehicle.lastUpdate.toISOString()
-        })),
-        pagination: {
-          current_page: 1,
-          total_pages: 1,
-          total_items: sampleVehicles.length,
-          items_per_page: sampleVehicles.length
-        },
-        summary: {
-          total: sampleVehicles.length,
-          active: sampleVehicles.filter(v => v.status === 'active').length,
-          inactive: sampleVehicles.filter(v => v.status === 'idle').length,
-          maintenance: sampleVehicles.filter(v => v.status === 'maintenance').length
-        }
-      },
-      online: false,
-      error: error.message
-    };
-  }
-  
-  if (endpoint.includes('/dashboard/stats')) {
-    const activeCount = sampleVehicles.filter(v => v.status === 'active').length;
-    const idleCount = sampleVehicles.filter(v => v.status === 'idle').length;
-    const maintenanceCount = sampleVehicles.filter(v => v.status === 'maintenance').length;
-    const avgFuel = sampleVehicles.reduce((sum, v) => sum + v.fuel, 0) / sampleVehicles.length;
-    
-    return {
-      success: true,
-      data: {
-        totalTrucks: sampleVehicles.length,
-        activeTrucks: activeCount,
-        inactiveTrucks: idleCount,
-        maintenanceTrucks: maintenanceCount,
-        averageFuel: Math.round(avgFuel * 10) / 10,
-        alertsCount: 3,
-        todayDistance: 12450.5,
-        fuelConsumption: 2150.8
-      },
-      online: false,
-      error: error.message
-    };
-  }
-  
-  if (endpoint.includes('/mining-area')) {
-    return {
-      success: true,
-      data: {
-        type: "FeatureCollection",
-        features: [] // Will use geofance.js data instead
-      },
-      online: false,
-      error: error.message
-    };
-  }
-  
-  return {
-    success: false,
-    data: null,
-    online: false,
-    error: error.message
-  };
-};
 
 // Authentication API
 export const authAPI = {
   login: async (credentials) => {
-    try {
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials)
-      });
-      
-      if (response.success && response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      
-      return response;
-    } catch (error) {
-      // Fallback for offline mode - allow bypass
-      if (credentials.username === 'bypass' || credentials.username === 'admin') {
-        const mockUser = {
-          id: 1,
-          username: credentials.username,
-          role: 'admin'
-        };
-        
-        localStorage.setItem('authToken', 'offline-bypass-token');
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        
-        return {
-          success: true,
-          data: {
-            token: 'offline-bypass-token',
-            user: mockUser
-          },
-          online: false,
-          message: 'Offline bypass mode activated'
-        };
-      }
-      
-      return {
-        success: false,
-        message: 'Login failed - Backend unavailable',
-        online: false,
-        error: error.message
-      };
+    const response = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    });
+    
+    if (response.success && response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     }
+    
+    return response;
   },
   
   logout: () => {
@@ -289,6 +156,12 @@ export const trucksAPI = {
   
   getRealTimeLocations: async () => {
     return await apiRequest('/api/trucks/realtime/locations');
+  },
+  
+  getLocationHistory: async (id, params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/api/trucks/${id}/history${queryString ? `?${queryString}` : ''}`;
+    return await apiRequest(endpoint);
   }
 };
 
@@ -296,6 +169,22 @@ export const trucksAPI = {
 export const dashboardAPI = {
   getStats: async () => {
     return await apiRequest('/api/dashboard/stats');
+  },
+  
+  getFleetSummary: async () => {
+    return await apiRequest('/api/dashboard/fleet-summary');
+  },
+  
+  getAlerts: async () => {
+    return await apiRequest('/api/dashboard/alerts');
+  },
+  
+  getFuelReport: async () => {
+    return await apiRequest('/api/dashboard/fuel');
+  },
+  
+  getMaintenanceReport: async () => {
+    return await apiRequest('/api/dashboard/maintenance');
   }
 };
 
@@ -303,6 +192,29 @@ export const dashboardAPI = {
 export const miningAreaAPI = {
   getBoundaries: async () => {
     return await apiRequest('/api/mining-area');
+  },
+  
+  getZoneStatistics: async () => {
+    return await apiRequest('/api/mining-area/statistics');
+  },
+  
+  getTrucksInZone: async (zoneName) => {
+    return await apiRequest(`/api/mining-area/${zoneName}/trucks`);
+  }
+};
+
+// Alerts API
+export const alertsAPI = {
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/api/alerts${queryString ? `?${queryString}` : ''}`;
+    return await apiRequest(endpoint);
+  },
+  
+  resolve: async (alertId) => {
+    return await apiRequest(`/api/alerts/${alertId}/resolve`, {
+      method: 'PUT'
+    });
   }
 };
 
@@ -320,6 +232,92 @@ export const connectionUtils = {
   }
 };
 
+// WebSocket connection for real-time updates
+export class FleetWebSocket {
+  constructor() {
+    this.ws = null;
+    this.subscriptions = new Set();
+    this.messageHandlers = new Map();
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectDelay = 1000;
+  }
+  
+  connect() {
+    try {
+      this.ws = new WebSocket(API_CONFIG.WS_URL);
+      
+      this.ws.onopen = () => {
+        console.log('✅ WebSocket connected to backend');
+        this.reconnectAttempts = 0;
+      };
+      
+      this.ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          this.handleMessage(message);
+        } catch (error) {
+          console.error('Failed to parse WebSocket message:', error);
+        }
+      };
+      
+      this.ws.onclose = () => {
+        console.log('❌ WebSocket disconnected');
+        this.attemptReconnect();
+      };
+      
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error);
+    }
+  }
+  
+  attemptReconnect() {
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+      
+      setTimeout(() => {
+        this.connect();
+      }, this.reconnectDelay * this.reconnectAttempts);
+    }
+  }
+  
+  subscribe(channel, handler) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.send({
+        type: 'subscribe',
+        channel: channel
+      });
+      
+      this.messageHandlers.set(channel, handler);
+      this.subscriptions.add(channel);
+    }
+  }
+  
+  send(message) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
+    }
+  }
+  
+  handleMessage(message) {
+    const handler = this.messageHandlers.get(message.type);
+    if (handler) {
+      handler(message.data);
+    }
+  }
+  
+  disconnect() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+}
+
 // Initialize connection check
 checkBackendConnection();
 
@@ -328,6 +326,8 @@ export default {
   trucksAPI,
   dashboardAPI,
   miningAreaAPI,
+  alertsAPI,
   connectionUtils,
+  FleetWebSocket,
   API_CONFIG
 };

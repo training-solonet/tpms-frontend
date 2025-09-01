@@ -11,14 +11,13 @@ import {
   EyeOff, 
   Shield,
   Wifi,
-  WifiOff,
-  Bug
+  WifiOff
 } from 'lucide-react';
 import { API_CONFIG } from '../../services/api.js';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, bypassLogin, isAuthenticated, loading, isOnline } = useAuth();
+  const { login, isAuthenticated, loading, isOnline } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -62,20 +61,6 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBypass = async () => {
-    setError('');
-    setIsLoading(true);
-    
-    const result = bypassLogin();
-    if (result.success) {
-      // Will redirect via useEffect
-    } else {
-      setError('Bypass failed');
-    }
-    
-    setIsLoading(false);
   };
 
   // Show loading state while checking authentication
@@ -201,19 +186,6 @@ const Login = () => {
                 'Login'
               )}
             </button>
-
-            {/* Bypass Button for Development */}
-            <button
-              type="button"
-              onClick={handleBypass}
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Bug className="w-5 h-5" />
-                Developer Bypass
-              </div>
-            </button>
           </form>
           
           {/* Demo Credentials */}
@@ -225,16 +197,13 @@ const Login = () => {
                 <p>Password: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin123</code></p>
               </div>
               <p className="mt-3 text-xs text-gray-500">Backend: {API_CONFIG.BASE_URL}</p>
-              <p className="text-xs text-orange-600 mt-1">
-                Use "Developer Bypass" to access without backend connection
-              </p>
             </div>
           </div>
         </div>
         
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-white/70 text-sm">© 2024 PT Borneo Indobara. All rights reserved.</p>
+          <p className="text-white/70 text-sm"> 2024 PT Borneo Indobara. All rights reserved.</p>
         </div>
       </div>
     </div>

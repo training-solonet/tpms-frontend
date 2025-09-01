@@ -78,35 +78,12 @@ export const useAuth = () => {
     setUser(null);
   };
 
-  // Bypass function for development
-  const bypassLogin = () => {
-    const mockUser = {
-      id: 'bypass',
-      username: 'Developer',
-      role: 'admin'
-    };
-    
-    localStorage.setItem('authToken', 'bypass-token');
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    
-    setIsAuthenticated(true);
-    setUser(mockUser);
-    setIsOnline(false); // Mark as offline since it's bypass
-    
-    return {
-      success: true,
-      message: 'Bypass mode activated - All features available offline',
-      online: false
-    };
-  };
-
   return {
     isAuthenticated,
     loading,
     user,
     login,
     logout,
-    bypassLogin,
     isOnline
   };
 };

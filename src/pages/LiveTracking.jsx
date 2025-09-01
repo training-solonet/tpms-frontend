@@ -1,13 +1,13 @@
 // src/pages/LiveTracking.jsx
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import LeafletMap from '../components/dashboard/LeafletMap';
+import LiveTrackingMap from '../components/dashboard/LiveTrackingMap';
 
 const LiveTracking = () => {
   return (
     <TailwindLayout>
       <div className="h-full">
-        <LeafletMap />
+        <LiveTrackingMap />
       </div>
     </TailwindLayout>
   );
