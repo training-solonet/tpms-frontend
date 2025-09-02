@@ -11,29 +11,54 @@ import {
   DocumentTextIcon,
   BellIcon,
   Cog6ToothIcon,
+  CpuChipIcon,
+  ClockIcon,
+  SignalIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, current: true },
+  { name: 'Live Tracking', href: '/live-tracking', icon: MapIcon, current: false },
   { 
     name: 'Fleet Management', 
     icon: TruckIcon, 
     current: false,
     children: [
-      { name: 'All Vehicles', href: '/fleet' },
+      { name: 'Fleet Groups', href: '/fleet/groups' },
+      { name: 'All Vehicles', href: '/fleet/vehicles' },
       { name: 'Vehicle Status', href: '/fleet/status' },
-      { name: 'Add Vehicle', href: '/fleet/add' },
     ]
   },
-  { name: 'Live Tracking', href: '/live-tracking', icon: MapIcon, current: false },
   { 
     name: 'Drivers', 
     icon: UserGroupIcon, 
     current: false,
     children: [
       { name: 'All Drivers', href: '/drivers' },
-      { name: 'Performance', href: '/drivers' },
-      { name: 'Add Driver', href: '/drivers' },
+      { name: 'Shift Management', href: '/drivers/shifts' },
+      { name: 'Assignments', href: '/drivers/assignments' },
+    ]
+  },
+  { 
+    name: 'IoT Devices', 
+    icon: CpuChipIcon, 
+    current: false,
+    children: [
+      { name: 'Device Status', href: '/devices' },
+      { name: 'Device Assignment', href: '/devices/assignment' },
+      { name: 'Sensors', href: '/devices/sensors' },
+      { name: 'Lock Events', href: '/devices/locks' },
+    ]
+  },
+  { 
+    name: 'Telemetry', 
+    icon: SignalIcon, 
+    current: false,
+    children: [
+      { name: 'Tire Pressure', href: '/telemetry/tires' },
+      { name: 'Hub Temperature', href: '/telemetry/temperature' },
+      { name: 'Fuel Levels', href: '/telemetry/fuel' },
     ]
   },
   { 
@@ -41,9 +66,18 @@ const navigation = [
     icon: WrenchScrewdriverIcon, 
     current: false,
     children: [
-      { name: 'Scheduled', href: '/maintenance' },
-      { name: 'History', href: '/maintenance' },
-      { name: 'Alerts', href: '/maintenance' },
+      { name: 'Work Orders', href: '/maintenance/orders' },
+      { name: 'Schedule', href: '/maintenance/schedule' },
+      { name: 'History', href: '/maintenance/history' },
+    ]
+  },
+  { 
+    name: 'Geofences', 
+    icon: ShieldCheckIcon, 
+    current: false,
+    children: [
+      { name: 'All Areas', href: '/geofences' },
+      { name: 'Violations', href: '/geofences/violations' },
     ]
   },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },

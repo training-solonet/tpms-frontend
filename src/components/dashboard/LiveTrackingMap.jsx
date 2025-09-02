@@ -17,6 +17,7 @@ import {
 import 'leaflet/dist/leaflet.css';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
 import { trucksAPI, miningAreaAPI, FleetWebSocket } from '../../services/api.js';
+import { getLiveTrackingData, getTruckRoute, generateGpsPositions } from '../../data/index.js';
 
 const LiveTrackingMap = () => {
   const mapRef = useRef(null);
@@ -43,198 +44,43 @@ const LiveTrackingMap = () => {
   const routeLinesRef = useRef({});
   const wsRef = useRef(null);
 
-  // Generate realistic mining truck routes with curves and turns
-  const generateRealisticMiningRoutes = () => {
-    // Define mining operation zones within PT Borneo Indobara area
-    const zones = {
-      loadingPoint: [115.580000, -3.520000],
-      dumpingPoint: [115.610000, -3.590000],
-      workshop: [115.590000, -3.580000],
-      fuelStation: [115.575000, -3.535000],
-      weighbridge: [115.585000, -3.545000]
-    };
-
-    // Generate realistic route with curves and waypoints
-    const generateCurvedRoute = (startPoint, endPoint, waypoints = []) => {
-      const route = [startPoint];
-      
-      // Add intermediate waypoints for realistic mining roads
-      waypoints.forEach(waypoint => {
-        // Add some variation to waypoints to simulate road curves
-        const variations = [];
-        const steps = 5;
-        
-        for (let i = 1; i <= steps; i++) {
-          const factor = i / (steps + 1);
-          const lat = route[route.length - 1][0] + (waypoint[0] - route[route.length - 1][0]) * factor;
-          const lng = route[route.length - 1][1] + (waypoint[1] - route[route.length - 1][1]) * factor;
-          
-          // Add road curvature simulation
-          const curveLat = lat + (Math.sin(factor * Math.PI * 2) * 0.0005);
-          const curveLng = lng + (Math.cos(factor * Math.PI * 3) * 0.0008);
-          
-          variations.push([curveLat, curveLng]);
-        }
-        
-        route.push(...variations);
-        route.push(waypoint);
-      });
-      
-      // Add final path to destination with curves
-      const finalSteps = 8;
-      for (let i = 1; i <= finalSteps; i++) {
-        const factor = i / (finalSteps + 1);
-        const lat = route[route.length - 1][0] + (endPoint[0] - route[route.length - 1][0]) * factor;
-        const lng = route[route.length - 1][1] + (endPoint[1] - route[route.length - 1][1]) * factor;
-        
-        // Simulate mining road curves and elevation changes
-        const roadCurveLat = lat + (Math.sin(factor * Math.PI * 4) * 0.0003);
-        const roadCurveLng = lng + (Math.cos(factor * Math.PI * 2) * 0.0006);
-        
-        route.push([roadCurveLat, roadCurveLng]);
-      }
-      
-      route.push(endPoint);
-      return route;
-    };
-
-    // Create realistic mining truck routes
-    const miningRoutes = {
-      'BRN-001': {
-        vehicle: {
-          id: 'BRN-001',
-          driver: 'Ahmad Suryadi',
-          position: [115.585000, -3.525000],
-          status: 'active',
-          speed: 45,
-          heading: 135,
-          fuel: 85,
-          battery: 95,
-          signal: 'strong',
-          lastUpdate: new Date(Date.now() - 2 * 60 * 1000),
-          route: 'Route A - Main Haul Road',
-          load: 'Coal - 50 tons'
-        },
-        routeHistory: generateCurvedRoute(
-          zones.loadingPoint,
-          zones.dumpingPoint,
-          [zones.weighbridge, [115.595000, -3.555000]] // Via weighbridge and intermediate point
-        )
-      },
-      'BRN-002': {
-        vehicle: {
-          id: 'BRN-002',
-          driver: 'Budi Santoso',
-          position: [115.565000, -3.545000],
-          status: 'idle',
-          speed: 0,
-          heading: 90,
-          fuel: 72,
-          battery: 88,
-          signal: 'good',
-          lastUpdate: new Date(Date.now() - 5 * 60 * 1000),
-          route: 'Route B - Loading Area',
-          load: 'Empty'
-        },
-        routeHistory: generateCurvedRoute(
-          zones.dumpingPoint,
-          zones.loadingPoint,
-          [[115.600000, -3.570000], zones.fuelStation] // Return route via fuel station
-        )
-      },
-      'BRN-003': {
-        vehicle: {
-          id: 'BRN-003',
-          driver: 'Candra Wijaya',
-          position: [115.590000, -3.580000],
-          status: 'maintenance',
-          speed: 0,
-          heading: 0,
-          fuel: 45,
-          battery: 65,
-          signal: 'weak',
-          lastUpdate: new Date(Date.now() - 30 * 60 * 1000),
-          route: 'Workshop Area',
-          load: 'Under Maintenance'
-        },
-        routeHistory: generateCurvedRoute(
-          zones.loadingPoint,
-          zones.workshop,
-          [[115.585000, -3.550000]] // Short route to workshop
-        )
-      },
-      'BRN-004': {
-        vehicle: {
-          id: 'BRN-004',
-          driver: 'Dedi Kurniawan',
-          position: [115.575000, -3.535000],
-          status: 'active',
-          speed: 32,
-          heading: 270,
-          fuel: 91,
-          battery: 92,
-          signal: 'strong',
-          lastUpdate: new Date(Date.now() - 1 * 60 * 1000),
-          route: 'Route C - Dump Area',
-          load: 'Coal - 45 tons'
-        },
-        routeHistory: generateCurvedRoute(
-          zones.loadingPoint,
-          zones.dumpingPoint,
-          [zones.fuelStation, [115.600000, -3.575000]] // Via fuel station
-        )
-      },
-      'BRN-005': {
-        vehicle: {
-          id: 'BRN-005',
-          driver: 'Eko Prasetyo',
-          position: [115.595000, -3.565000],
-          status: 'active',
-          speed: 38,
-          heading: 45,
-          fuel: 67,
-          battery: 78,
-          signal: 'good',
-          lastUpdate: new Date(Date.now() - 3 * 60 * 1000),
-          route: 'Route D - Pit Area',
-          load: 'Coal - 42 tons'
-        },
-        routeHistory: generateCurvedRoute(
-          zones.dumpingPoint,
-          zones.loadingPoint,
-          [zones.weighbridge, [115.588000, -3.540000]] // Return route with curves
-        )
-      }
-    };
-    
-    return miningRoutes;
-  };
-
   // Initialize sample data when backend is not available
   const initializeSampleData = async () => {
-    console.log('🔄 Backend not available - initializing realistic mining route data');
+    console.log('🔄 Backend not available - initializing comprehensive dummy data');
     
-    const sampleData = generateRealisticMiningRoutes();
-    const vehicles = Object.values(sampleData).map(item => item.vehicle);
-    const routes = {};
-    
-    Object.keys(sampleData).forEach(vehicleId => {
-      routes[vehicleId] = sampleData[vehicleId].routeHistory;
-      // Save to offline storage
-      saveOfflineRoute(vehicleId, sampleData[vehicleId].routeHistory);
-    });
-    
-    setVehicleRoutes(routes);
-    
-    // Initialize route visibility
-    const initialRouteVisibility = {};
-    vehicles.forEach(vehicle => {
-      initialRouteVisibility[vehicle.id] = true;
-    });
-    setRouteVisible(initialRouteVisibility);
-    
-    console.log(`✅ Initialized ${vehicles.length} demo vehicles with realistic routes`);
-    return vehicles;
+    try {
+      // Get live tracking data from our comprehensive dummy data
+      const liveTrackingData = getLiveTrackingData();
+      console.log(`📊 Loaded ${liveTrackingData.length} vehicles from dummy data`);
+      
+      // Load route history for each vehicle
+      const routes = {};
+      const routePromises = liveTrackingData.map(async (vehicle) => {
+        const routeData = getTruckRoute(vehicle.id, timeRange);
+        if (routeData && routeData.length > 0) {
+          routes[vehicle.id] = routeData.map(point => [point.latitude, point.longitude]);
+          // Save to offline storage
+          saveOfflineRoute(vehicle.id, routes[vehicle.id]);
+        }
+        return vehicle.id;
+      });
+      
+      await Promise.all(routePromises);
+      setVehicleRoutes(routes);
+      
+      // Initialize route visibility
+      const initialRouteVisibility = {};
+      liveTrackingData.forEach(vehicle => {
+        initialRouteVisibility[vehicle.id] = true;
+      });
+      setRouteVisible(initialRouteVisibility);
+      
+      console.log(`✅ Initialized ${liveTrackingData.length} vehicles with comprehensive dummy data`);
+      return liveTrackingData;
+    } catch (error) {
+      console.error('❌ Failed to initialize dummy data:', error);
+      return [];
+    }
   };
 
   // Advanced route simulation for active trucks

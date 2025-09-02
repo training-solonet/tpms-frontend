@@ -1,8 +1,9 @@
 // src/services/trackingService.js
+import { getLiveTrackingData, getTruckRoute, generateGpsPositions } from '../data/index.js';
 
 /**
  * Service untuk mengelola tracking dan route history truk
- * Mengintegrasikan dengan backend API untuk mendapatkan data location_history
+ * Mengintegrasikan dengan dummy data dan backend API untuk mendapatkan data location_history
  */
 
 export class TruckTrackingService {
@@ -24,7 +25,7 @@ export class TruckTrackingService {
     }
   
     /**
-     * Load location history for a specific truck from backend
+     * Load location history for a specific truck from backend or dummy data
      */
     async loadTruckLocationHistory(truckId, hours = 2) {
       try {
@@ -38,45 +39,70 @@ export class TruckTrackingService {
         if (cached && (Date.now() - cached.timestamp) < this.trackSettings.cacheTimeout) {
           return cached.data;
         }
-  
-        // Make API request to get location history
-        const response = await fetch(`${this.apiConfig.BASE_URL}/api/trucks/${truckId}/history?` + new URLSearchParams({
-          startDate: startTime.toISOString(),
-          endDate: endTime.toISOString(),
-          limit: this.trackSettings.maxPoints.toString()
-        }), {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-  
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-  
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          const points = data.data.map(point => ({
-            lat: parseFloat(point.latitude),
-            lng: parseFloat(point.longitude),
-            timestamp: new Date(point.recordedAt),
-            speed: parseFloat(point.speed || 0),
-            fuel: parseFloat(point.fuelPercentage || 0),
-            heading: parseInt(point.heading || 0)
-          })).sort((a, b) => a.timestamp - b.timestamp);
-  
-          // Cache the result
-          this.trackCache.set(cacheKey, {
-            data: points,
-            timestamp: Date.now()
+
+        // Try backend API first
+        try {
+          const response = await fetch(`${this.apiConfig.BASE_URL}/api/trucks/${truckId}/history?` + new URLSearchParams({
+            startDate: startTime.toISOString(),
+            endDate: endTime.toISOString(),
+            limit: this.trackSettings.maxPoints.toString()
+          }), {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+              'Content-Type': 'application/json'
+            }
           });
-  
-          return points;
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+              const points = data.data.map(point => ({
+                lat: parseFloat(point.latitude),
+                lng: parseFloat(point.longitude),
+                timestamp: new Date(point.recordedAt),
+                speed: parseFloat(point.speed || 0),
+                fuel: parseFloat(point.fuelPercentage || 0),
+                heading: parseInt(point.heading || 0)
+              })).sort((a, b) => a.timestamp - b.timestamp);
+
+              // Cache the result
+              this.trackCache.set(cacheKey, {
+                data: points,
+                timestamp: Date.now()
+              });
+
+              return points;
+            }
+          }
+        } catch (apiError) {
+          console.warn('Backend API unavailable, using dummy data:', apiError.message);
         }
-  
-        return [];
+
+        // Fallback to dummy data
+        const allGpsData = generateGpsPositions();
+        const truckData = allGpsData.filter(pos => 
+          pos.truck_id === truckId && 
+          new Date(pos.ts) >= startTime && 
+          new Date(pos.ts) <= endTime
+        ).slice(0, this.trackSettings.maxPoints);
+
+        const points = truckData.map(point => ({
+          lat: parseFloat(point.lat),
+          lng: parseFloat(point.lon),
+          timestamp: new Date(point.ts),
+          speed: parseFloat(point.speed_kph || 0),
+          fuel: 0, // Will be populated from telemetry
+          heading: parseInt(point.heading_deg || 0)
+        })).sort((a, b) => a.timestamp - b.timestamp);
+
+        // Cache the result
+        this.trackCache.set(cacheKey, {
+          data: points,
+          timestamp: Date.now()
+        });
+
+        return points;
       } catch (error) {
         console.error(`Failed to load location history for truck ${truckId}:`, error);
         return [];
@@ -335,16 +361,26 @@ export class TruckTrackingService {
             'Content-Type': 'application/json'
           }
         });
-  
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          return {
+            success: true,
+            data: data.data || {},
+            online: true
+          };
         }
-  
-        const data = await response.json();
+      } catch (error) {
+        console.warn('Backend API unavailable, using dummy data:', error.message);
+      }
+
+      // Fallback to dummy data
+      try {
+        const liveData = getLiveTrackingData();
         return {
           success: true,
-          data: data.data || {},
-          online: true
+          data: liveData,
+          online: false
         };
       } catch (error) {
         console.error('Failed to get real-time truck locations:', error);

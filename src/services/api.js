@@ -1,4 +1,5 @@
 // src/services/api.js
+import { getLiveTrackingData, getDashboardStats, getFleetData } from '../data/index.js';
 
 // API Configuration
 export const API_CONFIG = {
@@ -175,6 +176,7 @@ export const trucksAPI = {
     
     if (result.success) {
       console.log(`✅ Real-time locations loaded: ${result.data?.features?.length || 0} trucks`);
+      return result;
     } else {
       console.error(`❌ Failed to load real-time locations:`, result.error);
       console.log(`🔄 Trying alternative endpoints for real-time data...`);
@@ -194,6 +196,19 @@ export const trucksAPI = {
           console.log(`✅ Success with alternative endpoint: ${altEndpoint}`);
           return altResult;
         }
+      }
+      
+      // Fallback to dummy data
+      console.log(`🔄 Using dummy data as fallback`);
+      try {
+        const liveData = getLiveTrackingData();
+        return {
+          success: true,
+          data: liveData,
+          online: false
+        };
+      } catch (error) {
+        console.error(`❌ Failed to load dummy data:`, error);
       }
     }
     
@@ -240,11 +255,43 @@ export const trucksAPI = {
 // Dashboard API
 export const dashboardAPI = {
   getStats: async () => {
-    return await apiRequest('/api/dashboard/stats');
+    const result = await apiRequest('/api/dashboard/stats');
+    
+    if (!result.success) {
+      console.log(`🔄 Using dummy data for dashboard stats`);
+      try {
+        const stats = getDashboardStats();
+        return {
+          success: true,
+          data: stats,
+          online: false
+        };
+      } catch (error) {
+        console.error(`❌ Failed to load dummy dashboard stats:`, error);
+      }
+    }
+    
+    return result;
   },
   
   getFleetSummary: async () => {
-    return await apiRequest('/api/dashboard/fleet-summary');
+    const result = await apiRequest('/api/dashboard/fleet-summary');
+    
+    if (!result.success) {
+      console.log(`🔄 Using dummy data for fleet summary`);
+      try {
+        const fleetData = getFleetData();
+        return {
+          success: true,
+          data: fleetData,
+          online: false
+        };
+      } catch (error) {
+        console.error(`❌ Failed to load dummy fleet data:`, error);
+      }
+    }
+    
+    return result;
   },
   
   getAlerts: async () => {

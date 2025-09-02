@@ -1,7 +1,9 @@
 // src/services/trackingDataManager.js
+import { generateGpsPositions, getLiveTrackingData, getTruckRoute } from '../data/index.js';
 
 /**
  * Manager untuk mengelola data tracking dan optimasi performa
+ * Mengintegrasikan dengan dummy data dan backend API
  */
 export class TrackingDataManager {
     constructor(apiConfig) {
@@ -28,43 +30,65 @@ export class TrackingDataManager {
         const endTime = new Date();
         const startTime = new Date(endTime.getTime() - (hours * 60 * 60 * 1000));
         
-        // Make API request to backend
-        const response = await fetch(`${this.apiConfig.BASE_URL}/api/trucks/${truckId}/history?` + new URLSearchParams({
-          startDate: startTime.toISOString(),
-          endDate: endTime.toISOString(),
-          limit: maxPoints.toString()
-        }), {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
+        // Try backend API first
+        try {
+          const response = await fetch(`${this.apiConfig.BASE_URL}/api/trucks/${truckId}/history?` + new URLSearchParams({
+            startDate: startTime.toISOString(),
+            endDate: endTime.toISOString(),
+            limit: maxPoints.toString()
+          }), {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+              const points = data.data
+                .map(point => ({
+                  lat: parseFloat(point.latitude),
+                  lng: parseFloat(point.longitude),
+                  timestamp: new Date(point.recordedAt),
+                  speed: parseFloat(point.speed || 0),
+                  fuel: parseFloat(point.fuelPercentage || 0),
+                  heading: parseInt(point.heading || 0)
+                }))
+                .sort((a, b) => a.timestamp - b.timestamp);
+
+              // Cache the result
+              this.cacheTrackData(cacheKey, points);
+              
+              return points;
+            }
           }
-        });
-  
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        } catch (apiError) {
+          console.warn('Backend API unavailable, using dummy data:', apiError.message);
         }
-  
-        const data = await response.json();
+
+        // Fallback to dummy data
+        const allGpsData = generateGpsPositions();
+        const truckData = allGpsData.filter(pos => 
+          pos.truck_id === truckId && 
+          new Date(pos.ts) >= startTime && 
+          new Date(pos.ts) <= endTime
+        ).slice(0, maxPoints);
+
+        const points = truckData.map(point => ({
+          lat: parseFloat(point.lat),
+          lng: parseFloat(point.lon),
+          timestamp: new Date(point.ts),
+          speed: parseFloat(point.speed_kph || 0),
+          fuel: 0, // Will be populated from telemetry
+          heading: parseInt(point.heading_deg || 0)
+        })).sort((a, b) => a.timestamp - b.timestamp);
+
+        // Cache the result
+        this.cacheTrackData(cacheKey, points);
         
-        if (data.success && data.data) {
-          const points = data.data
-            .map(point => ({
-              lat: parseFloat(point.latitude),
-              lng: parseFloat(point.longitude),
-              timestamp: new Date(point.recordedAt),
-              speed: parseFloat(point.speed || 0),
-              fuel: parseFloat(point.fuelPercentage || 0),
-              heading: parseInt(point.heading || 0)
-            }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-  
-          // Cache the result
-          this.cacheTrackData(cacheKey, points);
-          
-          return points;
-        }
-  
-        return [];
+        return points;
       } catch (error) {
         console.error(`Failed to load location history for truck ${truckNumber}:`, error);
         
