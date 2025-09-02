@@ -7,16 +7,9 @@ import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
-import DeviceStatus from './pages/DeviceStatus.jsx';
-import DeviceAssignment from './pages/DeviceAssignment.jsx';
-import DriverShifts from './pages/DriverShifts.jsx';
-import DriverAssignments from './pages/DriverAssignments.jsx';
+import DeviceCenter from './pages/DeviceCenter.jsx';
 import TelemetryDashboard from './pages/TelemetryDashboard.jsx';
-import MaintenanceOrders from './pages/MaintenanceOrders.jsx';
-import Geofences from './pages/Geofences.jsx';
 import LiveTracking from './pages/LiveTracking';
-import Drivers from './pages/Drivers';
-import Maintenance from './pages/Maintenance';
 import Analytics from './pages/Analytics';
 import Reports from './pages/Reports';
 import Alerts from './pages/Alerts';
@@ -128,67 +121,18 @@ function AppRoutes() {
         />
         
         <Route 
-          path="/drivers" 
-          element={
-            <ProtectedRoute>
-              <Drivers />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/drivers/shifts" 
-          element={
-            <ProtectedRoute>
-              <DriverShifts />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/drivers/assignments" 
-          element={
-            <ProtectedRoute>
-              <DriverAssignments />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
           path="/devices" 
           element={
             <ProtectedRoute>
-              <DeviceStatus />
+              <DeviceCenter />
             </ProtectedRoute>
           } 
         />
         
-        <Route 
-          path="/devices/sensors" 
-          element={
-            <ProtectedRoute>
-              <DeviceStatus />
-            </ProtectedRoute>
-          } 
-        />
         
-        <Route 
-          path="/devices/locks" 
-          element={
-            <ProtectedRoute>
-              <DeviceStatus />
-            </ProtectedRoute>
-          } 
-        />
         
-        <Route 
-          path="/devices/assignment" 
-          element={
-            <ProtectedRoute>
-              <DeviceAssignment />
-            </ProtectedRoute>
-          } 
-        />
+        
+        
         
         <Route 
           path="/telemetry/tires" 
@@ -213,69 +157,6 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <TelemetryDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/maintenance" 
-          element={
-            <ProtectedRoute>
-              <Maintenance />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/maintenance/orders" 
-          element={
-            <ProtectedRoute>
-              <MaintenanceOrders />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/geofences" 
-          element={
-            <ProtectedRoute>
-              <Geofences />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/maintenance/schedule" 
-          element={
-            <ProtectedRoute>
-              <MaintenanceOrders />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/maintenance/history" 
-          element={
-            <ProtectedRoute>
-              <MaintenanceOrders />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/geofences" 
-          element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/geofences/violations" 
-          element={
-            <ProtectedRoute>
-              <Analytics />
             </ProtectedRoute>
           } 
         />

@@ -816,10 +816,16 @@ const LiveTrackingMap = () => {
       {/* Toggle Button */}
       <button
         onClick={() => setSidebarVisible(!sidebarVisible)}
-        className={`fixed top-1/2 -translate-y-1/2 z-50 bg-white hover:bg-gray-50 border border-gray-300 rounded-r-lg px-2 py-3 shadow-lg transition-all duration-300 ${
-          sidebarVisible ? 'left-80' : 'left-0'
+        className={`fixed top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 border border-gray-300 shadow-lg transition-all duration-300 flex items-center rounded-r-lg px-2 py-3 ${
+          sidebarVisible 
+            ? 'left-80' 
+            : 'left-72'
         }`}
-        style={{ zIndex: 1000 }}
+        style={{ 
+          zIndex: 999,
+          left: sidebarVisible ? '605px' : '288px'  // Tested position - 605px when sidebar open
+        }}
+        title={sidebarVisible ? 'Hide Vehicle List' : 'Show Vehicle List'}
       >
         <svg 
           className={`w-4 h-4 text-gray-600 transition-transform duration-300 ${
@@ -832,7 +838,6 @@ const LiveTrackingMap = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
-
       {/* Vehicle List Sidebar */}
       <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
         sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'

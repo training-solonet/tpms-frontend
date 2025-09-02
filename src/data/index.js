@@ -1,10 +1,7 @@
 // Main data export - aggregates all dummy data modules
 import { trucks } from './trucks.js';
-import { drivers } from './drivers.js';
-import { driverAssignments } from './driverAssignments.js';
 import { gpsPositions, generateGpsPositions } from './gpsPositions.js';
 import { fuelLevelEvents, speedEvents, alertEvents } from './telemetryEvents.js';
-import { maintenanceOrders, maintenanceItems } from './maintenance.js';
 import { trips } from './trips.js';
 import { dailyRoutes } from './dailyRoutes.js';
 
@@ -12,9 +9,7 @@ import { dailyRoutes } from './dailyRoutes.js';
 import { fleetGroups } from './fleetGroups.js';
 import { devices } from './devices.js';
 import { sensors } from './sensors.js';
-import { driverShifts } from './driverShifts.js';
 import { truckStatusEvents } from './truckStatusEvents.js';
-import { geofences } from './geofences.js';
 import { tirePressureEvents } from './tirePressureEvents.js';
 import { hubTemperatureEvents } from './hubTemperatureEvents.js';
 import { deviceStatusEvents } from './deviceStatusEvents.js';
@@ -25,15 +20,6 @@ import BORNEO_INDOBARA_GEOJSON from './geofance.js';
 // Fleet data aggregation with relationships
 export const getFleetData = () => {
   const trucksWithDrivers = trucks.map(truck => {
-    // Find current driver assignment
-    const currentAssignment = driverAssignments.find(
-      assignment => assignment.truck_id === truck.id && assignment.end_at === null
-    );
-    
-    const currentDriver = currentAssignment 
-      ? drivers.find(driver => driver.id === currentAssignment.driver_id)
-      : null;
-
     // Get latest GPS position
     const latestPosition = gpsPositions.find(pos => pos.truck_id === truck.id);
     
@@ -53,7 +39,6 @@ export const getFleetData = () => {
 
     return {
       ...truck,
-      driver: currentDriver,
       position: latestPosition,
       fuel: latestFuel,
       tires: tireData,
@@ -70,10 +55,6 @@ export const getFleetData = () => {
 export const getLiveTrackingData = () => {
   return gpsPositions.map(position => {
     const truck = trucks.find(t => t.id === position.truck_id);
-    const assignment = driverAssignments.find(
-      a => a.truck_id === position.truck_id && a.end_at === null
-    );
-    const driver = assignment ? drivers.find(d => d.id === assignment.driver_id) : null;
     const fuel = fuelLevelEvents.find(f => f.truck_id === position.truck_id);
     const alerts = alertEvents.filter(
       a => a.truck_id === position.truck_id && !a.acknowledged
@@ -83,7 +64,7 @@ export const getLiveTrackingData = () => {
       id: position.truck_id,
       name: truck?.name || 'Unknown Truck',
       plateNumber: truck?.plate_number || 'N/A',
-      driver: driver?.full_name || 'No Driver',
+      driver: 'N/A',
       position: [position.latitude, position.longitude],
       speed: position.speed_kph,
       heading: position.heading_deg,
@@ -142,14 +123,12 @@ export const getDashboardStats = () => {
   const totalTrucks = trucks.length;
   const activeTrucks = gpsPositions.filter(pos => pos.speed_kph > 0).length;
   const totalAlerts = alertEvents.filter(alert => !alert.acknowledged).length;
-  const openMaintenanceOrders = maintenanceOrders.filter(order => order.status !== 'completed').length;
   
   return {
     totalTrucks,
     activeTrucks,
     idleTrucks: totalTrucks - activeTrucks,
     totalAlerts,
-    maintenanceOrders: openMaintenanceOrders,
     fuelAverage: Math.round(
       fuelLevelEvents.reduce((sum, fuel) => sum + fuel.fuel_percent, 0) / 
       fuelLevelEvents.length
@@ -161,15 +140,11 @@ export const getDashboardStats = () => {
 export {
   // Original data
   trucks,
-  drivers,
-  driverAssignments,
   generateGpsPositions,
   gpsPositions,
   fuelLevelEvents,
   speedEvents,
   alertEvents,
-  maintenanceOrders,
-  maintenanceItems,
   trips,
   dailyRoutes,
   
@@ -177,9 +152,7 @@ export {
   fleetGroups,
   devices,
   sensors,
-  driverShifts,
   truckStatusEvents,
-  geofences,
   tirePressureEvents,
   hubTemperatureEvents,
   deviceStatusEvents,
@@ -197,15 +170,6 @@ export const getDeviceByTruck = (truckId) => {
 
 export const getSensorsByDevice = (deviceId) => {
   return sensors.filter(sensor => sensor.device_id === deviceId && !sensor.removed_at);
-};
-
-export const getCurrentDriverShift = (truckId) => {
-  const today = new Date().toISOString().split('T')[0];
-  return driverShifts.find(shift => 
-    shift.truck_id === truckId && 
-    shift.shift_date === today &&
-    !shift.end_at
-  );
 };
 
 export const getLatestTruckStatus = (truckId) => {
@@ -234,19 +198,6 @@ export const getDeviceStatus = (deviceId) => {
     .sort((a, b) => new Date(b.reported_at) - new Date(a.reported_at))[0];
 };
 
-export const getDriverShifts = (driverId) => {
-  return driverShifts.filter(shift => shift.driver_id === driverId);
-};
-
-export const getTrucksByDriver = (driverId) => {
-  const driverAssignmentsForDriver = driverAssignments.filter(
-    assignment => assignment.driver_id === driverId && assignment.end_at === null
-  );
-  return driverAssignmentsForDriver.map(assignment => 
-    trucks.find(truck => truck.id === assignment.truck_id)
-  ).filter(Boolean);
-};
-
 export const getDevicesByTruck = (truckId) => {
   return devices.filter(device => device.truck_id === truckId && !device.removed_at);
 };
@@ -268,7 +219,6 @@ export default {
   getDashboardStats,
   getDeviceByTruck,
   getSensorsByDevice,
-  getCurrentDriverShift,
   getLatestTruckStatus,
   getLatestTirePressure,
   getLatestHubTemperature,
@@ -276,15 +226,11 @@ export default {
   
   // All data structures
   trucks,
-  drivers,
-  driverAssignments,
   gpsPositions,
   fleetGroups,
   devices,
   sensors,
-  driverShifts,
   truckStatusEvents,
-  geofences,
   tirePressureEvents,
   hubTemperatureEvents,
   deviceStatusEvents,
@@ -293,8 +239,6 @@ export default {
   fuelLevelEvents,
   speedEvents,
   alertEvents,
-  maintenanceOrders,
-  maintenanceItems,
   trips,
   dailyRoutes,
   BORNEO_INDOBARA_GEOJSON

@@ -6,7 +6,6 @@ import {
   TruckIcon,
   MapIcon,
   UserGroupIcon,
-  WrenchScrewdriverIcon,
   ChartBarIcon,
   DocumentTextIcon,
   BellIcon,
@@ -14,7 +13,7 @@ import {
   CpuChipIcon,
   ClockIcon,
   SignalIcon,
-  ShieldCheckIcon,
+  
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -31,25 +30,10 @@ const navigation = [
     ]
   },
   { 
-    name: 'Drivers', 
-    icon: UserGroupIcon, 
-    current: false,
-    children: [
-      { name: 'All Drivers', href: '/drivers' },
-      { name: 'Shift Management', href: '/drivers/shifts' },
-      { name: 'Assignments', href: '/drivers/assignments' },
-    ]
-  },
-  { 
     name: 'IoT Devices', 
     icon: CpuChipIcon, 
+    href: '/devices',
     current: false,
-    children: [
-      { name: 'Device Status', href: '/devices' },
-      { name: 'Device Assignment', href: '/devices/assignment' },
-      { name: 'Sensors', href: '/devices/sensors' },
-      { name: 'Lock Events', href: '/devices/locks' },
-    ]
   },
   { 
     name: 'Telemetry', 
@@ -61,27 +45,8 @@ const navigation = [
       { name: 'Fuel Levels', href: '/telemetry/fuel' },
     ]
   },
-  { 
-    name: 'Maintenance', 
-    icon: WrenchScrewdriverIcon, 
-    current: false,
-    children: [
-      { name: 'Work Orders', href: '/maintenance/orders' },
-      { name: 'Schedule', href: '/maintenance/schedule' },
-      { name: 'History', href: '/maintenance/history' },
-    ]
-  },
-  { 
-    name: 'Geofences', 
-    icon: ShieldCheckIcon, 
-    current: false,
-    children: [
-      { name: 'All Areas', href: '/geofences' },
-      { name: 'Violations', href: '/geofences/violations' },
-    ]
-  },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },
-  { name: 'Reports', href: '/reports', icon: DocumentTextIcon, current: false },
+  // { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },
+  // { name: 'Reports', href: '/reports', icon: DocumentTextIcon, current: false },
   { name: 'Alerts', href: '/alerts', icon: BellIcon, current: false },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, current: false },
 ];

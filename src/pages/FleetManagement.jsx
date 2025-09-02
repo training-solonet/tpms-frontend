@@ -12,10 +12,9 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
-  ClockIcon,
-  UserIcon
+  ClockIcon
 } from '@heroicons/react/24/outline';
-import { trucks, fleetGroups, devices, drivers, driverAssignments } from '../data/index.js';
+import { trucks, fleetGroups, devices } from '../data/index.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 
 const FleetManagement = () => {
@@ -49,14 +48,7 @@ const FleetManagement = () => {
 
   const stats = getFleetStats();
 
-  // Get truck's assigned driver
-  const getTruckDriver = (truckId) => {
-    const assignment = driverAssignments.find(a => a.truck_id === truckId && a.status === 'active');
-    if (assignment) {
-      return drivers.find(d => d.id === assignment.driver_id);
-    }
-    return null;
-  };
+  // Driver info removed in tracking-only mode
 
   // Get truck's devices
   const getTruckDevices = (truckId) => {
@@ -199,7 +191,6 @@ const FleetManagement = () => {
           {/* Vehicles Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {filteredTrucks.map((truck) => {
-              const driver = getTruckDriver(truck.id);
               const deviceCount = getTruckDevices(truck.id).length;
               
               return (
@@ -232,12 +223,7 @@ const FleetManagement = () => {
                       <span className="text-gray-600">Group:</span>
                       <span className="font-medium">{getFleetGroupName(truck.fleet_group_id)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Driver:</span>
-                      <span className="font-medium">
-                        {driver ? driver.name : 'Unassigned'}
-                      </span>
-                    </div>
+                    {/* Driver removed */}
                     <div className="flex justify-between">
                       <span className="text-gray-600">IoT Devices:</span>
                       <span className="font-medium">{deviceCount}</span>
@@ -307,27 +293,7 @@ const FleetManagement = () => {
                       </div>
                     </div>
 
-                    {/* Assigned Driver */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Assigned Driver</h3>
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        {(() => {
-                          const driver = getTruckDriver(selectedTruck.id);
-                          return driver ? (
-                            <div className="flex items-center gap-3">
-                              <UserIcon className="h-8 w-8 text-indigo-600" />
-                              <div>
-                                <p className="font-medium text-gray-900">{driver.name}</p>
-                                <p className="text-sm text-gray-600">License: {driver.license_number}</p>
-                                <p className="text-sm text-gray-600">Phone: {driver.phone || 'N/A'}</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-gray-600">No driver assigned</p>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                    {/* Assigned Driver section removed */}
 
                     {/* IoT Devices */}
                     <div>

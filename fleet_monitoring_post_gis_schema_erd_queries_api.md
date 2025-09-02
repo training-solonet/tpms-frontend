@@ -1,4 +1,4 @@
-# Fleet Monitoring — Extended Final Schema (PostGIS + IoT + Future-proof)
+# Fleet Monitoring — Extended Final Schema (PostGIS + IoT)
 
 ---
 
@@ -9,7 +9,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Fleet grouping
+-- Fleet grouping (opsional, untuk manajemen banyak truk)
 CREATE TABLE IF NOT EXISTS fleet_group (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name        TEXT NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS fleet_group (
   updated_by  UUID
 );
 
--- Master tables
+-- Master: Truck
 CREATE TABLE IF NOT EXISTS truck (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   plate_number      TEXT UNIQUE NOT NULL,
@@ -31,17 +31,6 @@ CREATE TABLE IF NOT EXISTS truck (
   tire_config       TEXT,
   fleet_group_id    UUID REFERENCES fleet_group(id),
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_by        UUID,
-  updated_by        UUID
-);
-
-CREATE TABLE IF NOT EXISTS driver (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  full_name         TEXT NOT NULL,
-  employee_id       TEXT UNIQUE,
-  phone             TEXT,
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  active            BOOLEAN NOT NULL DEFAULT TRUE,
   created_by        UUID,
   updated_by        UUID
 );
@@ -72,32 +61,6 @@ CREATE TABLE IF NOT EXISTS sensor (
   updated_by   UUID
 );
 
--- Driver assignments
-CREATE TABLE IF NOT EXISTS driver_assignment (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id         UUID NOT NULL REFERENCES driver(id),
-  truck_id          UUID NOT NULL REFERENCES truck(id),
-  start_at          TIMESTAMPTZ NOT NULL,
-  end_at            TIMESTAMPTZ,
-  created_by        UUID,
-  updated_by        UUID,
-  UNIQUE (driver_id, start_at)
-);
-CREATE INDEX IF NOT EXISTS idx_driver_assignment_truck_start ON driver_assignment (truck_id, start_at DESC);
-
--- Driver shift
-CREATE TABLE IF NOT EXISTS driver_shift (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id   UUID NOT NULL REFERENCES driver(id),
-  truck_id    UUID REFERENCES truck(id),
-  shift_date  DATE NOT NULL,
-  shift_code  TEXT CHECK (shift_code IN ('day','night','custom')),
-  start_at    TIMESTAMPTZ NOT NULL,
-  end_at      TIMESTAMPTZ,
-  created_by  UUID,
-  updated_by  UUID
-);
-
 -- Truck status events
 CREATE TYPE IF NOT EXISTS truck_status AS ENUM ('active','inactive','maintenance');
 CREATE TABLE IF NOT EXISTS truck_status_event (
@@ -114,7 +77,8 @@ CREATE TABLE IF NOT EXISTS geofence (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name              TEXT NOT NULL,
   area              GEOGRAPHY(MULTIPOLYGON, 4326) NOT NULL,
-  created_by        UUID
+  created_by        UUID,
+  created_at        TIMESTAMPTZ DEFAULT now()
 );
 
 -- GPS positions (partitioned)
@@ -206,29 +170,6 @@ CREATE TABLE IF NOT EXISTS alert_event (
   created_by        UUID
 );
 
--- Maintenance
-CREATE TABLE IF NOT EXISTS maintenance_order (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  truck_id          UUID NOT NULL REFERENCES truck(id),
-  title             TEXT NOT NULL,
-  description       TEXT,
-  status            TEXT NOT NULL DEFAULT 'open',
-  opened_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
-  closed_at         TIMESTAMPTZ,
-  created_by        UUID,
-  updated_by        UUID
-);
-
-CREATE TABLE IF NOT EXISTS maintenance_item (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id          UUID NOT NULL REFERENCES maintenance_order(id) ON DELETE CASCADE,
-  part_code         TEXT,
-  part_name         TEXT,
-  qty               NUMERIC(10,2),
-  cost              NUMERIC(14,2),
-  created_by        UUID
-);
-
 -- Device status (latest snapshot)
 CREATE TABLE IF NOT EXISTS device_status_event (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -264,7 +205,7 @@ CREATE TABLE IF NOT EXISTS daily_route (
   UNIQUE (truck_id, route_date)
 );
 
--- Partition auto creation
+-- Partition auto creation for gps_position
 CREATE OR REPLACE FUNCTION create_gps_partition(target_date DATE) RETURNS void AS $$
 DECLARE
     start_date DATE := date_trunc('month', target_date)::DATE;
@@ -313,16 +254,6 @@ JOIN LATERAL (
   LIMIT 1
 ) p ON TRUE;
 
-CREATE OR REPLACE VIEW active_driver AS
-SELECT da.truck_id,
-       d.id AS driver_id,
-       d.full_name,
-       da.start_at,
-       da.end_at
-FROM driver_assignment da
-JOIN driver d ON d.id = da.driver_id
-WHERE da.end_at IS NULL OR da.end_at > now();
-
 -- Function to generate daily route
 CREATE OR REPLACE FUNCTION generate_daily_route(truck UUID, route_date DATE)
 RETURNS void AS $$
@@ -351,5 +282,3 @@ CREATE INDEX IF NOT EXISTS idx_tire_pressure_event_truck_ts ON tire_pressure_eve
 CREATE INDEX IF NOT EXISTS idx_hub_temperature_event_truck_ts ON hub_temperature_event (truck_id, changed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_fuel_level_event_truck_ts ON fuel_level_event (truck_id, changed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_speed_event_truck_ts ON speed_event (truck_id, changed_at DESC);
-```
-
