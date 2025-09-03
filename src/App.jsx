@@ -1,9 +1,9 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+// import { useAuth } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import Login from './components/auth/Login';
+// import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
@@ -16,45 +16,23 @@ import Alerts from './pages/Alerts';
 import Settings from './pages/Settings';
 import './App.css';
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  
-  console.log('🛡️ ProtectedRoute - isAuthenticated:', isAuthenticated, 'loading:', loading);
-  
-  // Skip loading screen to prevent flickering
-  if (loading) {
-    return null;
-  }
-  
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
-
-// Public Route Component (redirects to dashboard if already authenticated)
-const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  
-  // Skip loading screen to prevent flickering
-  if (loading) {
-    return null;
-  }
-  
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
-};
+// Protected/Public Route Components disabled: passthrough (login off)
+const ProtectedRoute = ({ children }) => children;
+const PublicRoute = ({ children }) => children;
 
 function AppRoutes() {
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route 
+        {/* <Route 
           path="/login" 
           element={
             <PublicRoute>
               <Login />
             </PublicRoute>
           } 
-        />
+        /> */}
         
         {/* Protected Routes */}
         <Route 

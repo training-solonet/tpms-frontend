@@ -65,7 +65,10 @@ export const getLiveTrackingData = () => {
       name: truck?.name || 'Unknown Truck',
       plateNumber: truck?.plate_number || 'N/A',
       driver: 'N/A',
-      position: [position.latitude, position.longitude],
+      position: [
+        position.latitude ?? position.lat,
+        position.longitude ?? position.lon
+      ],
       speed: position.speed_kph,
       heading: position.heading_deg,
       fuel: fuel?.fuel_percent || 0,

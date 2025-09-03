@@ -16,10 +16,12 @@ import {
 } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
-import { trucksAPI, miningAreaAPI, FleetWebSocket } from '../../services/api.js';
+// import { trucksAPI, miningAreaAPI, FleetWebSocket } from '../../services/api.js';
 import { getLiveTrackingData, getTruckRoute, generateGpsPositions } from '../../data/index.js';
 
 const LiveTrackingMap = () => {
+  // Toggle backend usage. Set to false to use dummy data only.
+  const USE_BACKEND = false;
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -44,37 +46,117 @@ const LiveTrackingMap = () => {
   const routeLinesRef = useRef({});
   const wsRef = useRef(null);
 
-  // Initialize sample data when backend is not available
+  // --- Geofence helpers & movement utilities ---
+  // Extract primary polygon (first ring) as [lat, lng]
+  const polygonLatLng = (BORNEO_INDOBARA_GEOJSON?.features?.[0]?.geometry?.coordinates?.[0] || [])
+    .map(([lng, lat]) => [lat, lng]);
+
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const toDeg = (rad) => (rad * 180) / Math.PI;
+
+  // Haversine distance in meters between [lat, lng]
+  const haversineMeters = (a, b) => {
+    const R = 6371000; // m
+    const dLat = toRad(b[0] - a[0]);
+    const dLng = toRad(b[1] - a[1]);
+    const lat1 = toRad(a[0]);
+    const lat2 = toRad(b[0]);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  };
+
+  // Convert a move of meters with bearing to new [lat, lng]
+  const moveByMeters = (start, distanceM, bearingDeg) => {
+    const R = 6371000; // Earth radius in meters
+    const brng = toRad(bearingDeg);
+    const lat1 = toRad(start[0]);
+    const lng1 = toRad(start[1]);
+    const lat2 = Math.asin(
+      Math.sin(lat1) + (distanceM / R) * Math.cos(brng) * Math.cos(lat1) +
+      0 // keep formula simple for small distances; this is sufficient for 10m steps
+    );
+    // For small distances, use equirectangular approximation for longitude delta
+    const dLng = (distanceM / (R * Math.cos(lat1))) * Math.sin(brng);
+    const lng2 = lng1 + dLng;
+    return [toDeg(lat2), toDeg(lng2)];
+  };
+
+  // Point in polygon (ray casting), polygon is array of [lat, lng]
+  const pointInPolygon = (pt, poly) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const xi = poly[i][0], yi = poly[i][1];
+      const xj = poly[j][0], yj = poly[j][1];
+      const intersect = ((yi > pt[1]) !== (yj > pt[1])) &&
+        (pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi + 1e-12) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  };
+
+  // Centroid of polygon (simple average; adequate for local movement guidance)
+  const polygonCentroid = (poly) => {
+    if (!poly || poly.length === 0) return [0, 0];
+    let sumLat = 0, sumLng = 0;
+    poly.forEach(([lat, lng]) => { sumLat += lat; sumLng += lng; });
+    return [sumLat / poly.length, sumLng / poly.length];
+  };
+
+  // Generate and initialize sample data if backend not available
   const initializeSampleData = async () => {
     console.log('🔄 Backend not available - initializing comprehensive dummy data');
-    
     try {
-      // Get live tracking data from our comprehensive dummy data
-      const liveTrackingData = getLiveTrackingData();
+      let liveTrackingData = getLiveTrackingData();
       console.log(`📊 Loaded ${liveTrackingData.length} vehicles from dummy data`);
-      
-      // Load route history for each vehicle
+
+      // If no dummy data available, synthesize a small demo fleet inside the geofence
+      if (!liveTrackingData || liveTrackingData.length === 0) {
+        console.warn('⚠️ Dummy data empty, synthesizing demo vehicles');
+        const center = polygonCentroid(polygonLatLng);
+        const makeInside = () => {
+          // try jitter around centroid until inside polygon
+          for (let i = 0; i < 100; i++) {
+            const dLat = (Math.random() - 0.5) * 0.01; // small jitter
+            const dLng = (Math.random() - 0.5) * 0.01;
+            const cand = [center[0] + dLat, center[1] + dLng];
+            if (pointInPolygon(cand, polygonLatLng)) return cand;
+          }
+          return center;
+        };
+        const synth = Array.from({ length: 5 }).map((_, i) => ({
+          id: `TRUCK-${String(i + 1).padStart(3, '0')}`,
+          driver: `Demo Driver ${i + 1}`,
+          position: makeInside(),
+          status: 'active',
+          speed: 0,
+          heading: 90,
+          fuel: 80,
+          battery: 90,
+          signal: 'good',
+          lastUpdate: new Date(),
+          route: 'Mining Area',
+          load: 'Empty'
+        }));
+        liveTrackingData = synth;
+      }
+
+      // Build simple initial routes from generated positions
       const routes = {};
-      const routePromises = liveTrackingData.map(async (vehicle) => {
+      liveTrackingData.forEach((vehicle) => {
         const routeData = getTruckRoute(vehicle.id, timeRange);
         if (routeData && routeData.length > 0) {
-          routes[vehicle.id] = routeData.map(point => [point.latitude, point.longitude]);
-          // Save to offline storage
+          // routeData already in [lat, lng]
+          routes[vehicle.id] = routeData;
           saveOfflineRoute(vehicle.id, routes[vehicle.id]);
         }
-        return vehicle.id;
       });
-      
-      await Promise.all(routePromises);
+
       setVehicleRoutes(routes);
-      
-      // Initialize route visibility
+
       const initialRouteVisibility = {};
-      liveTrackingData.forEach(vehicle => {
-        initialRouteVisibility[vehicle.id] = true;
-      });
+      liveTrackingData.forEach(vehicle => { initialRouteVisibility[vehicle.id] = true; });
       setRouteVisible(initialRouteVisibility);
-      
+
       console.log(`✅ Initialized ${liveTrackingData.length} vehicles with comprehensive dummy data`);
       return liveTrackingData;
     } catch (error) {
@@ -314,6 +396,14 @@ const LiveTrackingMap = () => {
       try {
         setLoading(true);
         
+        // In demo mode, skip backend entirely
+        if (!USE_BACKEND) {
+          const sampleData = await initializeSampleData();
+          setVehicles(sampleData);
+          setError(null);
+          return;
+        }
+
         // Load truck data from API
         const response = await trucksAPI.getRealTimeLocations();
         
@@ -333,20 +423,27 @@ const LiveTrackingMap = () => {
             route: 'Mining Area',
             load: feature.properties.payloadTons ? `Coal - ${feature.properties.payloadTons} tons` : 'Unknown'
           })) || [];
-          
-          setVehicles(vehicleData);
-          
-          // Load route history for each vehicle from database
-          const routesData = await loadAllRoutesHistory(vehicleData);
-          setVehicleRoutes(routesData);
-          
-          // Initialize route visibility
-          const initialRouteVisibility = {};
-          vehicleData.forEach(vehicle => {
-            initialRouteVisibility[vehicle.id] = true;
-          });
-          setRouteVisible(initialRouteVisibility);
-          
+
+          if (vehicleData.length > 0) {
+            setVehicles(vehicleData);
+
+            // Load route history for each vehicle from database
+            const routesData = await loadAllRoutesHistory(vehicleData);
+            setVehicleRoutes(routesData);
+
+            // Initialize route visibility
+            const initialRouteVisibility = {};
+            vehicleData.forEach(vehicle => {
+              initialRouteVisibility[vehicle.id] = true;
+            });
+            setRouteVisible(initialRouteVisibility);
+          } else {
+            console.log('ℹ️ API returned no vehicles, switching to sample data');
+            const sampleData = await initializeSampleData();
+            setVehicles(sampleData);
+            setError('No vehicles from backend - using demo data');
+          }
+
         } else {
           console.log('🔌 Backend not available - using sample data for demo');
           const sampleData = await initializeSampleData();
@@ -365,17 +462,17 @@ const LiveTrackingMap = () => {
       }
     };
 
-    loadTruckData();
+  loadTruckData();
 
-    // Setup WebSocket for real-time updates (with fallback)
+  // Only setup WebSocket when using backend
+  if (USE_BACKEND) {
     wsRef.current = new FleetWebSocket();
-    
     try {
       wsRef.current.connect();
       
       // Subscribe to truck location updates
       wsRef.current.subscribe('truck_locations_update', async (data) => {
-        if (data && Array.isArray(data)) {
+        if (data && Array.isArray(data) && data.length > 0) {
           console.log('📡 Received WebSocket truck updates:', data.length, 'vehicles');
           
           const vehicleData = data.map(truck => ({
@@ -405,7 +502,6 @@ const LiveTrackingMap = () => {
                   const newPosition = vehicle.position;
                   const lastPosition = currentRoute[currentRoute.length - 1];
                   
-                  // Check if vehicle has moved significantly (>10 meters)
                   const shouldAdd = !lastPosition || 
                     (Math.abs(lastPosition[0] - newPosition[0]) > 0.0001 || 
                      Math.abs(lastPosition[1] - newPosition[1]) > 0.0001);
@@ -413,37 +509,45 @@ const LiveTrackingMap = () => {
                   if (shouldAdd) {
                     const newRoute = [...currentRoute, newPosition];
                     const limitedRoute = newRoute.slice(-200);
-                    
-                    // Save to offline storage
                     saveOfflineRoute(vehicle.id, limitedRoute);
-                    
-                    return {
-                      ...prev,
-                      [vehicle.id]: limitedRoute
-                    };
+                    return { ...prev, [vehicle.id]: limitedRoute };
                   }
-                  
                   return prev;
                 });
               }
             });
           }
+        } else if (Array.isArray(data) && data.length === 0) {
+          console.log('📡 WebSocket update empty - keeping current vehicles');
         }
       });
-      
     } catch (wsError) {
       console.warn('⚠️ WebSocket connection failed, using polling fallback');
     }
+  }
+  
+  return () => {
+    if (map) {
+      map.remove();
+    }
+    if (USE_BACKEND && wsRef.current) {
+      wsRef.current.disconnect();
+    }
+  };
+}, [timeRange]);
 
-    return () => {
-      if (map) {
-        map.remove();
-      }
-      if (wsRef.current) {
-        wsRef.current.disconnect();
+// ... (rest of the code remains the same)
+  // Safety: if after loading there are still no vehicles, synthesize demo data
+  useEffect(() => {
+    const backfillIfEmpty = async () => {
+      if (!loading && vehicles.length === 0) {
+        console.log('ℹ️ Vehicles still empty after load, synthesizing demo fleet');
+        const sampleData = await initializeSampleData();
+        setVehicles(sampleData);
       }
     };
-  }, [timeRange]);
+    backfillIfEmpty();
+  }, [loading]);
 
   // Update markers and routes when data changes
   useEffect(() => {
@@ -638,85 +742,74 @@ const LiveTrackingMap = () => {
         }
       });
     }
-  }, [map, vehicles, vehicleRoutes, routeVisible]);
+  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes]);
 
-  // Enhanced real-time simulation with realistic mining truck movements
+  // Geofence-aware smooth movement: ~1 meter every 1 second with gentle heading drift (≈3.6 km/h)
   useEffect(() => {
     if (!isTrackingActive) return;
-    
+    const centroid = polygonCentroid(polygonLatLng);
     const interval = setInterval(() => {
-      setVehicles(prevVehicles => 
-        prevVehicles.map(vehicle => {
-          if (vehicle.status === 'active') {
-            // Use realistic movement simulation
-            const movement = simulateRealisticMovement(vehicle, vehicleRoutes[vehicle.id] || []);
-            
-            // Update route for active vehicles with curved paths
-            setVehicleRoutes(prev => {
-              const currentRoute = prev[vehicle.id] || [];
-              const newPosition = movement.position;
-              const lastPosition = currentRoute[currentRoute.length - 1];
-              
-              // Check if vehicle has moved significantly (realistic threshold)
-              const shouldAdd = !lastPosition || 
-                (Math.abs(lastPosition[0] - newPosition[0]) > 0.00008 || 
-                 Math.abs(lastPosition[1] - newPosition[1]) > 0.00008);
-              
-              if (shouldAdd) {
-                const newRoute = [...currentRoute, newPosition];
-                const limitedRoute = newRoute.slice(-200);
-                
-                // Save to offline storage
-                saveOfflineRoute(vehicle.id, limitedRoute);
-                
-                return {
-                  ...prev,
-                  [vehicle.id]: limitedRoute
-                };
-              }
-              
-              return prev;
-            });
-            
-            return {
-              ...vehicle,
-              position: movement.position,
-              heading: movement.heading,
-              speed: movement.speed,
-              lastUpdate: new Date()
-            };
+      setVehicles(prevVehicles => prevVehicles.map(vehicle => {
+        if (vehicle.status !== 'active') return vehicle;
+        const currentRoute = (vehicleRoutes[vehicle.id] || []);
+        const lastPos = currentRoute[currentRoute.length - 1] || vehicle.position;
+        const baseBearing = (vehicle.heading ?? 90);
+        // Apply very small random drift and heading inertia for smoother turns
+        const rawDrift = (Math.random() - 0.5) * 2; // -1..+1 deg
+        const targetBearing = baseBearing + rawDrift;
+        const nextBearing = baseBearing + (targetBearing - baseBearing) * 0.2; // inertia
+        const stepM = 1; // 1m per second
+
+        let nextPos = moveByMeters(lastPos, stepM, nextBearing);
+        if (!pointInPolygon(nextPos, polygonLatLng)) {
+          const dy = centroid[0] - lastPos[0];
+          const dx = centroid[1] - lastPos[1];
+          const bearingToCentroid = (Math.atan2(dx, dy) * 180) / Math.PI;
+          nextPos = moveByMeters(lastPos, stepM, bearingToCentroid);
+          if (!pointInPolygon(nextPos, polygonLatLng)) {
+            nextPos = moveByMeters(lastPos, stepM, (baseBearing + 180) % 360);
           }
-          return vehicle;
-        })
-      );
-    }, 6000); // Update every 6 seconds for smooth movement
+        }
+
+        setVehicleRoutes(prev => {
+          const current = prev[vehicle.id] || [];
+          const last = current[current.length - 1] || lastPos;
+          const moved = haversineMeters(last, nextPos);
+          if (moved >= 0.5) { // add points more frequently for smoother polyline
+            const limited = [...current, nextPos].slice(-200);
+            saveOfflineRoute(vehicle.id, limited);
+            return { ...prev, [vehicle.id]: limited };
+          }
+          return prev;
+        });
+
+        return {
+          ...vehicle,
+          position: nextPos,
+          heading: ((nextBearing) + 360) % 360,
+          speed: 3.6, // ≈ 1 m/s
+          lastUpdate: new Date()
+        };
+      }));
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [isTrackingActive, vehicleRoutes]);
-
-  // Refresh route history for specific vehicle with fallback
-  const refreshVehicleRoute = async (vehicleId, range = timeRange) => {
+  }, [isTrackingActive, vehicleRoutes, polygonLatLng]);
+  
+  // Refresh a single vehicle's route history from backend or offline storage
+  const refreshVehicleRoute = async (vehicleId, range) => {
     try {
-      console.log(`🔄 Refreshing route for ${vehicleId} (${range})`);
-      
       const routeHistory = await loadRouteHistory(vehicleId, range);
-      
       setVehicleRoutes(prev => ({
         ...prev,
         [vehicleId]: routeHistory
       }));
-      
-      // Save to offline storage
       if (routeHistory.length > 0) {
         saveOfflineRoute(vehicleId, routeHistory);
       }
-      
       console.log(`✅ Route refreshed for ${vehicleId}: ${routeHistory.length} points`);
-      
     } catch (error) {
       console.error(`❌ Failed to refresh route for ${vehicleId}:`, error);
-      
-      // Try offline fallback
       const offlineRoute = getOfflineRoute(vehicleId);
       if (offlineRoute.length > 0) {
         setVehicleRoutes(prev => ({
