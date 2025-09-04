@@ -21,6 +21,33 @@ const FleetGroups = () => {
     return trucks.filter(truck => truck.fleet_group_id === groupId);
   };
 
+  // --- Number range cluster helpers ---
+  const extractTruckNumber = (idOrName) => {
+    if (!idOrName) return null;
+    const m = String(idOrName).match(/(\d{1,4})/);
+    return m ? parseInt(m[1], 10) : null;
+  };
+
+  const numberRanges = [
+    { key: '1-199', label: '1 - 199', lo: 1, hi: 199 },
+    { key: '200-399', label: '200 - 399', lo: 200, hi: 399 },
+    { key: '400-599', label: '400 - 599', lo: 400, hi: 599 },
+    { key: '600-799', label: '600 - 799', lo: 600, hi: 799 },
+    { key: '800-999', label: '800 - 999', lo: 800, hi: 999 },
+  ];
+
+  const clusterStats = numberRanges.map(r => {
+    const inRange = trucks.filter(t => {
+      const n = extractTruckNumber(t.id) ?? extractTruckNumber(t.name);
+      return n != null && n >= r.lo && n <= r.hi;
+    });
+    return {
+      ...r,
+      count: inRange.length,
+      active: inRange.filter(t => getLatestTruckStatus(t.id)?.status === 'active').length,
+    };
+  });
+
   // Get group statistics
   const getGroupStats = (groupId) => {
     const groupTrucks = getTrucksByGroup(groupId);
@@ -51,6 +78,39 @@ const FleetGroups = () => {
               <PlusIcon className="h-5 w-5" />
               Add Group
             </button>
+          </div>
+        </div>
+
+        {/* Number Range Clusters */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <UsersIcon className="h-5 w-5 text-indigo-600" /> Number Range Clusters
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {clusterStats.map(cs => (
+              <div key={cs.key} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow border border-gray-200 p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-gray-600">Cluster</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">{cs.label}</span>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{cs.count}</div>
+                    <div className="text-xs text-gray-500">Vehicles</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-green-600 font-semibold">{cs.active}</div>
+                    <div className="text-xs text-gray-500">Active</div>
+                  </div>
+                </div>
+                <div className="mt-3 w-full bg-gray-200 rounded-full h-1.5">
+                  <div
+                    className="bg-green-500 h-1.5 rounded-full"
+                    style={{ width: `${cs.count > 0 ? (cs.active / Math.max(cs.count,1)) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

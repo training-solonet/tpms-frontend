@@ -66,16 +66,14 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const SidebarContent = () => (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-indigo-600 via-indigo-700 to-indigo-900 px-6 pb-4 backdrop-blur-xl border-r border-white/10">
-      <div className="flex h-16 shrink-0 items-center">
+    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-indigo-400 via-indigo-700 to-indigo-900 px-6 pb-4 backdrop-blur-xl border-r border-white/10">
+      <div className="flex h-16 shrink-0 items-center mb-6">
         <div className="flex items-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shadow-lg border border-white/30">
-            <TruckIcon className="h-7 w-7 text-white" />
-          </div>
-          <div className="ml-4">
-            <h1 className="text-xl font-bold text-white tracking-tight">Borneo Fleet</h1>
+          <img src="/icon2.png" alt="Truck" className="h-50 w-50 object-contain relative top-5" />
+          {/* <div className="ml-10">
+            <h3 className="text-xl font-bold text-white tracking-tight">Borneo Fleet</h3>
             <p className="text-sm text-indigo-200 font-medium">Live Tracking System</p>
-          </div>
+          </div> */}
         </div>
       </div>
       <nav className="flex flex-1 flex-col">

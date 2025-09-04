@@ -18,6 +18,7 @@ import 'leaflet/dist/leaflet.css';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
 // import { trucksAPI, miningAreaAPI, FleetWebSocket } from '../../services/api.js';
 import { getLiveTrackingData, getTruckRoute, generateGpsPositions } from '../../data/index.js';
+import manualRouteMd from '../../../make_dummy_real_route.md?raw';
 
 const LiveTrackingMap = () => {
   // Toggle backend usage. Set to false to use dummy data only.
@@ -28,9 +29,11 @@ const LiveTrackingMap = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [legendVisible, setLegendVisible] = useState(true);
-  const [mapStyle, setMapStyle] = useState('osm');
+  const [mapStyle, setMapStyle] = useState('satellite');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Cluster filters by truck number (multi-select)
+  const [clusterSelections, setClusterSelections] = useState(new Set(['1-199','200-399','400-599','600-799','800-999']));
   
   // Route tracking states
   const [vehicleRoutes, setVehicleRoutes] = useState({});
@@ -44,7 +47,11 @@ const LiveTrackingMap = () => {
   
   const markersRef = useRef({});
   const routeLinesRef = useRef({});
+  const manualRouteRef = useRef(null);
   const wsRef = useRef(null);
+  const miningBoundsRef = useRef(null);
+  const lastHideStateRef = useRef(null);
+  const rafRef = useRef(null);
 
   // --- Geofence helpers & movement utilities ---
   // Extract primary polygon (first ring) as [lat, lng]
@@ -63,6 +70,70 @@ const LiveTrackingMap = () => {
     const lat2 = toRad(b[0]);
     const s = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(s));
+  };
+
+  // --- Truck number helpers & cluster filtering ---
+  const extractTruckNumber = (idOrName) => {
+    if (!idOrName) return null;
+    const m = String(idOrName).match(/(\d{1,4})/);
+    return m ? parseInt(m[1], 10) : null;
+  };
+
+  const inSelectedCluster = (truckId) => {
+    // If nothing selected, treat as show all
+    if (!clusterSelections || clusterSelections.size === 0) return true;
+    const n = extractTruckNumber(truckId);
+    if (n == null) return false;
+    for (const key of clusterSelections) {
+      const [lo, hi] = key.split('-').map(Number);
+      if (n >= lo && n <= hi) return true;
+    }
+    return false;
+  };
+
+  // Apply marker scale/visibility based on zoom and viewport
+  const applyMarkerZoomStyling = () => {
+    if (!map) return;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const zoom = map.getZoom();
+      const bounds = map.getBounds();
+      const miningBounds = miningBoundsRef.current;
+      // Scale mapping by zoom (tweak as needed)
+      let scale = 1;
+      if (zoom >= 16) scale = 1;
+      else if (zoom >= 14) scale = 0.85;
+      else if (zoom >= 12) scale = 0.7;
+      else if (zoom >= 10) scale = 0.55;
+      else scale = 0.4;
+
+      // Hysteresis to prevent flicker: hide <= 5, show >= 8, in-between keep last state
+      const HIDE_ZOOM_MAX = 5;
+      const SHOW_ZOOM_MIN = 8;
+      let hideAll;
+      if (zoom <= HIDE_ZOOM_MAX) hideAll = true;
+      else if (zoom >= SHOW_ZOOM_MIN) hideAll = false;
+      else hideAll = lastHideStateRef.current ?? false;
+      lastHideStateRef.current = hideAll;
+
+      Object.values(markersRef.current).forEach(marker => {
+        const el = marker.getElement?.();
+        if (!el) return;
+        const wrapper = el.firstElementChild; // our custom HTML root
+        if (hideAll) {
+          el.style.visibility = 'hidden';
+        } else {
+          el.style.visibility = 'visible';
+          if (wrapper) {
+            // Scale only the inner wrapper; do not touch Leaflet's translate3d on the container
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'center bottom';
+          }
+        }
+      });
+
+      rafRef.current = null;
+    });
   };
 
   // Convert a move of meters with bearing to new [lat, lng]
@@ -354,17 +425,23 @@ const LiveTrackingMap = () => {
           mapInstance.getContainer().style.outline = 'none';
 
           // Add tile layers
-          const osmLayer = L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          });
-          
           const satelliteLayer = L.default.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri'
+            attribution: 'Tiles &copy; Esri',
+            keepBuffer: 3,
+            updateWhenZooming: true,
+            updateWhenIdle: true
+          });
+
+          const osmLayer = L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            keepBuffer: 3,
+            updateWhenZooming: true,
+            updateWhenIdle: true
           });
           
-          osmLayer.addTo(mapInstance);
-          mapInstance.osmLayer = osmLayer;
+          satelliteLayer.addTo(mapInstance);
           mapInstance.satelliteLayer = satelliteLayer;
+          mapInstance.osmLayer = osmLayer;
 
           // Add geofence
           if (BORNEO_INDOBARA_GEOJSON && BORNEO_INDOBARA_GEOJSON.features) {
@@ -380,6 +457,20 @@ const LiveTrackingMap = () => {
             }).addTo(mapInstance);
           }
 
+          // Compute mining area bounds for zoom-based hiding
+          try {
+            const bounds = L.default.latLngBounds(polygonLatLng);
+            miningBoundsRef.current = bounds;
+          } catch (e) {
+            console.warn('Unable to compute mining bounds:', e);
+          }
+
+          // Apply marker styling on zoom/move (continuous + end) and once after init
+          mapInstance.on('zoom', () => applyMarkerZoomStyling());
+          mapInstance.on('zoomend', () => applyMarkerZoomStyling());
+          mapInstance.on('move', () => applyMarkerZoomStyling());
+          mapInstance.on('moveend', () => applyMarkerZoomStyling());
+
           setMap(mapInstance);
         } catch (error) {
           console.error('Error initializing map:', error);
@@ -389,6 +480,90 @@ const LiveTrackingMap = () => {
 
     initializeMap();
   }, []);
+
+  // Render manual route from make_dummy_real_route.md
+  useEffect(() => {
+    if (!map) return;
+    try {
+      // Parse coordinates from the raw markdown text
+      const lines = manualRouteMd.split('\n');
+      const coords = lines
+        .map(l => l.trim())
+        .filter(l => l.length > 0)
+        // remove line number arrow prefix like "150→"
+        .map(l => l.replace(/^\d+\u2192\s*/, ''))
+        // strip any stray characters (quotes etc.)
+        .map(l => l.replace(/[^0-9\-\.,\s]/g, ''))
+        .map(l => l.split(',').map(s => parseFloat(s.trim())))
+        .filter(arr => Array.isArray(arr) && arr.length === 2 && !arr.some(isNaN))
+        .map(([lat, lng]) => [lat, lng]);
+
+      if (coords.length > 1) {
+        const L = window.L || require('leaflet');
+
+        // Remove previous manual route if exists
+        if (manualRouteRef.current) {
+          try { map.removeLayer(manualRouteRef.current.line); } catch (e) {}
+          try { map.removeLayer(manualRouteRef.current.start); } catch (e) {}
+          try { map.removeLayer(manualRouteRef.current.end); } catch (e) {}
+          manualRouteRef.current = null;
+        }
+
+        const color = '#2563eb'; // indigo-600
+        const line = L.polyline(coords, {
+          color,
+          weight: 4,
+          opacity: 0.95,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(map);
+
+        const startIcon = L.divIcon({
+          html: `<div style="background:white;border:2px solid ${color};border-radius:50%;width:14px;height:14px;"></div>`,
+          className: 'manual-route-start',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+        const endIcon = L.divIcon({
+          html: `<div style="background:${color};border:2px solid white;border-radius:50%;width:14px;height:14px;"></div>`,
+          className: 'manual-route-end',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+
+        const start = L.marker(coords[0], { icon: startIcon }).addTo(map).bindTooltip('Start', {direction:'top'});
+        const end = L.marker(coords[coords.length - 1], { icon: endIcon }).addTo(map).bindTooltip('End', {direction:'top'});
+
+        manualRouteRef.current = { line, start, end };
+
+        try {
+          map.fitBounds(line.getBounds(), { padding: [40, 40] });
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.warn('Failed to render manual route from markdown:', err);
+    }
+  }, [map]);
+
+  // Invalidate map size when sidebar visibility changes to avoid right-edge clipping
+  useEffect(() => {
+    if (!map) return;
+    // Delay to allow CSS transition to complete before recalculating map size
+    const t = setTimeout(() => {
+      try { map.invalidateSize({ animate: false }); } catch (e) {}
+    }, 250);
+    return () => clearTimeout(t);
+  }, [map, sidebarVisible]);
+
+  // Invalidate map size on window resize
+  useEffect(() => {
+    if (!map) return;
+    const onResize = () => {
+      try { map.invalidateSize({ animate: false }); } catch (e) {}
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [map]);
 
   // Load truck data and route history
   useEffect(() => {
@@ -579,44 +754,50 @@ const LiveTrackingMap = () => {
           offline: '#6b7280'
         };
 
-        // Create vehicle marker
+        // Skip if not in selected numeric cluster
+        if (!inSelectedCluster(vehicle.id)) {
+          return;
+        }
+
+        // Create custom rectangular-with-pointer marker with truck number
+        const truckNum = extractTruckNumber(vehicle.id) ?? '';
         const icon = L.divIcon({
           html: `
-            <div style="
-              background: ${colors[vehicle.status] || colors.offline};
-              border: 3px solid white;
-              border-radius: 50%;
-              width: 28px;
-              height: 28px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-              position: relative;
-            ">
-              <svg width="14" height="14" fill="white" viewBox="0 0 24 24">
-                <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-              </svg>
-              ${vehicle.speed > 0 ? `
-                <div style="
-                  position: absolute;
-                  top: -2px;
-                  right: -2px;
-                  width: 8px;
-                  height: 8px;
-                  background: #22c55e;
-                  border-radius: 50%;
-                  animation: pulse 2s infinite;
-                "></div>
-              ` : ''}
+            <div style="position: relative;">
+              <div style="
+                background: ${colors[vehicle.status] || colors.offline};
+                color: #ffffff;
+                border: 2px solid #ffffff;
+                border-radius: 6px;
+                padding: 2px 6px;
+                min-width: 26px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+              ">
+                ${truckNum}
+              </div>
+              <div style="
+                width: 0; height: 0;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 8px solid ${colors[vehicle.status] || colors.offline};
+                margin: 0 auto;
+                filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+              "></div>
             </div>
           `,
           className: 'custom-truck-icon',
           iconSize: [28, 28],
-          iconAnchor: [14, 14],
+          // Anchor at bottom-center so the pointer tip sits exactly on the coordinate
+          iconAnchor: [14, 28],
         });
 
-        const marker = L.marker(vehicle.position, { icon }).addTo(map);
+        const marker = L.marker(vehicle.position, { icon, zIndexOffset: 1000 }).addTo(map);
         markersRef.current[vehicle.id] = marker;
         
         // Enhanced popup with route info
@@ -685,9 +866,11 @@ const LiveTrackingMap = () => {
           // Create route line
           const routeLine = L.polyline(routeHistory, {
             color: routeColor,
-            weight: 4,
-            opacity: 0.7,
-            smoothFactor: 1,
+            weight: 3,
+            opacity: 0.9,
+            smoothFactor: 2,
+            lineJoin: 'round',
+            lineCap: 'round',
             dashArray: vehicle.status === 'active' ? null : '10, 10'
           }).addTo(map);
           
@@ -742,7 +925,12 @@ const LiveTrackingMap = () => {
         }
       });
     }
-  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes]);
+  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes, clusterSelections]);
+
+  // Re-apply marker zoom styling whenever map or selection changes
+  useEffect(() => {
+    applyMarkerZoomStyling();
+  }, [map, vehicles, clusterSelections]);
 
   // Geofence-aware smooth movement: ~1 meter every 1 second with gentle heading drift (≈3.6 km/h)
   useEffect(() => {
@@ -1002,6 +1190,34 @@ const LiveTrackingMap = () => {
                 <option value="30d">Last 30 Days</option>
               </select>
             </div>
+
+            {/* Cluster Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Cluster (Truck No)
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {['1-199','200-399','400-599','600-799','800-999'].map(range => (
+                  <label key={range} className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={clusterSelections.has(range)}
+                      onChange={(e) => {
+                        setClusterSelections(prev => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(range); else next.delete(range);
+                          return next;
+                        });
+                      }}
+                      disabled={loading}
+                    />
+                    <span>{range}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-1 text-[10px] text-gray-500">Unchecked ranges are hidden. Leave all unchecked to show all.</div>
+            </div>
             
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <div className={`w-2 h-2 rounded-full ${isTrackingActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
@@ -1056,7 +1272,7 @@ const LiveTrackingMap = () => {
               <p className="text-sm text-gray-600">No vehicles found</p>
             </div>
           ) : (
-            vehicles.map((vehicle, index) => {
+            vehicles.filter(v => inSelectedCluster(v.id)).map((vehicle, index) => {
               const routeHistory = vehicleRoutes[vehicle.id] || [];
               const routeColor = routeColors[index % routeColors.length];
               
