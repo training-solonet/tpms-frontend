@@ -1,14 +1,15 @@
 // src/pages/LiveTracking.jsx
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import LiveTrackingMap from '../components/dashboard/LiveTrackingMap';
+import LiveTrackingMapNew from '../components/dashboard/LiveTrackingMapNew';
 import '../styles/tracking.css'; // Import tracking styles
 
 const LiveTracking = () => {
   return (
     <TailwindLayout>
       <div className="h-full">
-        <LiveTrackingMap forceViewMode="live" />
+        <LiveTrackingMapNew />
+        {/* <LiveTrackingMap /> */}
       </div>
     </TailwindLayout>
   );

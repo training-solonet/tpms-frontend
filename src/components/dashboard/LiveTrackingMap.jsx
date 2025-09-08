@@ -18,6 +18,7 @@ import 'leaflet/dist/leaflet.css';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
 import { trucksAPI, FleetWebSocket } from '../../services/api.js';
 import { getLiveTrackingData, getTruckRoute, generateGpsPositions, getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
+import tirePressureDummy from '../../data/tirePressureEvents.js';
 
 const LiveTrackingMap = ({ forceViewMode = null }) => {
   // Toggle backend usage. Set to false to use dummy data only.
@@ -45,6 +46,69 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
   ]);
   // View mode: 'live' (no lines) or 'history' (show lines)
   const [viewMode, setViewMode] = useState(forceViewMode ?? 'live');
+  // History playback
+  const [playbackIndex, setPlaybackIndex] = useState(0);
+  const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
+  const [playbackSpeedMs, setPlaybackSpeedMs] = useState(500);
+  // History day selection (06:00–16:00 window)
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  });
+  // History shift selection (day/night/custom)
+  const [shiftMode, setShiftMode] = useState('day'); // 'day' | 'night' | 'custom'
+  const [customStart, setCustomStart] = useState('06:00');
+  const [customEnd, setCustomEnd] = useState('16:00');
+
+  const getDayWindow = (dateStr) => {
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (shiftMode === 'night') {
+        // 16:00 same day to 06:00 next day
+        const start = new Date(y, m - 1, d, 16, 0, 0, 0);
+        const end = new Date(y, m - 1, d + 1, 6, 0, 0, 0);
+        return { start, end };
+      }
+      if (shiftMode === 'custom') {
+        const [sh, sm] = (customStart || '06:00').split(':').map(Number);
+        const [eh, em] = (customEnd || '16:00').split(':').map(Number);
+        let start = new Date(y, m - 1, d, sh || 0, sm || 0, 0, 0);
+        let end = new Date(y, m - 1, d, eh || 0, em || 0, 0, 0);
+        // If end <= start, assume it crosses midnight -> add one day to end
+        if (end <= start) end = new Date(y, m - 1, d + 1, eh || 0, em || 0, 0, 0);
+        return { start, end };
+      }
+      // default day shift 06:00–16:00
+      const start = new Date(y, m - 1, d, 6, 0, 0, 0);
+      const end = new Date(y, m - 1, d, 16, 0, 0, 0);
+      return { start, end };
+    } catch {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0, 0, 0);
+      return { start, end };
+    }
+  };
+
+  // Current shift window (for Live): if now 06–16 use day today; if 16–24 use night today->tomorrow; if 00–06 use night yesterday->today
+  const getCurrentShiftWindow = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const d = now.getDate();
+    const h = now.getHours();
+    if (h >= 6 && h < 16) {
+      return { start: new Date(y, m, d, 6, 0, 0, 0), end: new Date(y, m, d, 16, 0, 0, 0) };
+    }
+    if (h >= 16) {
+      return { start: new Date(y, m, d, 16, 0, 0, 0), end: new Date(y, m, d + 1, 6, 0, 0, 0) };
+    }
+    // h < 6 -> night previous day
+    return { start: new Date(y, m, d - 1, 16, 0, 0, 0), end: new Date(y, m, d, 6, 0, 0, 0) };
+  };
 
   // Sync viewMode with URL hash (#history -> history mode) unless forced
   useEffect(() => {
@@ -57,6 +121,67 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         const onHash = () => {
           setViewMode(window.location.hash === '#history' ? 'history' : 'live');
         };
+
+  // --- Tire data helpers (live mode popup) ---
+  const normalizeTruckId = (id) => String(id || '').toLowerCase();
+  const getLatestTireData = async (truckId) => {
+    try {
+      const apiRes = await trucksAPI.getTirePressures(truckId);
+      if (apiRes?.success && Array.isArray(apiRes.data) && apiRes.data.length > 0) {
+        // Expecting array of { tire_no, pressure_kpa, temp_celsius }
+        const latestByTire = {};
+        apiRes.data.forEach(item => {
+          const no = Number(item.tire_no);
+          if (!latestByTire[no]) latestByTire[no] = item;
+        });
+        return latestByTire;
+      }
+    } catch (e) {
+      console.warn('Tire API failed, using dummy:', e?.message || e);
+    }
+    // Fallback to dummy: pick latest per tire_no for this truck
+    try {
+      const all = Array.isArray(tirePressureDummy) ? tirePressureDummy : (tirePressureDummy?.tirePressureEvents || []);
+      const filtered = all.filter(ev => normalizeTruckId(ev.truck_id).includes(normalizeTruckId(truckId)));
+      const latestByTire = {};
+      filtered.forEach(ev => {
+        const no = Number(ev.tire_no);
+        if (!latestByTire[no]) latestByTire[no] = ev;
+        else if (new Date(ev.changed_at) > new Date(latestByTire[no].changed_at)) latestByTire[no] = ev;
+      });
+      return latestByTire;
+    } catch {
+      return {};
+    }
+  };
+
+  const buildTirePopupHTML = (tireMap) => {
+    const tires = Object.keys(tireMap).map(n => Number(n)).sort((a,b)=>a-b);
+    const pairs = [];
+    for (let i=0;i<tires.length;i+=2){
+      const a = tireMap[tires[i]]; const b = tireMap[tires[i+1]];
+      const left = a ? `<div class="flex items-center gap-2"><span class="text-[10px] px-1 rounded bg-gray-200">#${a.tire_no}</span><span class="text-xs">${a.pressure_kpa ?? a.pressureKpa ?? '-'} kPa</span><span class="text-xs text-gray-500">/ ${a.temp_celsius ?? a.tempCelsius ?? '-'}°C</span></div>` : '';
+      const right = b ? `<div class="flex items-center gap-2"><span class="text-[10px] px-1 rounded bg-gray-200">#${b.tire_no}</span><span class="text-xs">${b.pressure_kpa ?? b.pressureKpa ?? '-'} kPa</span><span class="text-xs text-gray-500">/ ${b.temp_celsius ?? b.tempCelsius ?? '-'}°C</span></div>` : '';
+      pairs.push(`
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex-1 flex items-center justify-between">
+            <span class="text-[11px]">Tekanan Suhu</span>
+            ${left}
+          </div>
+          <div class="w-10 h-4 bg-gray-300 rounded-sm mx-2"></div>
+          <div class="flex-1 flex items-center justify-between">
+            ${right}
+            <span class="text-[11px]">Suhu Tekanan</span>
+          </div>
+        </div>
+      `);
+    }
+    return `
+      <div class="space-y-1">
+        ${pairs.join('')}
+      </div>
+    `;
+  };
         window.addEventListener('hashchange', onHash);
         return () => window.removeEventListener('hashchange', onHash);
       }
@@ -87,10 +212,14 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
   const markersRef = useRef({});
   const routeLinesRef = useRef({});
   const manualRouteRef = useRef(null);
+  const playbackMarkerRef = useRef(null);
+  const liveRouteLineRef = useRef(null);
+  const liveRouteMarkersRef = useRef({ start: null, end: null });
   const wsRef = useRef(null);
   const miningBoundsRef = useRef(null);
   const lastHideStateRef = useRef(null);
   const rafRef = useRef(null);
+  const playbackTimerRef = useRef(null);
 
   // --- Geofence helpers & movement utilities ---
   // Extract primary polygon (first ring) as [lat, lng]
@@ -326,28 +455,71 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
   };
 
   // Load route history from database with fallback
-  const loadRouteHistory = async (truckId, timeRange = '24h') => {
+  const loadRouteHistory = async (truckId, timeRange = '24h', windowOverride = null) => {
     try {
       console.log(`📍 Loading route history for ${truckId} (${timeRange})`);
       
+      const { start, end } = windowOverride || getDayWindow(selectedDate);
       const params = {
         timeRange: timeRange,
-        limit: 200,
-        minSpeed: 0
+        limit: timeRange === 'shift' ? 1000 : 200,
+        minSpeed: 0,
+        startTime: start.toISOString(),
+        endTime: end.toISOString()
       };
       
-      const response = await trucksAPI.getLocationHistory(truckId, params);
+      // Prefer numeric ID if present (some backends expect truck number only)
+      const numericId = (String(truckId).match(/\d{1,4}/) || [])[0];
+      const primaryId = numericId || truckId;
+      // First attempt with primaryId
+      let response = await trucksAPI.getLocationHistory(primaryId, params);
       
+      const toPoints = (records) => (records || [])
+        .filter(record => {
+          try {
+            const t = new Date(
+              record.timestamp || record.recorded_at || record.created_at || record.time || record.gps_time || null
+            );
+            if (!isNaN(t)) {
+              return t >= start && t <= end;
+            }
+          } catch {}
+          return true;
+        })
+        .map(record => [parseFloat(record.latitude), parseFloat(record.longitude)])
+        .filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]) && pt[0] !== 0 && pt[1] !== 0);
+
       if (response.success && response.data) {
-        // Convert database records to route points
-        const routePoints = response.data.map(record => [
-          parseFloat(record.latitude),
-          parseFloat(record.longitude)
-        ]).filter(point => 
-          !isNaN(point[0]) && !isNaN(point[1]) && 
-          point[0] !== 0 && point[1] !== 0
-        );
+        // Convert database records to route points (filter by day window if timestamp present)
+        let routePoints = toPoints(response.data);
         
+        // If empty and we didn't already use truckId, try the original ID as fallback
+        if ((!routePoints || routePoints.length === 0) && primaryId !== truckId) {
+          console.log(`🔁 Retrying history with raw ID: ${truckId}`);
+          response = await trucksAPI.getLocationHistory(truckId, params);
+          if (response.success && response.data) {
+            routePoints = toPoints(response.data);
+          }
+        }
+        
+        // If still empty, retry broader search without time window
+        if (!routePoints || routePoints.length === 0) {
+          console.log('🔁 Retrying history without time window constraints');
+          const { startTime, endTime, ...noWindow } = params;
+          response = await trucksAPI.getLocationHistory(truckId, noWindow);
+          if (response.success && response.data) {
+            routePoints = toPoints(response.data);
+          }
+        }
+        
+        // If backend returns empty for window, fallback to offline stored route
+        if (!routePoints || routePoints.length === 0) {
+          const offlineRoute = getOfflineRoute(truckId);
+          if (offlineRoute.length > 0) {
+            console.log(`📱 Backend empty, using offline route for ${truckId}: ${offlineRoute.length} points`);
+            return offlineRoute;
+          }
+        }
         console.log(`✅ Loaded ${routePoints.length} route points for ${truckId}`);
         return routePoints;
       }
@@ -553,9 +725,19 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     initializeMap();
   }, []);
 
-  // Render manual route from make_dummy_real_route.md via helpers
+  // Render manual route from make_dummy_real_route.md via helpers (History only)
   useEffect(() => {
     if (!map) return;
+    if (viewMode !== 'history') {
+      // remove if exists
+      if (manualRouteRef.current) {
+        try { map.removeLayer(manualRouteRef.current.line); } catch (e) {}
+        try { map.removeLayer(manualRouteRef.current.start); } catch (e) {}
+        try { map.removeLayer(manualRouteRef.current.end); } catch (e) {}
+        manualRouteRef.current = null;
+      }
+      return;
+    }
     try {
       const pts = getDummyRealRoutePoints();
       const coords = Array.isArray(pts) && pts.length > 1
@@ -589,11 +771,40 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
           iconSize: [14, 14],
           iconAnchor: [7, 7]
         });
+        // Use truck-style icon shape for END marker (visual consistency)
         const endIcon = L.divIcon({
-          html: `<div style="background:${color};border:2px solid white;border-radius:50%;width:14px;height:14px;"></div>`,
+          html: `
+            <div style="position: relative;">
+              <div style="
+                background: ${color};
+                color: #ffffff;
+                border: 2px solid #ffffff;
+                border-radius: 6px;
+                padding: 2px 6px;
+                min-width: 26px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 11px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+              ">
+                END
+              </div>
+              <div style="
+                width: 0; height: 0;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 8px solid ${color};
+                margin: 0 auto;
+                filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+              "></div>
+            </div>
+          `,
           className: 'manual-route-end',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
+          iconSize: [28, 28],
+          iconAnchor: [14, 28]
         });
 
         const start = L.marker(coords[0], { icon: startIcon, pane: 'routesPane' }).addTo(map).bindTooltip('Start', {direction:'top'});
@@ -608,7 +819,7 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     } catch (err) {
       console.warn('Failed to render manual route from markdown:', err);
     }
-  }, [map]);
+  }, [map, viewMode]);
 
   // Invalidate map size when sidebar visibility changes to avoid right-edge clipping
   useEffect(() => {
@@ -877,9 +1088,14 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
 
         const marker = L.marker(vehicle.position, { icon, zIndexOffset: 1000, pane: 'markersPane' }).addTo(map);
         markersRef.current[vehicle.id] = marker;
+        // Ensure visibility in case zoom hysteresis previously hid markers
+        try {
+          const el = marker.getElement?.();
+          if (el) el.style.visibility = 'visible';
+        } catch {}
         
-        // Enhanced popup with route info
-        marker.bindPopup(`
+        // Enhanced popup (live: add tire info; history: keep concise)
+        const basePopup = `
           <div class="p-4 min-w-72 max-w-80">
             <div class="flex items-center justify-between mb-3">
               <h4 class="font-bold text-gray-900 text-lg">${vehicle.id}</h4>
@@ -907,34 +1123,121 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
               </div>
             </div>
             
-            <div class="border-t pt-3 space-y-2">
-              <div class="text-sm">
-                <div class="text-gray-500">Route:</div>
-                <div class="font-medium">${vehicle.route}</div>
-              </div>
-              <div class="text-sm">
-                <div class="text-gray-500">Load:</div>
-                <div class="font-medium">${vehicle.load}</div>
-              </div>
-              <div class="text-sm">
-                <div class="text-gray-500">Route Points:</div>
-                <div class="font-medium">${(vehicleRoutes[vehicle.id] || []).length} points</div>
-              </div>
-              <div class="text-sm">
-                <div class="text-gray-500">Distance:</div>
-                <div class="font-medium">~${calculateRouteDistance(vehicleRoutes[vehicle.id] || []).toFixed(1)} km</div>
-              </div>
+            <div class="border-t pt-3 space-y-2" id="extra-section">
               <div class="text-sm">
                 <div class="text-gray-500">Last Update:</div>
                 <div class="font-medium">${formatLastUpdate(vehicle.lastUpdate)}</div>
               </div>
             </div>
           </div>
-          )}
-        `);
+        `;
 
-        marker.on('click', () => {
+        marker.bindPopup(basePopup);
+
+        marker.on('click', async () => {
           setSelectedVehicle(vehicle);
+          // In history mode, reset playback to start for this vehicle
+          if (viewMode === 'history') {
+            setIsPlaybackPlaying(false);
+            setPlaybackIndex(0);
+          }
+          // On live mode, augment popup with tire info
+          if (viewMode === 'live') {
+            try {
+              const tireMap = await getLatestTireData(vehicle.id);
+              const html = buildTirePopupHTML(tireMap);
+              const popup = marker.getPopup();
+              if (popup) {
+                const content = document.createElement('div');
+                content.innerHTML = popup.getContent();
+                const extra = content.querySelector('#extra-section');
+                if (extra) {
+                  const header = document.createElement('div');
+                  header.className = 'text-xs text-gray-600 font-medium';
+                  header.textContent = 'Tire Pressure & Temperature';
+                  extra.prepend(header);
+                  const tireDiv = document.createElement('div');
+                  tireDiv.className = 'space-y-1 mt-1';
+                  tireDiv.innerHTML = html;
+                  extra.appendChild(tireDiv);
+                  popup.setContent(content.innerHTML);
+                  marker.openPopup();
+                }
+              }
+            } catch {}
+
+            // Live mode: show this vehicle's recent route on demand
+            try {
+              // Clear previous live route if exists
+              if (liveRouteLineRef.current && map) {
+                try { map.removeLayer(liveRouteLineRef.current); } catch {}
+                liveRouteLineRef.current = null;
+              }
+              // Ensure Leaflet reference in this scope
+              const L = window.L || require('leaflet');
+              // Load route using current live shift window
+              const liveWindow = getCurrentShiftWindow();
+              console.log('🔎 Live click load route for', vehicle.id, 'window', liveWindow.start.toISOString(), '->', liveWindow.end.toISOString());
+              let routeHistory = await loadRouteHistory(vehicle.id, 'shift', liveWindow);
+              // Fallback to in-memory tracked route if backend/offline empty
+              if (!routeHistory || routeHistory.length <= 1) {
+                const mem = vehicleRoutes[vehicle.id] || [];
+                if (mem.length > 1) routeHistory = mem;
+              }
+              // Final fallback: use manual/dummy route path if available
+              if (!routeHistory || routeHistory.length <= 1) {
+                try {
+                  const pts = getDummyRealRoutePoints?.() || [];
+                  const coords = Array.isArray(pts) && pts.length > 1 ? pts.map(p => [p.lat, p.lng]) : [];
+                  if (coords.length > 1) {
+                    console.log('🧩 Using dummy/manual route fallback for live click');
+                    routeHistory = coords;
+                  }
+                } catch {}
+              }
+              if (Array.isArray(routeHistory) && routeHistory.length > 1) {
+                const routeColor = '#2563eb'; // blue-600
+                liveRouteLineRef.current = L.polyline(routeHistory, {
+                  color: routeColor,
+                  weight: 3,
+                  opacity: 0.9,
+                  smoothFactor: 2,
+                  lineJoin: 'round',
+                  lineCap: 'round',
+                  pane: 'routesPane'
+                }).addTo(map);
+                // Draw start/end markers for clarity
+                try {
+                  const startPt = routeHistory[0];
+                  const endPt = routeHistory[routeHistory.length - 1];
+                  // Clean previous markers
+                  if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch {}
+                  if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch {}
+                  const startIcon = L.divIcon({
+                    html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
+                    className: 'live-route-start', iconSize: [14,14], iconAnchor: [7,7]
+                  });
+                  const endIcon = L.divIcon({
+                    html: `<div style=\"position:relative;\"><div style=\"background:${routeColor};color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;min-width:20px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);\">END</div><div style=\"width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${routeColor};margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));\"></div></div>`,
+                    className: 'live-route-end', iconSize: [26,26], iconAnchor: [13,26]
+                  });
+                  liveRouteMarkersRef.current.start = L.marker(startPt, { icon: startIcon, pane: 'routesPane' }).addTo(map);
+                  liveRouteMarkersRef.current.end = L.marker(endPt, { icon: endIcon, pane: 'routesPane' }).addTo(map);
+                } catch {}
+                try {
+                  map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
+                } catch {}
+              } else {
+                // No route available – show a tiny one-time notice near the marker
+                try {
+                  marker.bindTooltip('No route data for current shift', { direction: 'top', opacity: 0.8, offset: [0, -20] }).openTooltip();
+                  setTimeout(() => { try { marker.closeTooltip(); } catch {} }, 1800);
+                } catch {}
+              }
+            } catch (e) {
+              console.warn('Failed to show live on-demand route:', e);
+            }
+          }
         });
 
         // Add route line if exists and visible (only in history mode)
@@ -1104,6 +1407,24 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     }
   };
 
+  // Handle selectedDate change (reload routes for the day window)
+  useEffect(() => {
+    if (viewMode !== 'history') return;
+    const reload = async () => {
+      setLoading(true);
+      try {
+        const routesData = await loadAllRoutesHistory(vehicles);
+        setVehicleRoutes(routesData);
+      } catch (e) {
+        console.error('Failed to reload routes for date/shift:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, shiftMode, customStart, customEnd]);
+
   // Toggle route visibility
   const toggleRouteVisibility = (vehicleId) => {
     setRouteVisible(prev => ({
@@ -1172,6 +1493,93 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     }
   };
 
+  // --- History playback helpers ---
+  const hasHistory = (vehicleId) => {
+    const pts = vehicleRoutes[vehicleId] || [];
+    return Array.isArray(pts) && pts.length > 1;
+  };
+
+  const createOrUpdatePlaybackMarker = (latlng) => {
+    if (!map || !latlng) return;
+    const L = window.L || require('leaflet');
+    if (!playbackMarkerRef.current) {
+      const icon = L.divIcon({
+        html: `<div style="background:#111827;color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;box-shadow:0 2px 6px rgba(0,0,0,.3);">▶</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #111827;margin:0 auto;"></div>`,
+        className: 'playback-marker',
+        iconSize: [28, 28],
+        iconAnchor: [14, 28]
+      });
+      playbackMarkerRef.current = L.marker(latlng, { icon, zIndexOffset: 1200, pane: 'markersPane' }).addTo(map);
+    } else {
+      try { playbackMarkerRef.current.setLatLng(latlng); } catch {}
+    }
+  };
+
+  const startPlayback = () => {
+    if (!selectedVehicle || !hasHistory(selectedVehicle.id)) return;
+    setIsPlaybackPlaying(true);
+    if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
+    playbackTimerRef.current = setInterval(() => {
+      setPlaybackIndex((i) => {
+        const max = (vehicleRoutes[selectedVehicle.id] || []).length - 1;
+        if (i >= max) return max; // stop at end; controlled below
+        return i + 1;
+      });
+    }, playbackSpeedMs);
+  };
+
+  const pausePlayback = () => {
+    setIsPlaybackPlaying(false);
+    if (playbackTimerRef.current) {
+      clearInterval(playbackTimerRef.current);
+      playbackTimerRef.current = null;
+    }
+  };
+
+  const stopPlayback = () => {
+    pausePlayback();
+    setPlaybackIndex(0);
+    // keep marker at start
+    const pts = selectedVehicle ? (vehicleRoutes[selectedVehicle.id] || []) : [];
+    if (pts.length > 0) createOrUpdatePlaybackMarker(pts[0]);
+  };
+
+  // Update playback timer when speed changes
+  useEffect(() => {
+    if (!isPlaybackPlaying) return;
+    // restart timer with new speed
+    pausePlayback();
+    startPlayback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playbackSpeedMs]);
+
+  // Drive playback marker on index change or vehicle change
+  useEffect(() => {
+    if (viewMode !== 'history') return;
+    const v = selectedVehicle;
+    if (!v) return;
+    const pts = vehicleRoutes[v.id] || [];
+    if (pts.length === 0) return;
+    const idx = Math.min(playbackIndex, pts.length - 1);
+    const latlng = pts[idx];
+    createOrUpdatePlaybackMarker(latlng);
+    // Stop at end
+    if (isPlaybackPlaying && idx >= pts.length - 1) {
+      pausePlayback();
+    }
+  }, [playbackIndex, selectedVehicle, vehicleRoutes, viewMode, isPlaybackPlaying]);
+
+  // Cleanup playback marker/timer on unmount or when switching away from history
+  useEffect(() => {
+    return () => {
+      if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
+      if (playbackMarkerRef.current && map) {
+        try { map.removeLayer(playbackMarkerRef.current); } catch {}
+        playbackMarkerRef.current = null;
+      }
+    };
+  }, [map]);
+
   return (
     <div className="h-full flex">
       {/* Toggle Button */}
@@ -1199,295 +1607,98 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
-      {/* Vehicle List Sidebar */}
+      {/* Sidebar - Minimal with filters only (no list, no scroll) */}
       <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
         sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
       }`}>
-        {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900">Fleet Tracking</h4>
-              {!forceViewMode ? (
-                <div className="mt-2 inline-flex items-center rounded-lg overflow-hidden border border-gray-200">
-                  <button
-                    onClick={() => setViewMode('live')}
-                    className={`px-3 py-1 text-xs font-medium ${viewMode === 'live' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                  >
-                    Live
-                  </button>
-                  <button
-                    onClick={() => setViewMode('history')}
-                    className={`px-3 py-1 text-xs font-medium ${viewMode === 'history' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                  >
-                    History
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-2 inline-flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-600">Mode:</span>
-                  <span className={`px-2 py-0.5 rounded text-xs ${viewMode === 'history' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                    {viewMode.toUpperCase()}
-                  </span>
+          <h4 className="text-lg font-semibold text-gray-900">Filters</h4>
+          {/* Date filter (History only) */}
+          {viewMode === 'history' && (
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Date (06:00 – 16:00)
+              </label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={loading}
+              />
+              {/* Shift selector */}
+              <label className="block text-xs font-medium text-gray-700 mb-1">Shift</label>
+              <select
+                value={shiftMode}
+                onChange={(e) => setShiftMode(e.target.value)}
+                className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="day">Day (06:00–16:00)</option>
+                <option value="night">Night (16:00–06:00)</option>
+                <option value="custom">Custom</option>
+              </select>
+              {shiftMode === 'custom' && (
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div>
+                    <label className="block text-[10px] text-gray-600 mb-0.5">Start</label>
+                    <input
+                      type="time"
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-600 mb-0.5">End</label>
+                    <input
+                      type="time"
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={toggleTracking}
-                className={`p-2 rounded-lg transition-colors ${
-                  isTrackingActive 
-                    ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-                title={isTrackingActive ? 'Pause Tracking' : 'Start Tracking'}
-              >
-                {isTrackingActive ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={resetMapView}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium px-2"
-              >
-                Reset View
-              </button>
-            </div>
-          </div>
-
-          {/* Route Controls */}
-          <div className="space-y-2 mb-3">
-            <div className="flex gap-2">
-              {viewMode === 'history' && (
-                <>
-                  <button
-                    onClick={clearAllRoutes}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-xs font-medium transition-colors"
-                  >
-                    <TrashIcon className="w-3 h-3" />
-                    Clear Routes
-                  </button>
-                  <button
-                    onClick={() => {
-                      vehicles.forEach(vehicle => {
-                        refreshVehicleRoute(vehicle.id, timeRange);
+          )}
+          {/* Cluster Filter */}
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Cluster (Truck No)
+            </label>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {['1-199','200-399','400-599','600-799','800-999'].map(range => (
+                <label key={range} className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={clusterSelections.has(range)}
+                    onChange={(e) => {
+                      setClusterSelections(prev => {
+                        const next = new Set(prev);
+                        if (e.target.checked) next.add(range); else next.delete(range);
+                        return next;
                       });
                     }}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg text-xs font-medium transition-colors"
                     disabled={loading}
-                  >
-                    <ArrowPathIcon className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh All
-                  </button>
-                </>
-              )}
-            </div>
-            
-            {/* Time Range Selector - only show in history mode */}
-            {viewMode === 'history' && (
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  History Range
+                  />
+                  <span>{range}</span>
                 </label>
-                <select
-                  value={timeRange}
-                  onChange={(e) => handleTimeRangeChange(e.target.value)}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  disabled={loading}
-                >
-                  <option value="1h">Last 1 Hour</option>
-                  <option value="6h">Last 6 Hours</option>
-                  <option value="24h">Last 24 Hours</option>
-                  <option value="7d">Last 7 Days</option>
-                  <option value="30d">Last 30 Days</option>
-                </select>
-              </div>
-            )}
-
-            {/* Cluster Filter */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Cluster (Truck No)
-              </label>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {['1-199','200-399','400-599','600-799','800-999'].map(range => (
-                  <label key={range} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={clusterSelections.has(range)}
-                      onChange={(e) => {
-                        setClusterSelections(prev => {
-                          const next = new Set(prev);
-                          if (e.target.checked) next.add(range); else next.delete(range);
-                          return next;
-                        });
-                      }}
-                      disabled={loading}
-                    />
-                    <span>{range}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="mt-1 text-[10px] text-gray-500">Unchecked ranges are hidden. Leave all unchecked to show all.</div>
+              ))}
             </div>
-            
-            <div className="flex items-center gap-1 text-xs text-gray-600">
-              <div className={`w-2 h-2 rounded-full ${isTrackingActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
-              {isTrackingActive ? 'Live Tracking Active' : 'Tracking Paused'}
-              {loading && (
-                <span className="text-blue-600 ml-2">Syncing...</span>
-              )}
-            </div>
+            <div className="mt-1 text-[10px] text-gray-500">Unchecked ranges are hidden. Leave all unchecked to show all.</div>
           </div>
-
-          {selectedVehicle && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="text-blue-900 text-sm font-medium">
-                Tracking: {selectedVehicle.id}
-              </div>
-              <div className="text-blue-700 text-xs">
-                {selectedVehicle.driver} - {selectedVehicle.route}
-              </div>
-              <div className="text-blue-600 text-xs mt-1">
-                Route: {(vehicleRoutes[selectedVehicle.id] || []).length} points • 
-                ~{calculateRouteDistance(vehicleRoutes[selectedVehicle.id] || []).toFixed(1)} km
-              </div>
-            </div>
-          )}
+          {/* Tracking status */}
+          <div className="mt-3 flex items-center gap-1 text-xs text-gray-600">
+            <div className={`w-2 h-2 rounded-full ${isTrackingActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+            {isTrackingActive ? 'Live Tracking Active' : 'Tracking Paused'}
+            {loading && (
+              <span className="text-blue-600 ml-2">Syncing...</span>
+            )}
+          </div>
         </div>
-        
-        {/* Vehicle List */}
-        <div className="flex-1 p-3 space-y-2 overflow-y-auto">
-          {error ? (
-            <div className="text-center py-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600" />
-                  <span className="text-sm text-yellow-800 font-medium">
-                    {error}
-                  </span>
-                </div>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Showing demo data with simulated routes
-                </p>
-              </div>
-            </div>
-          ) : null}
-          
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-              <p className="text-sm text-gray-600">Loading vehicles...</p>
-            </div>
-          ) : vehicles.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-600">No vehicles found</p>
-            </div>
-          ) : (
-            vehicles.filter(v => inSelectedCluster(v.id)).map((vehicle, index) => {
-              const routeHistory = vehicleRoutes[vehicle.id] || [];
-              const routeColor = routeColors[index % routeColors.length];
-              
-              return (
-                <div
-                  key={vehicle.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
-                    selectedVehicle?.id === vehicle.id
-                      ? 'border-blue-500 bg-blue-50 shadow-sm'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                  onClick={() => focusOnVehicle(vehicle)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">
-                          {vehicle.id.split('-')[1]}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">{vehicle.id}</div>
-                        <div className="text-xs text-gray-500">{vehicle.driver}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {/* Route visibility toggle */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleRouteVisibility(vehicle.id);
-                        }}
-                        className={`p-1 rounded transition-colors ${
-                          routeVisible[vehicle.id] !== false
-                            ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                        }`}
-                        title={routeVisible[vehicle.id] !== false ? 'Hide Route' : 'Show Route'}
-                      >
-                        {routeVisible[vehicle.id] !== false ? 
-                          <EyeIcon className="w-3 h-3" /> : 
-                          <EyeSlashIcon className="w-3 h-3" />
-                        }
-                      </button>
-                      
-                      {/* Refresh route button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          refreshVehicleRoute(vehicle.id, timeRange);
-                        }}
-                        className="p-1 rounded bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                        title="Refresh Route from Database"
-                      >
-                        <ArrowPathIcon className="w-3 h-3" />
-                      </button>
-                      
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}>
-                        {vehicle.status}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Route info line */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <div 
-                      className="w-3 h-0.5 rounded"
-                      style={{ backgroundColor: routeColor }}
-                    ></div>
-                    <span className="text-xs text-gray-600">
-                      {routeHistory.length} points • ~{calculateRouteDistance(routeHistory).toFixed(1)} km
-                    </span>
-                    {routeHistory.length === 0 && (
-                      <span className="text-xs text-red-500">No route data</span>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-1 text-xs text-gray-600">
-                    <div className="flex justify-between">
-                      <span>Speed:</span>
-                      <span className="font-semibold">{vehicle.speed} km/h</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Fuel:</span>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${vehicle.fuel > 30 ? 'bg-green-500' : 'bg-red-500'}`}
-                            style={{ width: `${vehicle.fuel}%` }}
-                          />
-                        </div>
-                        <span className="font-semibold">{vehicle.fuel}%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Updated:</span>
-                      <span className="font-semibold">{formatLastUpdate(vehicle.lastUpdate)}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <div className="flex-1" />
       </div>
 
       {/* Map Area */}
@@ -1670,9 +1881,87 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         </div>
         {/* Legend toggle button removed */}
 
+        {/* Playback Controls (History mode) */}
+        {viewMode === 'history' && selectedVehicle && hasHistory(selectedVehicle.id) && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3" style={{ zIndex: 1000 }}>
+            {/* Play/Pause */}
+            <button
+              onClick={() => (isPlaybackPlaying ? pausePlayback() : startPlayback())}
+              className={`px-3 py-1 rounded text-white text-xs ${isPlaybackPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'}`}
+            >
+              {isPlaybackPlaying ? 'Pause' : 'Play'}
+            </button>
+            {/* Step Back */}
+            <button
+              onClick={() => setPlaybackIndex(i => Math.max(0, i - 1))}
+              className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+            >
+              -1
+            </button>
+            {/* Skip Back 10 */}
+            <button
+              onClick={() => setPlaybackIndex(i => Math.max(0, i - 10))}
+              className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+              title="Skip back 10 points"
+            >
+              -10
+            </button>
+            {/* Timeline */}
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={(vehicleRoutes[selectedVehicle.id] || []).length - 1}
+                value={Math.min(playbackIndex, (vehicleRoutes[selectedVehicle.id] || []).length - 1)}
+                onChange={(e) => setPlaybackIndex(Number(e.target.value))}
+                className="w-64"
+              />
+              <span className="text-xs text-gray-700 min-w-[72px] text-right">
+                {Math.min(playbackIndex, (vehicleRoutes[selectedVehicle.id] || []).length - 1)} / {(vehicleRoutes[selectedVehicle.id] || []).length - 1}
+              </span>
+            </div>
+            {/* Step Forward */}
+            <button
+              onClick={() => setPlaybackIndex(i => Math.min((vehicleRoutes[selectedVehicle.id] || []).length - 1, i + 1))}
+              className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+            >
+              +1
+            </button>
+            {/* Skip Forward 10 */}
+            <button
+              onClick={() => setPlaybackIndex(i => Math.min((vehicleRoutes[selectedVehicle.id] || []).length - 1, i + 10))}
+              className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+              title="Skip forward 10 points"
+            >
+              +10
+            </button>
+            {/* Speed */}
+            <div className="flex items-center gap-1 text-xs text-gray-700">
+              <span>Speed:</span>
+              <select
+                value={playbackSpeedMs}
+                onChange={(e) => setPlaybackSpeedMs(Number(e.target.value))}
+                className="border border-gray-300 rounded px-1 py-0.5 text-xs"
+              >
+                <option value={1000}>1x</option>
+                <option value={500}>2x</option>
+                <option value={200}>5x</option>
+              </select>
+            </div>
+            {/* Stop */}
+            <button
+              onClick={stopPlayback}
+              className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
+            >
+              Stop
+            </button>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-2" style={{ zIndex: 1000 }}>
-          {/* Fit All Routes Button */}
+          {/* Fit All Routes Button (history only) */}
+          {viewMode === 'history' && (
           <button
             onClick={() => {
               if (map) {
@@ -1698,6 +1987,7 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
             <MapIcon className="w-4 h-4" />
             <span className="text-sm font-medium">Fit Routes</span>
           </button>
+          )}
           
           {/* Auto Center Button */}
           <button

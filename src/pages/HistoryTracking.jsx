@@ -1,14 +1,14 @@
 // src/pages/HistoryTracking.jsx
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import LiveTrackingMap from '../components/dashboard/LiveTrackingMap';
+import HistoryTrackingMap from '../components/dashboard/HistoryTrackingMap';
 import '../styles/tracking.css';
 
 const HistoryTracking = () => {
   return (
     <TailwindLayout>
       <div className="h-full">
-        <LiveTrackingMap forceViewMode="history" />
+        <HistoryTrackingMap />
       </div>
     </TailwindLayout>
   );
