@@ -1,17 +1,17 @@
-// src/pages/LiveTracking.jsx
+// src/pages/HistoryTracking.jsx
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import LiveTrackingMap from '../components/dashboard/LiveTrackingMap';
-import '../styles/tracking.css'; // Import tracking styles
+import '../styles/tracking.css';
 
-const LiveTracking = () => {
+const HistoryTracking = () => {
   return (
     <TailwindLayout>
       <div className="h-full">
-        <LiveTrackingMap forceViewMode="live" />
+        <LiveTrackingMap forceViewMode="history" />
       </div>
     </TailwindLayout>
   );
 };
 
-export default LiveTracking;
+export default HistoryTracking;

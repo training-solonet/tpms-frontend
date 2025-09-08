@@ -1,5 +1,6 @@
 // src/services/trackingDataManager.js
-import { generateGpsPositions, getLiveTrackingData, getTruckRoute } from '../data/index.js';
+import { useState } from 'react';
+import { generateGpsPositions, getLiveTrackingData, getTruckRoute, getDummyRealRoutePoints } from '../data/index.js';
 
 /**
  * Manager untuk mengelola data tracking dan optimasi performa
@@ -30,60 +31,119 @@ export class TrackingDataManager {
         const endTime = new Date();
         const startTime = new Date(endTime.getTime() - (hours * 60 * 60 * 1000));
         
-        // Try backend API first
+        // Primary backend endpoint: /api/location-history/:plateNumber
         try {
-          const response = await fetch(`${this.apiConfig.BASE_URL}/api/trucks/${truckId}/history?` + new URLSearchParams({
-            startDate: startTime.toISOString(),
-            endDate: endTime.toISOString(),
-            limit: maxPoints.toString()
-          }), {
+          const primaryParams = new URLSearchParams({
+            timeRange: `${hours}h`,
+            limit: String(maxPoints),
+            minSpeed: '0'
+          });
+          const primaryUrl = `${this.apiConfig.BASE_URL}/api/location-history/${encodeURIComponent(truckId)}?${primaryParams.toString()}`;
+          const res1 = await fetch(primaryUrl, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
               'Content-Type': 'application/json'
             }
           });
 
-          if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && data.data) {
-              const points = data.data
+          if (res1.ok) {
+            const data = await res1.json();
+            const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.locations) ? data.locations : []);
+            if (list.length > 0) {
+              const points = list
                 .map(point => ({
-                  lat: parseFloat(point.latitude),
-                  lng: parseFloat(point.longitude),
-                  timestamp: new Date(point.recordedAt),
-                  speed: parseFloat(point.speed || 0),
-                  fuel: parseFloat(point.fuelPercentage || 0),
-                  heading: parseInt(point.heading || 0)
+                  lat: parseFloat(point.latitude ?? point.lat),
+                  lng: parseFloat(point.longitude ?? point.lng),
+                  timestamp: new Date(point.recordedAt || point.timestamp || point.time || Date.now()),
+                  speed: parseFloat(point.speed ?? point.speed_kph ?? 0),
+                  fuel: parseFloat(point.fuelPercentage ?? point.fuel ?? 0),
+                  heading: parseInt(point.heading ?? point.course ?? point.heading_deg ?? 0)
                 }))
+                .filter(p => !isNaN(p.lat) && !isNaN(p.lng))
                 .sort((a, b) => a.timestamp - b.timestamp);
 
-              // Cache the result
               this.cacheTrackData(cacheKey, points);
-              
               return points;
             }
           }
         } catch (apiError) {
-          console.warn('Backend API unavailable, using dummy data:', apiError.message);
+          console.warn('Primary location-history endpoint failed:', apiError.message);
+        }
+
+        // Legacy fallback: /api/trucks/:id/history with start/end
+        try {
+          const legacyUrl = `${this.apiConfig.BASE_URL}/api/trucks/${encodeURIComponent(truckId)}/history?` + new URLSearchParams({
+            startDate: startTime.toISOString(),
+            endDate: endTime.toISOString(),
+            limit: String(maxPoints)
+          });
+          const res2 = await fetch(legacyUrl, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (res2.ok) {
+            const data = await res2.json();
+            const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data?.locations) ? data.locations : []);
+            if (list.length > 0) {
+              const points = list
+                .map(point => ({
+                  lat: parseFloat(point.latitude ?? point.lat),
+                  lng: parseFloat(point.longitude ?? point.lng),
+                  timestamp: new Date(point.recordedAt || point.timestamp || point.time || Date.now()),
+                  speed: parseFloat(point.speed ?? point.speed_kph ?? 0),
+                  fuel: parseFloat(point.fuelPercentage ?? point.fuel ?? 0),
+                  heading: parseInt(point.heading ?? point.course ?? point.heading_deg ?? 0)
+                }))
+                .filter(p => !isNaN(p.lat) && !isNaN(p.lng))
+                .sort((a, b) => a.timestamp - b.timestamp);
+
+              this.cacheTrackData(cacheKey, points);
+              return points;
+            }
+          }
+        } catch (legacyError) {
+          console.warn('Legacy history endpoint failed:', legacyError.message);
         }
 
         // Fallback to dummy data
-        const allGpsData = generateGpsPositions();
-        const truckData = allGpsData.filter(pos => 
-          pos.truck_id === truckId && 
-          new Date(pos.ts) >= startTime && 
-          new Date(pos.ts) <= endTime
-        ).slice(0, maxPoints);
+        // Prefer the dummy real route from Markdown
+        const mdPts = getDummyRealRoutePoints();
+        let points = [];
+        if (mdPts && mdPts.length > 0) {
+          const total = Math.min(mdPts.length, maxPoints);
+          for (let i = 0; i < total; i++) {
+            const t = total > 1 ? i / (total - 1) : 0;
+            const ts = new Date(startTime.getTime() + t * (endTime.getTime() - startTime.getTime()));
+            points.push({
+              lat: mdPts[i].lat,
+              lng: mdPts[i].lng,
+              timestamp: ts,
+              speed: 0,
+              fuel: 0,
+              heading: 0
+            });
+          }
+        } else {
+          // Legacy generated GPS positions fallback
+          const allGpsData = generateGpsPositions();
+          const truckData = allGpsData.filter(pos => 
+            pos.truck_id === truckId && 
+            new Date(pos.ts) >= startTime && 
+            new Date(pos.ts) <= endTime
+          ).slice(0, maxPoints);
 
-        const points = truckData.map(point => ({
-          lat: parseFloat(point.lat),
-          lng: parseFloat(point.lon),
-          timestamp: new Date(point.ts),
-          speed: parseFloat(point.speed_kph || 0),
-          fuel: 0, // Will be populated from telemetry
-          heading: parseInt(point.heading_deg || 0)
-        })).sort((a, b) => a.timestamp - b.timestamp);
+          points = truckData.map(point => ({
+            lat: parseFloat(point.lat),
+            lng: parseFloat(point.lon),
+            timestamp: new Date(point.ts),
+            speed: parseFloat(point.speed_kph || 0),
+            fuel: 0, // Will be populated from telemetry
+            heading: parseInt(point.heading_deg || 0)
+          })).sort((a, b) => a.timestamp - b.timestamp);
+        }
 
         // Cache the result
         this.cacheTrackData(cacheKey, points);

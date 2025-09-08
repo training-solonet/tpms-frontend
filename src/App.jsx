@@ -10,6 +10,7 @@ import FleetGroups from './pages/FleetGroups.jsx';
 import DeviceCenter from './pages/DeviceCenter.jsx';
 import TelemetryDashboard from './pages/TelemetryDashboard.jsx';
 import LiveTracking from './pages/LiveTracking';
+import HistoryTracking from './pages/HistoryTracking.jsx';
 import Analytics from './pages/Analytics';
 import Reports from './pages/Reports';
 import Alerts from './pages/Alerts';
@@ -49,6 +50,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <LiveTracking />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/history-tracking" 
+          element={
+            <ProtectedRoute>
+              <HistoryTracking />
             </ProtectedRoute>
           } 
         />

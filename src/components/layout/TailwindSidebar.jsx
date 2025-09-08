@@ -18,7 +18,15 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, current: true },
-  { name: 'Live Tracking', href: '/live-tracking', icon: MapIcon, current: false },
+  {
+    name: 'Tracking',
+    icon: MapIcon,
+    current: false,
+    children: [
+      { name: 'Live Tracking', href: '/live-tracking' },
+      { name: 'History', href: '/history-tracking' },
+    ],
+  },
   { 
     name: 'Fleet Management', 
     icon: TruckIcon, 

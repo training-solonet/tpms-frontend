@@ -1,5 +1,6 @@
 // src/services/trackingService.js
-import { getLiveTrackingData, getTruckRoute, generateGpsPositions } from '../data/index.js';
+import { useState } from 'react';
+import { getLiveTrackingData, getTruckRoute, generateGpsPositions, getDummyRealRoutePoints } from '../data/index.js';
 
 /**
  * Service untuk mengelola tracking dan route history truk
@@ -40,61 +41,113 @@ export class TruckTrackingService {
           return cached.data;
         }
 
-        // Try backend API first
+        // Try backend API first - primary endpoint per latest docs
         try {
-          const response = await fetch(`${this.apiConfig.BASE_URL}/api/trucks/${truckId}/history?` + new URLSearchParams({
-            startDate: startTime.toISOString(),
-            endDate: endTime.toISOString(),
-            limit: this.trackSettings.maxPoints.toString()
-          }), {
+          const primaryParams = new URLSearchParams({
+            timeRange: `${hours}h`,
+            limit: this.trackSettings.maxPoints.toString(),
+            minSpeed: '0'
+          });
+          const primaryUrl = `${this.apiConfig.BASE_URL}/api/location-history/${encodeURIComponent(truckId)}?${primaryParams.toString()}`;
+          const res1 = await fetch(primaryUrl, {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
               'Content-Type': 'application/json'
             }
           });
+          if (res1.ok) {
+            const data = await res1.json();
+            const list = Array.isArray(data?.data)
+              ? data.data
+              : (Array.isArray(data?.locations) ? data.locations : []);
+            if (list && list.length > 0) {
+              const points = list.map(point => ({
+                lat: parseFloat(point.latitude),
+                lng: parseFloat(point.longitude),
+                timestamp: new Date(point.recordedAt || point.timestamp || point.time || Date.now()),
+                speed: parseFloat(point.speed || 0),
+                fuel: parseFloat(point.fuelPercentage || point.fuel || 0),
+                heading: parseInt(point.heading || point.course || 0)
+              })).filter(p => !isNaN(p.lat) && !isNaN(p.lng))
+                .sort((a, b) => a.timestamp - b.timestamp);
 
-          if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && data.data) {
-              const points = data.data.map(point => ({
+              this.trackCache.set(cacheKey, { data: points, timestamp: Date.now() });
+              return points;
+            }
+          }
+
+          // Fallback endpoint (legacy): /api/trucks/:id/history with start/end
+          const fallbackParams = new URLSearchParams({
+            startDate: startTime.toISOString(),
+            endDate: endTime.toISOString(),
+            limit: this.trackSettings.maxPoints.toString()
+          });
+          const legacyUrl = `${this.apiConfig.BASE_URL}/api/trucks/${encodeURIComponent(truckId)}/history?${fallbackParams.toString()}`;
+          const res2 = await fetch(legacyUrl, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (res2.ok) {
+            const data = await res2.json();
+            const list = Array.isArray(data?.data) ? data.data : [];
+            if (list && list.length > 0) {
+              const points = list.map(point => ({
                 lat: parseFloat(point.latitude),
                 lng: parseFloat(point.longitude),
                 timestamp: new Date(point.recordedAt),
                 speed: parseFloat(point.speed || 0),
                 fuel: parseFloat(point.fuelPercentage || 0),
                 heading: parseInt(point.heading || 0)
-              })).sort((a, b) => a.timestamp - b.timestamp);
+              })).filter(p => !isNaN(p.lat) && !isNaN(p.lng))
+                .sort((a, b) => a.timestamp - b.timestamp);
 
-              // Cache the result
-              this.trackCache.set(cacheKey, {
-                data: points,
-                timestamp: Date.now()
-              });
-
+              this.trackCache.set(cacheKey, { data: points, timestamp: Date.now() });
               return points;
             }
           }
         } catch (apiError) {
-          console.warn('Backend API unavailable, using dummy data:', apiError.message);
+          console.warn('Backend API unavailable, using dummy data:', apiError?.message || apiError);
         }
 
         // Fallback to dummy data
-        const allGpsData = generateGpsPositions();
-        const truckData = allGpsData.filter(pos => 
-          pos.truck_id === truckId && 
-          new Date(pos.ts) >= startTime && 
-          new Date(pos.ts) <= endTime
-        ).slice(0, this.trackSettings.maxPoints);
+        // Prefer using the single source of truth dummy real route from Markdown
+        const mdPts = getDummyRealRoutePoints();
+        let points = [];
+        if (mdPts && mdPts.length > 0) {
+          // Spread timestamps evenly across requested time window
+          const total = Math.min(mdPts.length, this.trackSettings.maxPoints);
+          for (let i = 0; i < total; i++) {
+            const t = total > 1 ? i / (total - 1) : 0;
+            const ts = new Date(startTime.getTime() + t * (endTime.getTime() - startTime.getTime()));
+            points.push({
+              lat: mdPts[i].lat,
+              lng: mdPts[i].lng,
+              timestamp: ts,
+              speed: 0,
+              fuel: 0,
+              heading: 0
+            });
+          }
+        } else {
+          // Legacy fallback to generated GPS positions
+          const allGpsData = generateGpsPositions();
+          const truckData = allGpsData.filter(pos => 
+            pos.truck_id === truckId && 
+            new Date(pos.ts) >= startTime && 
+            new Date(pos.ts) <= endTime
+          ).slice(0, this.trackSettings.maxPoints);
 
-        const points = truckData.map(point => ({
-          lat: parseFloat(point.lat),
-          lng: parseFloat(point.lon),
-          timestamp: new Date(point.ts),
-          speed: parseFloat(point.speed_kph || 0),
-          fuel: 0, // Will be populated from telemetry
-          heading: parseInt(point.heading_deg || 0)
-        })).sort((a, b) => a.timestamp - b.timestamp);
+          points = truckData.map(point => ({
+            lat: parseFloat(point.lat),
+            lng: parseFloat(point.lon),
+            timestamp: new Date(point.ts),
+            speed: parseFloat(point.speed_kph || 0),
+            fuel: 0, // Will be populated from telemetry
+            heading: parseInt(point.heading_deg || 0)
+          })).sort((a, b) => a.timestamp - b.timestamp);
+        }
 
         // Cache the result
         this.trackCache.set(cacheKey, {
@@ -306,54 +359,14 @@ export class TruckTrackingService {
       return { ...this.trackSettings };
     }
   }
-  
-  /**
-   * Enhanced API service specifically for tracking
-   */
+ 
+  // REST API client for tracking endpoints
   export class TrackingAPI {
     constructor(baseURL) {
       this.baseURL = baseURL;
     }
-  
-    async getTruckLocationHistory(truckId, params = {}) {
-      const defaultParams = {
-        limit: 100,
-        ...params
-      };
-  
-      const queryString = new URLSearchParams(defaultParams).toString();
-      const endpoint = `${this.baseURL}/api/trucks/${truckId}/history?${queryString}`;
-      
-      try {
-        const response = await fetch(endpoint, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-  
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-  
-        const data = await response.json();
-        return {
-          success: true,
-          data: data.data || [],
-          online: true
-        };
-      } catch (error) {
-        console.error(`Failed to get location history for truck ${truckId}:`, error);
-        return {
-          success: false,
-          data: [],
-          online: false,
-          error: error.message
-        };
-      }
-    }
-  
-    async getAllTrucksCurrentLocation() {
+
+    async getRealTimeTruckLocations() {
       try {
         const response = await fetch(`${this.baseURL}/api/trucks/realtime/locations`, {
           headers: {
@@ -374,25 +387,71 @@ export class TruckTrackingService {
         console.warn('Backend API unavailable, using dummy data:', error.message);
       }
 
-      // Fallback to dummy data
+      // Fallback to dummy data if backend fails
       try {
         const liveData = getLiveTrackingData();
-        return {
-          success: true,
-          data: liveData,
-          online: false
-        };
+        return { success: true, data: liveData, online: false };
       } catch (error) {
         console.error('Failed to get real-time truck locations:', error);
-        return {
-          success: false,
-          data: null,
-          online: false,
-          error: error.message
-        };
+        return { success: false, data: null, online: false, error: error.message };
       }
     }
-  
+
+    async getTruckLocationHistory(truckId, params = {}) {
+      const defaults = { limit: 100, minSpeed: 0, ...params };
+      // Primary endpoint: /api/location-history/:id
+      const primaryQS = new URLSearchParams({
+        timeRange: defaults.timeRange || '24h',
+        limit: String(defaults.limit),
+        minSpeed: String(defaults.minSpeed)
+      }).toString();
+      const primary = `${this.baseURL}/api/location-history/${encodeURIComponent(truckId)}?${primaryQS}`;
+
+      try {
+        const res1 = await fetch(primary, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (res1.ok) {
+          const data = await res1.json();
+          const list = Array.isArray(data?.data)
+            ? data.data
+            : (Array.isArray(data?.locations) ? data.locations : []);
+          return { success: true, data: list, online: true };
+        }
+      } catch (e) {
+        console.warn('Primary location-history endpoint failed:', e);
+      }
+
+      // Fallback legacy endpoint: /api/trucks/:id/history with start/end
+      const now = new Date();
+      const start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const legacyQS = new URLSearchParams({
+        startDate: start.toISOString(),
+        endDate: now.toISOString(),
+        limit: String(defaults.limit)
+      }).toString();
+      const legacy = `${this.baseURL}/api/trucks/${encodeURIComponent(truckId)}/history?${legacyQS}`;
+
+      try {
+        const res2 = await fetch(legacy, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!res2.ok) throw new Error(`HTTP ${res2.status}: ${res2.statusText}`);
+        const data = await res2.json();
+        return { success: true, data: data.data || [], online: true };
+      } catch (error) {
+        console.error(`Failed to get location history for truck ${truckId}:`, error);
+        return { success: false, data: [], online: false, error: error.message };
+      }
+    }
+
     async getTruckById(truckId) {
       try {
         const response = await fetch(`${this.baseURL}/api/trucks/${truckId}`, {
@@ -401,25 +460,16 @@ export class TruckTrackingService {
             'Content-Type': 'application/json'
           }
         });
-  
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-  
+
         const data = await response.json();
-        return {
-          success: true,
-          data: data.data || null,
-          online: true
-        };
+        return { success: true, data: data.data || null, online: true };
       } catch (error) {
         console.error(`Failed to get truck ${truckId}:`, error);
-        return {
-          success: false,
-          data: null,
-          online: false,
-          error: error.message
-        };
+        return { success: false, data: null, online: false, error: error.message };
       }
     }
   }

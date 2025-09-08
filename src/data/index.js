@@ -5,6 +5,10 @@ import { fuelLevelEvents, speedEvents, alertEvents } from './telemetryEvents.js'
 import { trips } from './trips.js';
 import { dailyRoutes } from './dailyRoutes.js';
 
+// Import dummy real route from project root markdown as raw text (Vite ?raw)
+// This will be used as a special fallback route for icon/route rendering when backend is unavailable
+import dummyRealRouteRaw from '../../make_dummy_real_route.md?raw';
+
 // New data structures from updated schema
 import { fleetGroups } from './fleetGroups.js';
 import { devices } from './devices.js';
@@ -117,7 +121,13 @@ export const getTruckRoute = (truckId, timeRange = '24h') => {
   if (currentPos) {
     return [[currentPos.latitude || currentPos.lat, currentPos.longitude || currentPos.lon]];
   }
-  
+
+  // Final fallback: use dummy real route from markdown, if available
+  const mdRoute = getDummyRealRoutePoints();
+  if (mdRoute.length > 0) {
+    return mdRoute.map(p => [p.lat, p.lng]);
+  }
+
   return [];
 };
 
@@ -246,3 +256,44 @@ export default {
   dailyRoutes,
   BORNEO_INDOBARA_GEOJSON
 };
+
+// --- Dummy Real Route Helpers ---
+// Parse the raw markdown file to coordinates. Each non-empty line is expected to contain
+// a latitude and longitude separated by a comma.
+function parseDummyRealRoute(rawText) {
+  if (!rawText) return [];
+  const lines = rawText.split(/\r?\n/);
+  const points = [];
+  for (const line of lines) {
+    const trimmed = line.trim().replace(/^\d+\s*[→:\-]?\s*/, ''); // strip leading line numbers or arrows if any
+    if (!trimmed) continue;
+    const match = trimmed.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[2]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        points.push({ lat, lng });
+      }
+    }
+  }
+  return points;
+}
+
+// Cached parsed route to avoid re-parsing
+let _dummyRealRouteCache = null;
+
+export function getDummyRealRoutePoints() {
+  if (_dummyRealRouteCache) return _dummyRealRouteCache;
+  try {
+    _dummyRealRouteCache = parseDummyRealRoute(dummyRealRouteRaw);
+  } catch (e) {
+    console.warn('Failed to parse make_dummy_real_route.md:', e);
+    _dummyRealRouteCache = [];
+  }
+  return _dummyRealRouteCache;
+}
+
+export function getDummyRealRouteLastPoint() {
+  const pts = getDummyRealRoutePoints();
+  return pts.length > 0 ? pts[pts.length - 1] : null;
+}

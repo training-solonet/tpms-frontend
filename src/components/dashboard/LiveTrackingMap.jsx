@@ -16,13 +16,12 @@ import {
 } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
-// import { trucksAPI, miningAreaAPI, FleetWebSocket } from '../../services/api.js';
-import { getLiveTrackingData, getTruckRoute, generateGpsPositions } from '../../data/index.js';
-import manualRouteMd from '../../../make_dummy_real_route.md?raw';
+import { trucksAPI, FleetWebSocket } from '../../services/api.js';
+import { getLiveTrackingData, getTruckRoute, generateGpsPositions, getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
 
-const LiveTrackingMap = () => {
+const LiveTrackingMap = ({ forceViewMode = null }) => {
   // Toggle backend usage. Set to false to use dummy data only.
-  const USE_BACKEND = false;
+  const USE_BACKEND = true;
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -44,6 +43,46 @@ const LiveTrackingMap = () => {
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
     '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
   ]);
+  // View mode: 'live' (no lines) or 'history' (show lines)
+  const [viewMode, setViewMode] = useState(forceViewMode ?? 'live');
+
+  // Sync viewMode with URL hash (#history -> history mode) unless forced
+  useEffect(() => {
+    if (forceViewMode) return;
+    try {
+      if (typeof window !== 'undefined') {
+        if (window.location.hash === '#history') {
+          setViewMode('history');
+        }
+        const onHash = () => {
+          setViewMode(window.location.hash === '#history' ? 'history' : 'live');
+        };
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+      }
+    } catch {}
+  }, [forceViewMode]);
+
+  useEffect(() => {
+    if (forceViewMode) return; // do not alter URL when mode is forced
+    try {
+      if (typeof window !== 'undefined') {
+        if (viewMode === 'history') {
+          if (window.location.hash !== '#history') window.location.hash = 'history';
+        } else {
+          const url = window.location.pathname + window.location.search;
+          window.history.replaceState(null, '', url);
+        }
+      }
+    } catch {}
+  }, [viewMode, forceViewMode]);
+
+  // Enforce external forceViewMode prop (in case it changes)
+  useEffect(() => {
+    if (forceViewMode && viewMode !== forceViewMode) {
+      setViewMode(forceViewMode);
+    }
+  }, [forceViewMode]);
   
   const markersRef = useRef({});
   const routeLinesRef = useRef({});
@@ -183,21 +222,16 @@ const LiveTrackingMap = () => {
       // If no dummy data available, synthesize a small demo fleet inside the geofence
       if (!liveTrackingData || liveTrackingData.length === 0) {
         console.warn('⚠️ Dummy data empty, synthesizing demo vehicles');
-        const center = polygonCentroid(polygonLatLng);
-        const makeInside = () => {
-          // try jitter around centroid until inside polygon
-          for (let i = 0; i < 100; i++) {
-            const dLat = (Math.random() - 0.5) * 0.01; // small jitter
-            const dLng = (Math.random() - 0.5) * 0.01;
-            const cand = [center[0] + dLat, center[1] + dLng];
-            if (pointInPolygon(cand, polygonLatLng)) return cand;
-          }
-          return center;
-        };
-        const synth = Array.from({ length: 5 }).map((_, i) => ({
+        // Prefer positioning along the dummy real route if available
+        const mdPts = getDummyRealRoutePoints();
+        const mdCoords = Array.isArray(mdPts) && mdPts.length > 0 ? mdPts.map(p => [p.lat, p.lng]) : [];
+        const total = 5;
+        const synth = Array.from({ length: total }).map((_, i) => ({
           id: `TRUCK-${String(i + 1).padStart(3, '0')}`,
           driver: `Demo Driver ${i + 1}`,
-          position: makeInside(),
+          position: mdCoords.length > 0
+            ? mdCoords[Math.floor((i / Math.max(total - 1, 1)) * (mdCoords.length - 1))]
+            : polygonCentroid(polygonLatLng),
           status: 'active',
           speed: 0,
           heading: 90,
@@ -211,15 +245,23 @@ const LiveTrackingMap = () => {
         liveTrackingData = synth;
       }
 
-      // Build simple initial routes from generated positions
+      // Build simple initial routes from generated positions; also align positions to route last points when available
       const routes = {};
-      liveTrackingData.forEach((vehicle) => {
+      liveTrackingData = liveTrackingData.map((vehicle, idx) => {
         const routeData = getTruckRoute(vehicle.id, timeRange);
         if (routeData && routeData.length > 0) {
-          // routeData already in [lat, lng]
           routes[vehicle.id] = routeData;
           saveOfflineRoute(vehicle.id, routes[vehicle.id]);
+          // Use last point of the route for the icon position
+          const last = routeData[routeData.length - 1];
+          return { ...vehicle, position: last };
         }
+        // If no routeData, try dummy route helpers
+        const mdLast = getDummyRealRouteLastPoint?.();
+        if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
+          return { ...vehicle, position: [mdLast.lat, mdLast.lng] };
+        }
+        return vehicle;
       });
 
       setVehicleRoutes(routes);
@@ -404,9 +446,24 @@ const LiveTrackingMap = () => {
 
   // Initialize map
   useEffect(() => {
+    // Re-entrancy guard for StrictMode/hot-reload
+    const initGuardRef = { current: false };
     const initializeMap = async () => {
+      // Guard against double-invocation in React Strict Mode and hot reloads
+      if (
+        !mapRef.current ||
+        map ||
+        initGuardRef.current ||
+        (mapRef.current && mapRef.current._leaflet_id) ||
+        (mapRef.current && mapRef.current.classList && mapRef.current.classList.contains('leaflet-container')) ||
+        (mapRef.current && mapRef.current.querySelector && mapRef.current.querySelector('.leaflet-pane'))
+      ) {
+        return;
+      }
       if (mapRef.current && !map) {
         try {
+          // mark initializing before awaiting
+          initGuardRef.current = true;
           const L = await import('leaflet');
           
           // Initialize map centered on PT Borneo Indobara geofence area
@@ -423,6 +480,18 @@ const LiveTrackingMap = () => {
           });
 
           mapInstance.getContainer().style.outline = 'none';
+
+          // Ensure proper layer ordering to prevent marker hover movement
+          try {
+            const routesPane = mapInstance.createPane('routesPane');
+            routesPane.style.zIndex = 399;
+            routesPane.style.pointerEvents = 'auto';
+            const markersPane = mapInstance.createPane('markersPane');
+            markersPane.style.zIndex = 400; // above routes
+            markersPane.style.pointerEvents = 'auto';
+          } catch (e) {
+            console.warn('Unable to create custom panes:', e);
+          }
 
           // Add tile layers
           const satelliteLayer = L.default.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -474,6 +543,9 @@ const LiveTrackingMap = () => {
           setMap(mapInstance);
         } catch (error) {
           console.error('Error initializing map:', error);
+        } finally {
+          // allow future inits only if map wasn't created for some reason
+          // if map exists, effect won't run again due to dependency []
         }
       }
     };
@@ -481,22 +553,14 @@ const LiveTrackingMap = () => {
     initializeMap();
   }, []);
 
-  // Render manual route from make_dummy_real_route.md
+  // Render manual route from make_dummy_real_route.md via helpers
   useEffect(() => {
     if (!map) return;
     try {
-      // Parse coordinates from the raw markdown text
-      const lines = manualRouteMd.split('\n');
-      const coords = lines
-        .map(l => l.trim())
-        .filter(l => l.length > 0)
-        // remove line number arrow prefix like "150→"
-        .map(l => l.replace(/^\d+\u2192\s*/, ''))
-        // strip any stray characters (quotes etc.)
-        .map(l => l.replace(/[^0-9\-\.,\s]/g, ''))
-        .map(l => l.split(',').map(s => parseFloat(s.trim())))
-        .filter(arr => Array.isArray(arr) && arr.length === 2 && !arr.some(isNaN))
-        .map(([lat, lng]) => [lat, lng]);
+      const pts = getDummyRealRoutePoints();
+      const coords = Array.isArray(pts) && pts.length > 1
+        ? pts.map(p => [p.lat, p.lng])
+        : [];
 
       if (coords.length > 1) {
         const L = window.L || require('leaflet');
@@ -515,7 +579,8 @@ const LiveTrackingMap = () => {
           weight: 4,
           opacity: 0.95,
           lineJoin: 'round',
-          lineCap: 'round'
+          lineCap: 'round',
+          pane: 'routesPane'
         }).addTo(map);
 
         const startIcon = L.divIcon({
@@ -531,8 +596,8 @@ const LiveTrackingMap = () => {
           iconAnchor: [7, 7]
         });
 
-        const start = L.marker(coords[0], { icon: startIcon }).addTo(map).bindTooltip('Start', {direction:'top'});
-        const end = L.marker(coords[coords.length - 1], { icon: endIcon }).addTo(map).bindTooltip('End', {direction:'top'});
+        const start = L.marker(coords[0], { icon: startIcon, pane: 'routesPane' }).addTo(map).bindTooltip('Start', {direction:'top'});
+        const end = L.marker(coords[coords.length - 1], { icon: endIcon, pane: 'routesPane' }).addTo(map).bindTooltip('End', {direction:'top'});
 
         manualRouteRef.current = { line, start, end };
 
@@ -645,8 +710,8 @@ const LiveTrackingMap = () => {
     try {
       wsRef.current.connect();
       
-      // Subscribe to truck location updates
-      wsRef.current.subscribe('truck_locations_update', async (data) => {
+      // Common handler for truck updates
+      const handleTruckUpdates = async (data) => {
         if (data && Array.isArray(data) && data.length > 0) {
           console.log('📡 Received WebSocket truck updates:', data.length, 'vehicles');
           
@@ -695,21 +760,34 @@ const LiveTrackingMap = () => {
         } else if (Array.isArray(data) && data.length === 0) {
           console.log('📡 WebSocket update empty - keeping current vehicles');
         }
-      });
+      };
+
+      // Subscribe to truck location updates on both possible channels
+      wsRef.current.subscribe('truck_locations_update', handleTruckUpdates);
+      wsRef.current.subscribe('truck_updates', handleTruckUpdates);
     } catch (wsError) {
       console.warn('⚠️ WebSocket connection failed, using polling fallback');
     }
   }
   
   return () => {
-    if (map) {
-      map.remove();
-    }
     if (USE_BACKEND && wsRef.current) {
       wsRef.current.disconnect();
     }
   };
 }, [timeRange]);
+
+  // Cleanup on unmount: remove map and disconnect WebSocket
+  useEffect(() => {
+    return () => {
+      try {
+        if (wsRef.current) wsRef.current.disconnect();
+      } catch {}
+      try {
+        if (map) map.remove();
+      } catch {}
+    };
+  }, []);
 
 // ... (rest of the code remains the same)
   // Safety: if after loading there are still no vehicles, synthesize demo data
@@ -797,7 +875,7 @@ const LiveTrackingMap = () => {
           iconAnchor: [14, 28],
         });
 
-        const marker = L.marker(vehicle.position, { icon, zIndexOffset: 1000 }).addTo(map);
+        const marker = L.marker(vehicle.position, { icon, zIndexOffset: 1000, pane: 'markersPane' }).addTo(map);
         markersRef.current[vehicle.id] = marker;
         
         // Enhanced popup with route info
@@ -852,15 +930,16 @@ const LiveTrackingMap = () => {
               </div>
             </div>
           </div>
+          )}
         `);
 
         marker.on('click', () => {
           setSelectedVehicle(vehicle);
         });
 
-        // Add route line if exists and visible
+        // Add route line if exists and visible (only in history mode)
         const routeHistory = vehicleRoutes[vehicle.id] || [];
-        if (routeHistory.length > 1 && routeVisible[vehicle.id] !== false) {
+        if (viewMode === 'history' && routeHistory.length > 1 && routeVisible[vehicle.id] !== false) {
           const routeColor = routeColors[index % routeColors.length];
           
           // Create route line
@@ -871,7 +950,8 @@ const LiveTrackingMap = () => {
             smoothFactor: 2,
             lineJoin: 'round',
             lineCap: 'round',
-            dashArray: vehicle.status === 'active' ? null : '10, 10'
+            dashArray: vehicle.status === 'active' ? undefined : '10, 10',
+            pane: 'routesPane'
           }).addTo(map);
           
           routeLinesRef.current[vehicle.id] = routeLine;
@@ -925,7 +1005,7 @@ const LiveTrackingMap = () => {
         }
       });
     }
-  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes, clusterSelections]);
+  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes, clusterSelections, viewMode]);
 
   // Re-apply marker zoom styling whenever map or selection changes
   useEffect(() => {
@@ -1126,7 +1206,32 @@ const LiveTrackingMap = () => {
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-lg font-semibold text-gray-900">Live Tracking</h4>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900">Fleet Tracking</h4>
+              {!forceViewMode ? (
+                <div className="mt-2 inline-flex items-center rounded-lg overflow-hidden border border-gray-200">
+                  <button
+                    onClick={() => setViewMode('live')}
+                    className={`px-3 py-1 text-xs font-medium ${viewMode === 'live' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    Live
+                  </button>
+                  <button
+                    onClick={() => setViewMode('history')}
+                    className={`px-3 py-1 text-xs font-medium ${viewMode === 'history' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    History
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-2 inline-flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-600">Mode:</span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${viewMode === 'history' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                    {viewMode.toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={toggleTracking}
@@ -1151,45 +1256,51 @@ const LiveTrackingMap = () => {
           {/* Route Controls */}
           <div className="space-y-2 mb-3">
             <div className="flex gap-2">
-              <button
-                onClick={clearAllRoutes}
-                className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-xs font-medium transition-colors"
-              >
-                <TrashIcon className="w-3 h-3" />
-                Clear Routes
-              </button>
-              <button
-                onClick={() => {
-                  vehicles.forEach(vehicle => {
-                    refreshVehicleRoute(vehicle.id, timeRange);
-                  });
-                }}
-                className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg text-xs font-medium transition-colors"
-                disabled={loading}
-              >
-                <ArrowPathIcon className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                Refresh All
-              </button>
+              {viewMode === 'history' && (
+                <>
+                  <button
+                    onClick={clearAllRoutes}
+                    className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    <TrashIcon className="w-3 h-3" />
+                    Clear Routes
+                  </button>
+                  <button
+                    onClick={() => {
+                      vehicles.forEach(vehicle => {
+                        refreshVehicleRoute(vehicle.id, timeRange);
+                      });
+                    }}
+                    className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg text-xs font-medium transition-colors"
+                    disabled={loading}
+                  >
+                    <ArrowPathIcon className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh All
+                  </button>
+                </>
+              )}
             </div>
             
-            {/* Time Range Selector */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                History Range
-              </label>
-              <select
-                value={timeRange}
-                onChange={(e) => handleTimeRangeChange(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                disabled={loading}
-              >
-                <option value="1h">Last 1 Hour</option>
-                <option value="6h">Last 6 Hours</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-              </select>
-            </div>
+            {/* Time Range Selector - only show in history mode */}
+            {viewMode === 'history' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  History Range
+                </label>
+                <select
+                  value={timeRange}
+                  onChange={(e) => handleTimeRangeChange(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <option value="1h">Last 1 Hour</option>
+                  <option value="6h">Last 6 Hours</option>
+                  <option value="24h">Last 24 Hours</option>
+                  <option value="7d">Last 7 Days</option>
+                  <option value="30d">Last 30 Days</option>
+                </select>
+              </div>
+            )}
 
             {/* Cluster Filter */}
             <div>
@@ -1426,7 +1537,8 @@ const LiveTrackingMap = () => {
               </button>
             </div>
             
-            {/* Route Display Controls */}
+            {/* Route Display Controls - only in history mode */}
+            {viewMode === 'history' && (
             <div className="border-l border-gray-300 pl-3 flex items-center gap-2">
               <span className="text-xs text-gray-600">Routes:</span>
               <button
@@ -1454,6 +1566,7 @@ const LiveTrackingMap = () => {
                 Hide All
               </button>
             </div>
+            )}
             
             {/* Live Status */}
             <div className="border-l border-gray-300 pl-3 flex items-center gap-2">
@@ -1480,7 +1593,8 @@ const LiveTrackingMap = () => {
             </div>
           </div>
 
-          {/* Fleet Status Legend */}
+          {/* Fleet Status Legend hidden per advisor feedback */}
+          {false && (
           <div className={`bg-white/90 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-300 ${
             legendVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
           }`}>
@@ -1552,20 +1666,9 @@ const LiveTrackingMap = () => {
               </div>
             </div>
           </div>
+        )}
         </div>
-
-        {/* Show Legend Button */}
-        <button
-          onClick={() => setLegendVisible(true)}
-          className={`absolute top-20 right-4 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 shadow-lg transition-opacity duration-300 ${
-            legendVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
-          style={{ zIndex: 1000 }}
-        >
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        {/* Legend toggle button removed */}
 
         {/* Action Buttons */}
         <div className="absolute bottom-4 right-4 flex flex-col gap-2" style={{ zIndex: 1000 }}>
@@ -1602,8 +1705,11 @@ const LiveTrackingMap = () => {
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 shadow-lg transition-colors duration-200 flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0z" />
+              <circle cx="12" cy="12" r="7" strokeWidth="2" />
+              <line x1="12" y1="3" x2="12" y2="7" strokeWidth="2" strokeLinecap="round" />
+              <line x1="12" y1="17" x2="12" y2="21" strokeWidth="2" strokeLinecap="round" />
+              <line x1="3" y1="12" x2="7" y2="12" strokeWidth="2" strokeLinecap="round" />
+              <line x1="17" y1="12" x2="21" y2="12" strokeWidth="2" strokeLinecap="round" />
             </svg>
             <span className="text-sm font-medium">Auto Center</span>
           </button>
