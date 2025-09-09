@@ -22,7 +22,7 @@ const TailwindHeader = ({ setSidebarOpen }) => {
   ];
 
   return (
-    <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-white/20 bg-white/80 backdrop-blur-xl px-4 shadow-lg sm:gap-x-6 sm:px-6 lg:px-8">
+    <div className="sticky top-0 z-[1002] flex h-16 shrink-0 items-center gap-x-4 border-b border-white/20 bg-white/80 backdrop-blur-xl px-4 shadow-lg sm:gap-x-6 sm:px-6 lg:px-8">
       <button
         type="button"
         className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
@@ -54,7 +54,7 @@ const TailwindHeader = ({ setSidebarOpen }) => {
         </form>
         <div className="flex items-center gap-x-4 lg:gap-x-6">
           {/* Notifications dropdown */}
-          <Menu as="div" className="relative">
+          <Menu as="div" className="relative z-[1003]">
             <Menu.Button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
               <span className="sr-only">View notifications</span>
               <div className="relative">
@@ -73,7 +73,7 @@ const TailwindHeader = ({ setSidebarOpen }) => {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-10 mt-2.5 w-80 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+              <Menu.Items className="absolute right-0 z-[1003] mt-2.5 w-80 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                 <div className="px-4 py-2 border-b border-gray-100">
                   <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
                 </div>
@@ -116,19 +116,19 @@ const TailwindHeader = ({ setSidebarOpen }) => {
           </Menu>
 
           {/* Settings */}
-          <button
+          {/* <button
             type="button"
             className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
           >
             <span className="sr-only">Settings</span>
             <Cog6ToothIcon className="h-6 w-6" aria-hidden="true" />
-          </button>
+          </button> */}
 
           {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
 
           {/* Profile dropdown */}
-          <Menu as="div" className="relative">
+          <Menu as="div" className="relative z-[1003]">
             <Menu.Button className="-m-1.5 flex items-center p-1.5">
               <span className="sr-only">Open user menu</span>
               <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
@@ -161,7 +161,7 @@ const TailwindHeader = ({ setSidebarOpen }) => {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+              <Menu.Items className="absolute right-0 z-[1003] mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                 <div className="px-3 py-2 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">John Doe</p>
                   <p className="text-xs text-gray-500">Fleet Manager</p>
