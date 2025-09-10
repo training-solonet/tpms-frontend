@@ -9,6 +9,39 @@ export const API_CONFIG = {
   RETRY_DELAY: 1000
 };
 
+// Vendors (master data) API - CRUD
+export const vendorsAPI = {
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/api/vendors${queryString ? `?${queryString}` : ''}`;
+    return await apiRequest(endpoint);
+  },
+
+  getById: async (id) => {
+    return await apiRequest(`/api/vendors/${encodeURIComponent(id)}`);
+  },
+
+  create: async (payload) => {
+    return await apiRequest(`/api/vendors`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  update: async (id, payload) => {
+    return await apiRequest(`/api/vendors/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  remove: async (id) => {
+    return await apiRequest(`/api/vendors/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
 // Connection status
 let isOnline = true;
 let connectionAttempts = 0;
@@ -154,6 +187,13 @@ export const trucksAPI = {
 
   getById: async (id) => {
     return await apiRequest(`/api/trucks/${id}`);
+  },
+
+  update: async (id, payload) => {
+    return await apiRequest(`/api/trucks/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
   },
 
   updateStatus: async (id, status) => {
@@ -441,6 +481,7 @@ export default {
   dashboardAPI,
   miningAreaAPI,
   alertsAPI,
+  vendorsAPI,
   connectionUtils,
   FleetWebSocket,
   API_CONFIG

@@ -5,9 +5,10 @@ import { fuelLevelEvents, speedEvents, alertEvents } from './telemetryEvents.js'
 import { trips } from './trips.js';
 import { dailyRoutes } from './dailyRoutes.js';
 
-// Import dummy real route from project root markdown as raw text (Vite ?raw)
-// This will be used as a special fallback route for icon/route rendering when backend is unavailable
-import dummyRealRouteRaw from '../../make_dummy_real_route.md?raw';
+// Import dummy real routes from project root markdown as raw text (Vite ?raw)
+// These will be used as special fallback routes for icon/route rendering when backend is unavailable
+import dummyRealRouteRaw from '../../route1.md?raw';
+import dummyRealRouteRaw2 from '../../route2.md?raw';
 
 // New data structures from updated schema
 import { fleetGroups } from './fleetGroups.js';
@@ -281,6 +282,7 @@ function parseDummyRealRoute(rawText) {
 
 // Cached parsed route to avoid re-parsing
 let _dummyRealRouteCache = null;
+let _dummyRealRouteCache2 = null;
 
 export function getDummyRealRoutePoints() {
   if (_dummyRealRouteCache) return _dummyRealRouteCache;
@@ -296,4 +298,28 @@ export function getDummyRealRoutePoints() {
 export function getDummyRealRouteLastPoint() {
   const pts = getDummyRealRoutePoints();
   return pts.length > 0 ? pts[pts.length - 1] : null;
+}
+
+// --- Second dummy route helpers (route2.md) ---
+export function getDummyRealRoutePoints2() {
+  if (_dummyRealRouteCache2) return _dummyRealRouteCache2;
+  try {
+    _dummyRealRouteCache2 = parseDummyRealRoute(dummyRealRouteRaw2);
+  } catch (e) {
+    console.warn('Failed to parse route2.md:', e);
+    _dummyRealRouteCache2 = [];
+  }
+  return _dummyRealRouteCache2;
+}
+
+export function getDummyRealRouteLastPoint2() {
+  const pts = getDummyRealRoutePoints2();
+  return pts.length > 0 ? pts[pts.length - 1] : null;
+}
+
+// Return all available dummy routes as array of arrays of {lat,lng}
+export function getAllDummyRealRoutes() {
+  const r1 = getDummyRealRoutePoints();
+  const r2 = getDummyRealRoutePoints2();
+  return [r1, r2].filter(arr => Array.isArray(arr) && arr.length > 0);
 }

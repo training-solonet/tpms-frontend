@@ -7,9 +7,63 @@ import {
 } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
 import { trucksAPI } from '../../services/api.js';
-import { getDummyRealRoutePoints } from '../../data/index.js';
+import { getDummyRealRoutePoints, getDummyRealRoutePoints2 } from '../../data/index.js';
 
 const HistoryTrackingMap = () => {
+  // Test mode for manual single route playback
+  const USE_TEST_ROUTE = true;
+  const TEST_ROUTE = [
+    [-3.506761, 115.624602],
+    [-3.506831, 115.624709],
+    [-3.506925, 115.624882],
+    [-3.507028, 115.625017],
+    [-3.507139, 115.625174],
+    [-3.507221, 115.625322],
+    [-3.507603, 115.625873],
+    [-3.507746, 115.626132],
+    [-3.507841, 115.626260],
+    [-3.507927, 115.626371],
+    [-3.508066, 115.626490],
+    [-3.508177, 115.626646],
+    [-3.508313, 115.626803],
+    [-3.508420, 115.626930],
+    [-3.508403, 115.626905],
+    [-3.508502, 115.627021],
+    [-3.508645, 115.627177],
+    [-3.508828, 115.627354],
+    [-3.508963, 115.627512],
+    [-3.509174, 115.627706],
+    [-3.509418, 115.627918],
+    [-3.509634, 115.628112],
+    [-3.509931, 115.628342],
+    [-3.510025, 115.628491],
+    [-3.510138, 115.628622],
+    [-3.510260, 115.628766],
+    [-3.510399, 115.628956],
+    [-3.510597, 115.629145],
+    [-3.511003, 115.629446],
+    [-3.511238, 115.629505],
+    [-3.511399, 115.629564],
+    [-3.511613, 115.629623],
+    [-3.511843, 115.629639],
+    [-3.512015, 115.629666],
+    [-3.512154, 115.629715],
+    [-3.512475, 115.629677],
+    [-3.512764, 115.629602],
+    [-3.512903, 115.629564],
+    [-3.513150, 115.629511],
+    [-3.513284, 115.629462],
+    [-3.513235, 115.629296],
+    [-3.513193, 115.629087],
+    [-3.513134, 115.628867],
+    [-3.513128, 115.628685],
+    [-3.513235, 115.628593],
+    [-3.513401, 115.628534],
+    [-3.513562, 115.628470],
+    [-3.513749, 115.628459],
+    [-3.513926, 115.628406],
+    [-3.514135, 115.628384]
+  ];
   const [map, setMap] = useState(null);
   const [mapUtils, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -180,6 +234,66 @@ const HistoryTrackingMap = () => {
       try {
         setLoading(true);
         
+        if (USE_TEST_ROUTE) {
+          const testVehicle = {
+            id: 'TRUCK-001',
+            driver: 'Demo Driver',
+            position: TEST_ROUTE[0],
+            status: 'active',
+            speed: 20,
+            heading: 0,
+            fuel: 50,
+            battery: 90,
+            signal: 'good',
+            lastUpdate: new Date(),
+            route: 'Test Route',
+            load: 'Empty'
+          };
+          // Load route2.md if available
+          const r2pts = getDummyRealRoutePoints2();
+          const ROUTE2 = Array.isArray(r2pts) && r2pts.length > 1 ? r2pts.map(p => [p.lat, p.lng]) : [];
+          const vehiclesArr = [testVehicle];
+          const routesData = { [testVehicle.id]: TEST_ROUTE };
+          const routeVisibilityData = { [testVehicle.id]: true };
+
+          if (ROUTE2.length > 1) {
+            const testVehicle2 = {
+              id: 'TRUCK-002',
+              driver: 'Demo Driver 2',
+              position: ROUTE2[0],
+              status: 'active',
+              speed: 18,
+              heading: 0,
+              fuel: 55,
+              battery: 90,
+              signal: 'good',
+              lastUpdate: new Date(),
+              route: 'Test Route 2',
+              load: 'Empty'
+            };
+            vehiclesArr.push(testVehicle2);
+            routesData[testVehicle2.id] = ROUTE2;
+            routeVisibilityData[testVehicle2.id] = true;
+          }
+
+          setVehicles(vehiclesArr);
+          setVehicleRoutes(routesData);
+          setRouteVisible(routeVisibilityData);
+          setSelectedVehicle(testVehicle);
+          try {
+            const allLatLngs = [];
+            TEST_ROUTE.forEach(p => allLatLngs.push(L.latLng(p[0], p[1])));
+            if (routesData['TRUCK-002']) {
+              routesData['TRUCK-002'].forEach(p => allLatLngs.push(L.latLng(p[0], p[1])));
+            }
+            if (allLatLngs.length > 1) {
+              const bounds = L.latLngBounds(allLatLngs);
+              map.fitBounds(bounds, { padding: [40, 40] });
+            }
+          } catch {}
+          return;
+        }
+
         // Load basic vehicle data (can be from API or dummy)
         const response = await trucksAPI.getRealTimeLocations();
         let vehicleData = [];
@@ -399,13 +513,62 @@ const HistoryTrackingMap = () => {
 
   // Update playback marker position
   useEffect(() => {
-    if (!map || !selectedVehicle || !playbackMarkerRef.current) return;
+    if (!map || !selectedVehicle) return;
 
     const routeHistory = vehicleRoutes[selectedVehicle.id] || [];
     if (routeHistory.length === 0 || playbackIndex >= routeHistory.length) return;
 
     const currentPosition = routeHistory[playbackIndex];
-    playbackMarkerRef.current.setLatLng(currentPosition);
+    
+    // Create or update playback marker
+    if (!playbackMarkerRef.current) {
+      const L = window.L || require('leaflet');
+      const playbackIcon = L.divIcon({
+        html: `
+          <div style="
+            background: #3b82f6;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 8px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+          "></div>
+          <style>
+            @keyframes pulse {
+              0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7), 0 4px 8px rgba(0,0,0,0.3); }
+              70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0), 0 4px 8px rgba(0,0,0,0.3); }
+              100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0), 0 4px 8px rgba(0,0,0,0.3); }
+            }
+          </style>
+        `,
+        className: 'playback-marker',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+      
+      playbackMarkerRef.current = L.marker(currentPosition, { 
+        icon: playbackIcon, 
+        zIndexOffset: 3000,
+        pane: 'markersPane'
+      }).addTo(map);
+    } else {
+      playbackMarkerRef.current.setLatLng(currentPosition);
+    }
+
+    // Update tooltip
+    if (playbackMarkerRef.current) {
+      playbackMarkerRef.current.bindTooltip(`
+        <div class="text-sm">
+          <strong>${selectedVehicle.id} Playback</strong><br/>
+          Point: ${playbackIndex + 1} / ${routeHistory.length}<br/>
+          Progress: ${Math.round((playbackIndex / Math.max(1, routeHistory.length - 1)) * 100)}%
+        </div>
+      `, { 
+        permanent: false,
+        direction: 'top'
+      });
+    }
 
     // Auto-center map on playback marker if enabled
     if (isAutoCenterEnabled) {
@@ -417,59 +580,83 @@ const HistoryTrackingMap = () => {
   useEffect(() => {
     if (!map) return;
 
-    const L = window.L || require('leaflet');
-
     // Remove existing playback marker
     if (playbackMarkerRef.current && map.hasLayer(playbackMarkerRef.current)) {
       map.removeLayer(playbackMarkerRef.current);
       playbackMarkerRef.current = null;
     }
 
-    // Create new playback marker if vehicle is selected
+    // Recreate any missing static markers so all trucks remain selectable
+    try {
+      vehicles.forEach((vehicle) => {
+        const existing = markersRef.current[vehicle.id];
+        const hasLayer = existing && map.hasLayer(existing);
+        if (!hasLayer) {
+          const colors = {
+            active: '#10b981',
+            idle: '#f59e0b',
+            maintenance: '#ef4444',
+            offline: '#6b7280'
+          };
+          const truckNum = extractTruckNumber(vehicle.id) ?? '';
+          const icon = L.divIcon({
+            html: `
+              <div style="position: relative;">
+                <div style="
+                  background: ${colors[vehicle.status] || colors.offline};
+                  color: #ffffff;
+                  border: 2px solid #ffffff;
+                  border-radius: 6px;
+                  padding: 2px 6px;
+                  min-width: 26px;
+                  height: 20px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: 700;
+                  font-size: 12px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                ">
+                  ${truckNum}
+                </div>
+                <div style="
+                  width: 0; height: 0;
+                  border-left: 6px solid transparent;
+                  border-right: 6px solid transparent;
+                  border-top: 8px solid ${colors[vehicle.status] || colors.offline};
+                  margin: 0 auto;
+                  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+                "></div>
+              </div>
+            `,
+            className: 'custom-truck-icon',
+            iconSize: [28, 28],
+            iconAnchor: [14, 28],
+          });
+          const marker = L.marker(vehicle.position, { icon, zIndexOffset: 2000, pane: 'markersPane' }).addTo(map);
+          markersRef.current[vehicle.id] = marker;
+          marker.on('click', () => {
+            try { marker.bringToFront(); } catch {}
+            setSelectedVehicle(vehicle);
+            setPlaybackIndex(0);
+            setIsPlaybackPlaying(false);
+          });
+        }
+      });
+    } catch {}
+
+    // Reset playback when vehicle changes
     if (selectedVehicle) {
       const routeHistory = vehicleRoutes[selectedVehicle.id] || [];
       if (routeHistory.length > 0) {
-        const playbackIcon = L.divIcon({
-          html: `
-            <div style="
-              background: #3b82f6;
-              border: 3px solid #ffffff;
-              border-radius: 50%;
-              width: 20px;
-              height: 20px;
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 8px rgba(0,0,0,0.3);
-              animation: pulse 2s infinite;
-            "></div>
-            <style>
-              @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7), 0 4px 8px rgba(0,0,0,0.3); }
-                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0), 0 4px 8px rgba(0,0,0,0.3); }
-                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0), 0 4px 8px rgba(0,0,0,0.3); }
-              }
-            </style>
-          `,
-          className: 'playback-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
-        });
-
-        const initialPosition = routeHistory[Math.min(playbackIndex, routeHistory.length - 1)];
-        playbackMarkerRef.current = L.marker(initialPosition, { 
-          icon: playbackIcon, 
-          zIndexOffset: 2000,
-          pane: 'markersPane'
-        }).addTo(map);
-
-        playbackMarkerRef.current.bindTooltip(`
-          <div class="text-sm">
-            <strong>${selectedVehicle.id} Playback</strong><br/>
-            Point: ${playbackIndex + 1} / ${routeHistory.length}<br/>
-            Time: ${new Date(Date.now() - (routeHistory.length - playbackIndex) * 60000).toLocaleTimeString()}
-          </div>
-        `, { 
-          permanent: false,
-          direction: 'top'
-        });
+        setPlaybackIndex(0);
+        setIsPlaybackPlaying(false);
+        if (playbackTimerRef.current) {
+          clearInterval(playbackTimerRef.current);
+          playbackTimerRef.current = null;
+        }
+        // Place the playback truck icon at the starting point
+        try { createOrUpdatePlaybackMarker(routeHistory[0]); } catch {}
       }
     }
 
@@ -481,9 +668,10 @@ const HistoryTrackingMap = () => {
     };
   }, [map, selectedVehicle, vehicleRoutes]);
 
-  // Render manual route from make_dummy_real_route.md
+  // Render manual route from make_dummy_real_route.md (disabled in test mode)
   useEffect(() => {
     if (!map) return;
+    if (USE_TEST_ROUTE) return;
     
     try {
       const pts = getDummyRealRoutePoints();
@@ -689,28 +877,98 @@ const HistoryTrackingMap = () => {
   const createOrUpdatePlaybackMarker = (latlng) => {
     if (!map || !latlng) return;
     const L = window.L || require('leaflet');
+    
     if (!playbackMarkerRef.current) {
+      const truckNum = extractTruckNumber(selectedVehicle?.id) ?? '';
+      const colors = {
+        active: '#10b981',
+        idle: '#f59e0b',
+        maintenance: '#ef4444',
+        offline: '#6b7280'
+      };
+      const badgeColor = colors[selectedVehicle?.status] || colors.offline;
       const icon = L.divIcon({
-        html: `<div style="background:#111827;color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;box-shadow:0 2px 6px rgba(0,0,0,.3);">▶</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #111827;margin:0 auto;"></div>`,
+        html: `
+          <div style="position: relative;">
+            <div style="
+              background: ${badgeColor};
+              color: #ffffff;
+              border: 2px solid #ffffff;
+              border-radius: 6px;
+              padding: 2px 6px;
+              min-width: 26px;
+              height: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 12px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            ">
+              ${truckNum}
+            </div>
+            <div style="
+              width: 0; height: 0;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 8px solid ${badgeColor};
+              margin: 0 auto;
+              filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+            "></div>
+          </div>
+        `,
         className: 'playback-marker',
         iconSize: [28, 28],
         iconAnchor: [14, 28]
       });
-      playbackMarkerRef.current = L.marker(latlng, { icon, zIndexOffset: 1200, pane: 'markersPane' }).addTo(map);
+      
+      playbackMarkerRef.current = L.marker(latlng, { 
+        icon, 
+        zIndexOffset: 3000, 
+        pane: 'markersPane' 
+      }).addTo(map);
     } else {
-      try { playbackMarkerRef.current.setLatLng(latlng); } catch {}
+      try { 
+        playbackMarkerRef.current.setLatLng(latlng); 
+      } catch (e) {
+        console.warn('Failed to update playback marker position:', e);
+      }
     }
   };
 
   const startPlayback = () => {
     if (!selectedVehicle || !hasHistory(selectedVehicle.id)) return;
+    
+    const routeHistory = vehicleRoutes[selectedVehicle.id] || [];
+    if (playbackIndex >= routeHistory.length - 1) {
+      setPlaybackIndex(0); // Reset to start if at end
+    }
+    
+    // Remove the static truck marker at the start so only the start dot remains
+    try {
+      const staticMarker = markersRef.current[selectedVehicle.id];
+      if (staticMarker && map && map.hasLayer(staticMarker)) {
+        map.removeLayer(staticMarker);
+      }
+      delete markersRef.current[selectedVehicle.id];
+    } catch {}
+
     setIsPlaybackPlaying(true);
     if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
+    
     playbackTimerRef.current = setInterval(() => {
-      setPlaybackIndex((i) => {
-        const max = (vehicleRoutes[selectedVehicle.id] || []).length - 1;
-        if (i >= max) return max;
-        return i + 1;
+      setPlaybackIndex((currentIndex) => {
+        const maxIndex = routeHistory.length - 1;
+        if (currentIndex >= maxIndex) {
+          // Auto-stop at end
+          setIsPlaybackPlaying(false);
+          if (playbackTimerRef.current) {
+            clearInterval(playbackTimerRef.current);
+            playbackTimerRef.current = null;
+          }
+          return maxIndex;
+        }
+        return currentIndex + 1;
       });
     }, playbackSpeedMs);
   };
@@ -732,22 +990,22 @@ const HistoryTrackingMap = () => {
 
   // Update playback timer when speed changes
   useEffect(() => {
-    if (!isPlaybackPlaying) return;
+    if (!isPlaybackPlaying || !selectedVehicle) return;
     pausePlayback();
-    startPlayback();
+    setTimeout(() => startPlayback(), 50); // Small delay to ensure clean restart
   }, [playbackSpeedMs]);
 
-  // Drive playback marker on index change or vehicle change
+  // Auto-stop playback when reaching the end
   useEffect(() => {
-    const v = selectedVehicle;
-    if (!v) return;
-    const pts = vehicleRoutes[v.id] || [];
-    if (pts.length === 0) return;
-    const idx = Math.min(playbackIndex, pts.length - 1);
-    const latlng = pts[idx];
-    createOrUpdatePlaybackMarker(latlng);
-    if (isPlaybackPlaying && idx >= pts.length - 1) {
-      pausePlayback();
+    if (!selectedVehicle || !isPlaybackPlaying) return;
+    
+    const routeHistory = vehicleRoutes[selectedVehicle.id] || [];
+    if (playbackIndex >= routeHistory.length - 1) {
+      setIsPlaybackPlaying(false);
+      if (playbackTimerRef.current) {
+        clearInterval(playbackTimerRef.current);
+        playbackTimerRef.current = null;
+      }
     }
   }, [playbackIndex, selectedVehicle, vehicleRoutes, isPlaybackPlaying]);
 

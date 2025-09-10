@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   XMarkIcon,
@@ -17,36 +18,33 @@ import {
 } from '@heroicons/react/24/outline';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, current: true },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   {
     name: 'Tracking',
     icon: MapIcon,
-    current: false,
     children: [
       { name: 'Live Tracking', href: '/live-tracking' },
       { name: 'History', href: '/history-tracking' },
     ],
   },
-  { 
-    name: 'Fleet Management', 
-    icon: TruckIcon, 
-    current: false,
+  {
+    name: 'Fleet Management',
+    icon: TruckIcon,
     children: [
       { name: 'Fleet Groups', href: '/fleet/groups' },
-      { name: 'All Vehicles', href: '/fleet/vehicles' },
+      { name: 'All Vehicles', href: '/trucks' },
       { name: 'Vehicle Status', href: '/fleet/status' },
+      { name: 'Vendors', href: '/vendors' },
     ]
   },
   { 
-    name: 'IoT Devices', 
-    icon: CpuChipIcon, 
+    name: 'IoT Devices',
+    icon: CpuChipIcon,
     href: '/devices',
-    current: false,
   },
   { 
     name: 'Telemetry', 
     icon: SignalIcon, 
-    current: false,
     children: [
       { name: 'Tire Pressure', href: '/telemetry/tires' },
       { name: 'Hub Temperature', href: '/telemetry/temperature' },
@@ -55,8 +53,8 @@ const navigation = [
   },
   // { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },
   // { name: 'Reports', href: '/reports', icon: DocumentTextIcon, current: false },
-  { name: 'Alerts', href: '/alerts', icon: BellIcon, current: false },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, current: false },
+  { name: 'Alerts', href: '/alerts', icon: BellIcon },
+  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 
 function classNames(...classes) {
@@ -64,7 +62,27 @@ function classNames(...classes) {
 }
 
 const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
+  const location = useLocation();
   const [expandedItems, setExpandedItems] = React.useState({});
+
+  const isActive = (item) => {
+    if (item.href) {
+      // Exact match or pathname starts with href (for nested routes)
+      try {
+        const [pathOnly] = item.href.split('?');
+        return location.pathname === pathOnly || location.pathname.startsWith(pathOnly + '/');
+      } catch {
+        return location.pathname === item.href;
+      }
+    }
+    if (item.children) {
+      return item.children.some((c) => {
+        const [pathOnly] = c.href.split('?');
+        return location.pathname === pathOnly || location.pathname.startsWith(pathOnly + '/');
+      });
+    }
+    return false;
+  };
 
   const toggleExpanded = (itemName) => {
     setExpandedItems(prev => ({
@@ -74,7 +92,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const SidebarContent = () => (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-indigo-400 via-indigo-700 to-indigo-900 px-6 pb-4 backdrop-blur-xl border-r border-white/10">
+    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-indigo-400 via-indigo-700 to-indigo-900 px-6 pb-4 backdrop-blur-xl border-r border-white/10 pointer-events-auto">
       <div className="flex h-16 shrink-0 items-center mb-6">
         <div className="flex items-center">
           <img src="/icon2.png" alt="Truck" className="h-50 w-50 object-contain relative top-5" />
@@ -88,45 +106,44 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
         <ul role="list" className="flex flex-1 flex-col gap-y-7">
           <li>
             <ul role="list" className="-mx-2 space-y-1">
-              {navigation.map((item) => (
+              {navigation.map((item) => {
+                const active = isActive(item);
+                const expanded = expandedItems[item.name] ?? (active && item.children);
+                return (
                 <li key={item.name}>
                   {!item.children ? (
-                    <a
-                      href={item.href}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.location.href = item.href;
-                      }}
+                    <Link
+                      to={item.href}
                       className={classNames(
-                        item.current
+                        active
                           ? 'bg-white/20 text-white shadow-md'
                           : 'text-indigo-200 hover:text-white hover:bg-white/10',
-                        'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-200 border border-transparent hover:border-white/20 cursor-pointer'
+                        'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-200 border border-transparent hover:border-white/20 cursor-pointer relative z-[5001]'
                       )}
                     >
                       <item.icon
                         className={classNames(
-                          item.current ? 'text-white' : 'text-indigo-200 group-hover:text-white',
+                          active ? 'text-white' : 'text-indigo-200 group-hover:text-white',
                           'h-6 w-6 shrink-0'
                         )}
                         aria-hidden="true"
                       />
                       {item.name}
-                    </a>
+                    </Link>
                   ) : (
                     <div>
                       <button
                         onClick={() => toggleExpanded(item.name)}
                         className={classNames(
-                          item.current
+                          active
                             ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/30'
                             : 'text-indigo-200 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-md',
-                          'group flex w-full gap-x-3 rounded-xl p-3 text-left text-sm leading-6 font-semibold transition-all duration-200'
+                          'group flex w-full gap-x-3 rounded-xl p-3 text-left text-sm leading-6 font-semibold transition-all duration-200 relative z-[5001]'
                         )}
                       >
                         <item.icon
                           className={classNames(
-                            item.current ? 'text-white' : 'text-indigo-200 group-hover:text-white',
+                            active ? 'text-white' : 'text-indigo-200 group-hover:text-white',
                             'h-6 w-6 shrink-0'
                           )}
                           aria-hidden="true"
@@ -134,7 +151,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                         {item.name}
                         <svg
                           className={classNames(
-                            expandedItems[item.name] ? 'rotate-90' : '',
+                            expanded ? 'rotate-90' : '',
                             'ml-auto h-5 w-5 shrink-0 text-indigo-200 transition-transform'
                           )}
                           viewBox="0 0 20 20"
@@ -148,20 +165,16 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           />
                         </svg>
                       </button>
-                      {expandedItems[item.name] && (
+                      {expanded && (
                         <ul className="mt-1 px-2">
                           {item.children.map((subItem) => (
                             <li key={subItem.name}>
-                              <a
-                                href={subItem.href}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  window.location.href = subItem.href;
-                                }}
-                                className="block rounded-md py-2 pl-9 pr-2 text-sm leading-6 text-indigo-200 hover:text-white hover:bg-white/10 cursor-pointer"
+                              <Link
+                                to={subItem.href}
+                                className="block rounded-md py-2 pl-9 pr-2 text-sm leading-6 text-indigo-200 hover:text-white hover:bg-white/10 cursor-pointer relative z-[5001]"
                               >
                                 {subItem.name}
-                              </a>
+                              </Link>
                             </li>
                           ))}
                         </ul>
@@ -169,7 +182,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                     </div>
                   )}
                 </li>
-              ))}
+              );})}
             </ul>
           </li>
           <li className="mt-auto">
@@ -244,7 +257,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
       </Transition.Root>
 
       {/* Static sidebar for desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[4000] lg:flex lg:w-72 lg:flex-col pointer-events-auto">
         <SidebarContent />
       </div>
     </>

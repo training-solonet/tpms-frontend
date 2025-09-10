@@ -15,6 +15,13 @@ import Analytics from './pages/Analytics';
 import Reports from './pages/Reports';
 import Alerts from './pages/Alerts';
 import Settings from './pages/Settings';
+import TrucksFormList from './pages/TrucksFormList.jsx';
+import TruckForm from './pages/TruckForm.jsx';
+import TelemetryTiresForm from './pages/TelemetryTiresForm.jsx';
+import TelemetryTemperatureForm from './pages/TelemetryTemperatureForm.jsx';
+import TelemetryFuelForm from './pages/TelemetryFuelForm.jsx';
+import VendorsList from './pages/VendorsList.jsx';
+import VendorForm from './pages/VendorForm.jsx';
 import './App.css';
 
 // Protected/Public Route Components disabled: passthrough (login off)
@@ -75,7 +82,7 @@ function AppRoutes() {
           path="/fleet/status" 
           element={
             <ProtectedRoute>
-              <FleetManagement />
+              <DeviceCenter />
             </ProtectedRoute>
           } 
         />
@@ -102,7 +109,7 @@ function AppRoutes() {
           path="/fleet/vehicles" 
           element={
             <ProtectedRoute>
-              <FleetManagement />
+              <TrucksFormList />
             </ProtectedRoute>
           } 
         />
@@ -116,16 +123,29 @@ function AppRoutes() {
           } 
         />
         
-        
-        
-        
-        
+        {/* Trucks forms */}
+        <Route 
+          path="/trucks" 
+          element={
+            <ProtectedRoute>
+              <TrucksFormList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/trucks/:id" 
+          element={
+            <ProtectedRoute>
+              <TruckForm />
+            </ProtectedRoute>
+          } 
+        />
         
         <Route 
           path="/telemetry/tires" 
           element={
             <ProtectedRoute>
-              <TelemetryDashboard />
+              <TelemetryTiresForm />
             </ProtectedRoute>
           } 
         />
@@ -134,7 +154,7 @@ function AppRoutes() {
           path="/telemetry/temperature" 
           element={
             <ProtectedRoute>
-              <TelemetryDashboard />
+              <TelemetryTemperatureForm />
             </ProtectedRoute>
           } 
         />
@@ -143,7 +163,42 @@ function AppRoutes() {
           path="/telemetry/fuel" 
           element={
             <ProtectedRoute>
-              <TelemetryDashboard />
+              <TelemetryFuelForm />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/vendors" 
+          element={
+            <ProtectedRoute>
+              <VendorsList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/vendors/:id" 
+          element={
+            <ProtectedRoute>
+              <VendorForm />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Vendors (master data) */}
+        <Route 
+          path="/vendors" 
+          element={
+            <ProtectedRoute>
+              <VendorsList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/vendors/:id" 
+          element={
+            <ProtectedRoute>
+              <VendorForm />
             </ProtectedRoute>
           } 
         />

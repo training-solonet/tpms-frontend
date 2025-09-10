@@ -7,6 +7,7 @@ import {
   SignalIcon
 } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
+import TirePressureDisplay from './TirePressureDisplay';
 import { trucksAPI, FleetWebSocket } from '../../services/api.js';
 import { getLiveTrackingData, getTruckRoute, getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
 import tirePressureDummy from '../../data/tirePressureEvents.js';
@@ -629,6 +630,13 @@ const LiveTrackingMapNew = () => {
         {loading && (
           <span className="text-blue-600 ml-2">Syncing...</span>
         )}
+      </div>
+
+      {/* Tire Pressure Display */}
+      <div className="mt-4 border-t border-gray-200 pt-4">
+        <TirePressureDisplay 
+          selectedTruckId={selectedVehicle?.id} 
+        />
       </div>
     </>
   );

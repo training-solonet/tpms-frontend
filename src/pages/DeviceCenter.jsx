@@ -206,6 +206,7 @@ const LocksTab = ({ search, truckFilter, actionFilter }) => {
 };
 
 const DeviceCenter = () => {
+  const location = useLocation();
   const query = useQuery();
   const navigate = useNavigate();
   const initialTab = query.get('tab') || 'status';
@@ -229,8 +230,14 @@ const DeviceCenter = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">IoT Device Center</h1>
-              <p className="text-sm text-gray-600 mt-1">Status, Sensors, dan Locks dalam satu halaman</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {location.pathname.startsWith('/fleet/status') ? 'Vehicle Status' : 'IoT Device Center'}
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {location.pathname.startsWith('/fleet/status') 
+                  ? 'Kondisi perangkat pada kendaraan (battery, signal, lock)'
+                  : 'Status, Sensors, dan Locks dalam satu halaman'}
+              </p>
             </div>
           </div>
 

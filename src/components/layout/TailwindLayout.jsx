@@ -6,7 +6,7 @@ const TailwindLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-hidden">
+    <div className="relative h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-hidden">
       {/* Sidebar */}
       <TailwindSidebar 
         sidebarOpen={sidebarOpen} 
@@ -14,7 +14,7 @@ const TailwindLayout = ({ children }) => {
       />
 
       {/* Main content */}
-      <div className="lg:pl-72 h-full flex flex-col">
+      <div className="relative lg:pl-72 h-full flex flex-col z-0">
         {/* Header */}
         <TailwindHeader setSidebarOpen={setSidebarOpen} />
 

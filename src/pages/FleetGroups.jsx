@@ -11,14 +11,53 @@ import {
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { fleetGroups, trucks, getLatestTruckStatus } from '../data/index.js';
+import { trucksAPI, vendorsAPI } from '../services/api.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 
 const FleetGroups = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [backendTrucks, setBackendTrucks] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [loadingVendors, setLoadingVendors] = useState(true);
+  const [loadingTrucks, setLoadingTrucks] = useState(true);
+
+  // Load vendors and trucks on mount so summary is visible immediately
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingVendors(true);
+        const vRes = await vendorsAPI.getAll();
+        if (mounted && vRes.success && Array.isArray(vRes.data)) setVendors(vRes.data);
+      } finally {
+        if (mounted) setLoadingVendors(false);
+      }
+    })();
+    (async () => {
+      try {
+        setLoadingTrucks(true);
+        const tRes = await trucksAPI.getAll();
+        if (mounted && tRes.success && Array.isArray(tRes.data)) {
+          setBackendTrucks(tRes.data.map(t => ({
+            ...t,
+            fleet_group_id: t.fleet_group_id || t.fleetGroupId || t.fleet_group || null,
+            vendor_id: t.vendor_id || t.vendorId || null,
+            name: t.name || t.id,
+            plate_number: t.plate_number || t.plate || '-'
+          })));
+        }
+      } finally {
+        if (mounted) setLoadingTrucks(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Get trucks by fleet group
   const getTrucksByGroup = (groupId) => {
-    return trucks.filter(truck => truck.fleet_group_id === groupId);
+    // Prefer backend trucks when available; fallback to dummy
+    const source = backendTrucks.length > 0 ? backendTrucks : trucks;
+    return source.filter(truck => truck.fleet_group_id === groupId);
   };
 
   // --- Number range cluster helpers ---
@@ -37,7 +76,8 @@ const FleetGroups = () => {
   ];
 
   const clusterStats = numberRanges.map(r => {
-    const inRange = trucks.filter(t => {
+    const source = backendTrucks.length > 0 ? backendTrucks : trucks;
+    const inRange = source.filter(t => {
       const n = extractTruckNumber(t.id) ?? extractTruckNumber(t.name);
       return n != null && n >= r.lo && n <= r.hi;
     });
@@ -51,6 +91,7 @@ const FleetGroups = () => {
   // Get group statistics
   const getGroupStats = (groupId) => {
     const groupTrucks = getTrucksByGroup(groupId);
+    // Active calculation available for dummy data only
     const activeTrucks = groupTrucks.filter(truck => {
       const status = getLatestTruckStatus(truck.id);
       return status?.status === 'active';
@@ -118,6 +159,20 @@ const FleetGroups = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
           {fleetGroups.map((group) => {
             const stats = getGroupStats(group.id);
+            // Compute compact vendor summary per group (visible on card)
+            const source = backendTrucks.length > 0 ? backendTrucks : trucks;
+            const groupTs = source.filter(t => t.fleet_group_id === group.id);
+            const byId = new Map((vendors || []).map(v => [v.id, v]));
+            const vCount = new Map();
+            for (const t of groupTs) {
+              const vid = t.vendor_id || 'none';
+              vCount.set(vid, (vCount.get(vid) || 0) + 1);
+            }
+            const vList = Array.from(vCount.entries()).map(([vid, total]) => ({
+              id: vid,
+              name: vid !== 'none' ? (byId.get(vid)?.name || 'Unknown') : 'Unassigned',
+              total
+            })).sort((a,b) => (a.id === 'none') - (b.id === 'none')).slice(0,3);
             return (
               <div
                 key={group.id}
@@ -143,6 +198,28 @@ const FleetGroups = () => {
                 </div>
 
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">{group.description}</p>
+
+                {/* Compact Vendors summary (top 3) */}
+                <div className="mb-4">
+                  <div className="text-xs text-gray-500 mb-1">Vendors</div>
+                  {(loadingTrucks || loadingVendors) ? (
+                    <div className="text-xs text-gray-400">Loading...</div>
+                  ) : vList.length === 0 ? (
+                    <div className="text-xs text-gray-400">No assignment</div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {vList.map(v => (
+                        <span key={v.id} className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs border border-indigo-100">
+                          <span className="font-medium">{v.name}</span>
+                          <span className="text-[10px] bg-white/70 rounded px-1 text-gray-600 border border-indigo-100">{v.total}</span>
+                        </span>
+                      ))}
+                      {vCount.size > vList.length && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 text-xs border">+{vCount.size - vList.length} more</span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Statistics */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
@@ -194,6 +271,12 @@ const FleetGroups = () => {
               </div>
             </div>
 
+            {/* Vendors Summary in Group */}
+            <VendorsSummary 
+              groupId={selectedGroup.id} 
+              loadState={{ backendTrucks, setBackendTrucks, vendors, setVendors, loadingTrucks, setLoadingTrucks, loadingVendors, setLoadingVendors }}
+            />
+
             {/* Trucks in Group */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {getTrucksByGroup(selectedGroup.id).map((truck) => {
@@ -242,5 +325,103 @@ const FleetGroups = () => {
     </TailwindLayout>
   );
 };
+
+// Lightweight summary of vendors inside a fleet group
+function VendorsSummary({ groupId, loadState }) {
+  const { backendTrucks, setBackendTrucks, vendors, setVendors, loadingTrucks, setLoadingTrucks, loadingVendors, setLoadingVendors } = loadState;
+
+  React.useEffect(() => {
+    let mounted = true;
+    // load vendors once
+    (async () => {
+      try {
+        setLoadingVendors(true);
+        const vRes = await vendorsAPI.getAll();
+        if (mounted && vRes.success && Array.isArray(vRes.data)) setVendors(vRes.data);
+      } finally {
+        if (mounted) setLoadingVendors(false);
+      }
+    })();
+    // load trucks once
+    (async () => {
+      try {
+        setLoadingTrucks(true);
+        const tRes = await trucksAPI.getAll();
+        if (mounted && tRes.success && Array.isArray(tRes.data)) {
+          // normalize a bit for local usage
+          setBackendTrucks(tRes.data.map(t => ({
+            ...t,
+            fleet_group_id: t.fleet_group_id || t.fleetGroupId || t.fleet_group || null,
+            vendor_id: t.vendor_id || t.vendorId || null,
+            name: t.name || t.id,
+            plate_number: t.plate_number || t.plate || '-'
+          })));
+        }
+      } finally {
+        if (mounted) setLoadingTrucks(false);
+      }
+    })();
+    return () => { mounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Compute per-vendor counts in this group
+  const sourceTrucks = backendTrucks.length > 0 ? backendTrucks : trucks;
+  const groupTrucks = React.useMemo(() => sourceTrucks.filter(t => t.fleet_group_id === groupId), [sourceTrucks, groupId]);
+
+  const vendorMap = React.useMemo(() => {
+    const map = new Map();
+    for (const t of groupTrucks) {
+      const vid = t.vendor_id || 'none';
+      if (!map.has(vid)) map.set(vid, { total: 0, active: 0 });
+      const entry = map.get(vid);
+      entry.total += 1;
+      // Active only determinable from dummy getLatestTruckStatus; for backend we may not have status
+      const status = getLatestTruckStatus(t.id);
+      if (status?.status === 'active') entry.active += 1;
+    }
+    return map;
+  }, [groupTrucks]);
+
+  const items = React.useMemo(() => {
+    const list = [];
+    // Ensure we show known vendors first, then 'Unassigned'
+    const byId = new Map((vendors || []).map(v => [v.id, v]));
+    for (const [vid, stats] of vendorMap.entries()) {
+      const v = vid !== 'none' ? byId.get(vid) : null;
+      const name = v?.name || 'Unassigned Vendor';
+      list.push({ id: vid, name, total: stats.total, active: stats.active, inactive: Math.max(0, stats.total - stats.active) });
+    }
+    // Stable sort: real vendors first then Unassigned
+    return list.sort((a, b) => (a.id === 'none') - (b.id === 'none'));
+  }, [vendorMap, vendors]);
+
+  return (
+    <div className="mb-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">Vendors in this Group</h3>
+      {(loadingVendors || loadingTrucks) ? (
+        <div className="text-gray-500 text-sm">Loading vendors...</div>
+      ) : items.length === 0 ? (
+        <div className="text-gray-500 text-sm">No trucks in this group.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+          {items.map((it, idx) => (
+            <div key={`${it.id}-${idx}`} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-gray-900">{it.name}</div>
+                <span className="text-xs text-gray-500">{`Vendor ${it.id === 'none' ? '-' : ''}`}</span>
+              </div>
+              <div className="mt-2 flex items-center gap-4 text-sm">
+                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700">Active: {it.active}</span>
+                <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">Inactive: {it.inactive}</span>
+                <span className="ml-auto text-xs text-gray-500">Total: {it.total}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default FleetGroups;

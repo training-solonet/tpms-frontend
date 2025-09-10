@@ -236,7 +236,8 @@ const BaseTrackingMap = ({
         onClick={() => setSidebarVisible(!sidebarVisible)}
         className={`fixed top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 border border-gray-300 shadow-lg transition-all duration-300 flex items-center rounded-r-lg px-2 py-3`}
         style={{ 
-          zIndex: 999,
+          // Ensure this stays below the sidebar (which uses z-50)
+          zIndex: 40,
           left: sidebarVisible ? '605px' : '288px'
         }}
         title={sidebarVisible ? 'Hide Vehicle List' : 'Show Vehicle List'}
@@ -258,7 +259,7 @@ const BaseTrackingMap = ({
         sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
       }`}>
         {sidebarContent && (
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 h-full">
             {sidebarContent}
           </div>
         )}
@@ -266,11 +267,11 @@ const BaseTrackingMap = ({
       </div>
 
       {/* Map Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative z-0">
         <div 
           ref={mapRef}
           className="absolute inset-0 w-full h-full"
-          style={{ cursor: 'grab' }}
+          style={{ cursor: 'grab', zIndex: 0 }}
         />
         
         {/* Map Controls */}
