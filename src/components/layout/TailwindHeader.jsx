@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import {
   Bars3Icon,
@@ -8,12 +8,17 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth.js';
+import CommandPalette from '../common/CommandPalette.jsx';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
 const TailwindHeader = ({ setSidebarOpen }) => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const notifications = [
     { id: 1, title: 'Vehicle BRN-001 Alert', message: 'Speed limit exceeded', time: '5 min ago', type: 'warning' },
     { id: 2, title: 'Maintenance Due', message: 'Vehicle BRN-003 requires service', time: '1 hour ago', type: 'info' },
@@ -21,12 +26,44 @@ const TailwindHeader = ({ setSidebarOpen }) => {
     { id: 4, title: 'Fuel Alert', message: 'Vehicle BRN-004 low fuel level', time: '3 hours ago', type: 'error' },
   ];
 
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      if ((isMac && e.metaKey && e.key.toLowerCase() === 'k') || (!isMac && e.ctrlKey && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        setPaletteOpen((p) => !p);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const displayName = user?.name || user?.username || 'John Doe';
+  const initials = (displayName || 'JD')
+    .split(' ')
+    .map((s) => s[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const handleSignOut = () => {
+    try {
+      logout();
+    } finally {
+      navigate('/login', { replace: true });
+    }
+  };
+
   return (
+    <>
     <div className="sticky top-0 z-[1002] flex h-16 shrink-0 items-center gap-x-4 border-b border-white/20 bg-white/80 backdrop-blur-xl px-4 shadow-lg sm:gap-x-6 sm:px-6 lg:px-8">
       <button
         type="button"
         className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
         onClick={() => setSidebarOpen(true)}
+        aria-label="Open sidebar"
       >
         <span className="sr-only">Open sidebar</span>
         <Bars3Icon className="h-6 w-6" aria-hidden="true" />
@@ -35,27 +72,24 @@ const TailwindHeader = ({ setSidebarOpen }) => {
       {/* Separator */}
       <div className="h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
 
-      <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-        <form className="relative flex flex-1" action="#" method="GET">
-          <label htmlFor="search-field" className="sr-only">
-            Search
-          </label>
-          <MagnifyingGlassIcon
-            className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400"
-            aria-hidden="true"
-          />
-          <input
-            id="search-field"
-            className="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
-            placeholder="Search vehicles, drivers, routes..."
-            type="search"
-            name="search"
-          />
-        </form>
-        <div className="flex items-center gap-x-4 lg:gap-x-6">
+      <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-between">
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 shadow-sm"
+            title="Global Search (Ctrl/Cmd + K)"
+            aria-label="Open command palette search"
+          >
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            <span className="hidden sm:inline">Search</span>
+            <span className="ml-2 hidden sm:inline text-[10px] text-gray-400">Ctrl/Cmd + K</span>
+          </button>
+        </div>
+        <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
           {/* Notifications dropdown */}
           <Menu as="div" className="relative z-[1003]">
-            <Menu.Button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+            <Menu.Button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500" aria-label="Open notifications menu">
               <span className="sr-only">View notifications</span>
               <div className="relative">
                 <BellIcon className="h-6 w-6" aria-hidden="true" />
@@ -129,14 +163,14 @@ const TailwindHeader = ({ setSidebarOpen }) => {
 
           {/* Profile dropdown */}
           <Menu as="div" className="relative z-[1003]">
-            <Menu.Button className="-m-1.5 flex items-center p-1.5">
+            <Menu.Button className="-m-1.5 flex items-center p-1.5" aria-label="Open user menu">
               <span className="sr-only">Open user menu</span>
               <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
-                <span className="text-sm font-medium text-white">JD</span>
+                <span className="text-sm font-medium text-white">{initials}</span>
               </div>
               <span className="hidden lg:flex lg:items-center">
                 <span className="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
-                  John Doe
+                  {displayName}
                 </span>
                 <svg
                   className="ml-2 h-5 w-5 text-gray-400"
@@ -163,7 +197,7 @@ const TailwindHeader = ({ setSidebarOpen }) => {
             >
               <Menu.Items className="absolute right-0 z-[1003] mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
                 <div className="px-3 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">John Doe</p>
+                  <p className="text-sm font-medium text-gray-900">{displayName}</p>
                   <p className="text-xs text-gray-500">Fleet Manager</p>
                 </div>
                 <Menu.Item>
@@ -197,16 +231,17 @@ const TailwindHeader = ({ setSidebarOpen }) => {
                 <div className="border-t border-gray-100">
                   <Menu.Item>
                     {({ active }) => (
-                      <a
-                        href="#"
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
                         className={classNames(
                           active ? 'bg-gray-50' : '',
-                          'flex items-center px-3 py-2 text-sm text-gray-700'
+                          'flex items-center w-full px-3 py-2 text-left text-sm text-gray-700'
                         )}
                       >
                         <ArrowRightOnRectangleIcon className="mr-3 h-4 w-4" />
                         Sign out
-                      </a>
+                      </button>
                     )}
                   </Menu.Item>
                 </div>
@@ -216,6 +251,8 @@ const TailwindHeader = ({ setSidebarOpen }) => {
         </div>
       </div>
     </div>
+    <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
+    </>
   );
 };
 
