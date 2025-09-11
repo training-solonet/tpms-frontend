@@ -33,7 +33,7 @@ const navigation = [
     children: [
       { name: 'Fleet Groups', href: '/fleet/groups' },
       { name: 'All Vehicles', href: '/trucks' },
-      { name: 'Vehicle Status', href: '/fleet/status' },
+      { name: 'Vehicle & IoT Status', href: '/fleet/status' },
       { name: 'Vendors', href: '/vendors' },
     ]
   },
