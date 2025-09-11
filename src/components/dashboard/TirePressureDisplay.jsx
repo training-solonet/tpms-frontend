@@ -7,43 +7,50 @@ const TirePressureDisplay = ({ selectedTruckId, className = "" }) => {
   const [tireData, setTireData] = useState([]);
   const [truckInfo, setTruckInfo] = useState(null);
 
-  // Get tire configuration mapping
-  const getTireCount = (tireConfig) => {
-    const configMap = {
-      '4x2': 4,  // 2 front + 2 rear
-      '6x4': 6,  // 2 front + 4 rear
-      '8x4': 8   // 2 front + 6 rear
-    };
-    return configMap[tireConfig] || 4;
-  };
-
-  // Get tire layout based on configuration
-  const getTireLayout = (tireConfig) => {
+  // Build a per-axle layout that supports dual tires (2 left, 2 right) for rear axles
+  // and single tires for the front axle. Also returns the computed total tire count.
+  const buildAxleLayout = (tireConfig) => {
+    // Define axle specifications: each axle has leftCount and rightCount
+    // - Front axle: single-left and single-right (motor vehicle front)
+    // - Rear axles: depending on config, single or dual per side
+    let axles = [];
     switch (tireConfig) {
-      case '4x2':
-        return [
-          { row: 0, positions: [1, 2] }, // Front axle
-          { row: 1, positions: [3, 4] }  // Rear axle
-        ];
       case '6x4':
-        return [
-          { row: 0, positions: [1, 2] },     // Front axle
-          { row: 1, positions: [3, 4] },     // Rear axle 1
-          { row: 2, positions: [5, 6] }      // Rear axle 2
+        // 3 axles: 1 front (single), 2 rear (dual each side)
+        axles = [
+          { name: 'Front', leftCount: 1, rightCount: 1 },
+          { name: 'Rear 1', leftCount: 2, rightCount: 2 },
+          { name: 'Rear 2', leftCount: 2, rightCount: 2 },
         ];
+        break;
       case '8x4':
-        return [
-          { row: 0, positions: [1, 2] },     // Front axle
-          { row: 1, positions: [3, 4] },     // Rear axle 1
-          { row: 2, positions: [5, 6] },     // Rear axle 2
-          { row: 3, positions: [7, 8] }      // Rear axle 3
+        // 4 axles: 1 front (single), 3 rear (dual each side)
+        axles = [
+          { name: 'Front', leftCount: 1, rightCount: 1 },
+          { name: 'Rear 1', leftCount: 2, rightCount: 2 },
+          { name: 'Rear 2', leftCount: 2, rightCount: 2 },
+          { name: 'Rear 3', leftCount: 2, rightCount: 2 },
         ];
+        break;
+      case '4x2':
       default:
-        return [
-          { row: 0, positions: [1, 2] },
-          { row: 1, positions: [3, 4] }
+        // 2 axles: front (single), rear (single)
+        axles = [
+          { name: 'Front', leftCount: 1, rightCount: 1 },
+          { name: 'Rear', leftCount: 1, rightCount: 1 },
         ];
+        break;
     }
+
+    // Assign sequential tire numbers across axles and sides
+    let tireNo = 1;
+    const layout = axles.map((axle) => {
+      const left = Array.from({ length: axle.leftCount }).map(() => ({ tireNo: tireNo++ }));
+      const right = Array.from({ length: axle.rightCount }).map(() => ({ tireNo: tireNo++ }));
+      return { ...axle, left, right };
+    });
+
+    return { layout, tireCount: tireNo - 1 };
   };
 
   useEffect(() => {
@@ -106,6 +113,39 @@ const TirePressureDisplay = ({ selectedTruckId, className = "" }) => {
     };
   };
 
+  // SVG Tire icon with status coloring
+  const TireIcon = ({ tireNo, reading }) => {
+    const status = reading ? getTireStatus(reading.pressure_kpa, reading.temp_celsius, reading.ex_type) : null;
+    const ring = status ? (status.status === 'warning' ? '#ef4444' : status.status === 'caution' ? '#f59e0b' : '#10b981') : '#9ca3af';
+    return (
+      <div className="flex flex-col items-center">
+        <div className="text-[10px] text-gray-500 mb-0.5">{reading ? `${reading.pressure_kpa} kPa` : '--'}</div>
+        <div className="relative">
+          <svg width="36" height="36" viewBox="0 0 36 36" className="drop-shadow-sm">
+            <circle cx="18" cy="18" r="16" fill="#f8fafc" stroke={ring} strokeWidth="3" />
+            <circle cx="18" cy="18" r="10" fill="#e5e7eb" stroke="#cbd5e1" strokeWidth="1.5" />
+            <circle cx="18" cy="18" r="4.5" fill="#94a3b8" />
+            {/* tread marks */}
+            <g stroke="#cbd5e1" strokeWidth="1">
+              <line x1="6" y1="18" x2="12" y2="18" />
+              <line x1="24" y1="18" x2="30" y2="18" />
+              <line x1="18" y1="6" x2="18" y2="12" />
+              <line x1="18" y1="24" x2="18" y2="30" />
+            </g>
+          </svg>
+          {/* status dot */}
+          {status && (
+            <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${status.color}`}></span>
+          )}
+          <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-slate-700">
+            {tireNo}
+          </span>
+        </div>
+        <div className="text-[10px] text-gray-500 mt-0.5">{reading ? `${reading.temp_celsius}°C` : '--'}</div>
+      </div>
+    );
+  };
+
   if (!selectedTruckId || !truckInfo) {
     return (
       <div className={`p-4 ${className}`}>
@@ -121,8 +161,7 @@ const TirePressureDisplay = ({ selectedTruckId, className = "" }) => {
     );
   }
 
-  const tireLayout = getTireLayout(truckInfo.tire_config);
-  const tireCount = getTireCount(truckInfo.tire_config);
+  const { layout: axleLayout, tireCount } = buildAxleLayout(truckInfo.tire_config);
 
   return (
     <div className={`p-4 ${className}`}>
@@ -134,67 +173,31 @@ const TirePressureDisplay = ({ selectedTruckId, className = "" }) => {
       </div>
 
       {/* Tire Layout Visualization */}
-      <div className="space-y-3">
-        {tireLayout.map((axle, axleIndex) => (
-          <div key={axleIndex} className="flex justify-center">
-            <div className="flex items-center gap-4">
-              {axle.positions.map((tireNo, posIndex) => {
-                const tireInfo = tireData.find(t => t.tire_no === tireNo);
-                const status = tireInfo ? getTireStatus(tireInfo.pressure_kpa, tireInfo.temp_celsius, tireInfo.ex_type) : null;
-                
-                return (
-                  <div key={tireNo} className="flex flex-col items-center">
-                    {/* Pressure Value */}
-                    <div className="text-xs font-medium text-gray-600 mb-1">
-                      {tireInfo ? `${tireInfo.pressure_kpa} kPa` : '--'}
-                    </div>
-                    
-                    {/* Temperature Value */}
-                    <div className="text-xs text-gray-500 mb-2">
-                      {tireInfo ? `${tireInfo.temp_celsius}°C` : '--'}
-                    </div>
-                    
-                    {/* Tire Visual */}
-                    <div className={`relative w-12 h-16 rounded-lg border-2 flex items-center justify-center ${
-                      status ? status.borderColor : 'border-gray-300'
-                    } ${status ? status.bgColor : 'bg-gray-50'}`}>
-                      {/* Tire Number */}
-                      <span className={`text-xs font-bold ${status ? status.textColor : 'text-gray-500'}`}>
-                        {tireNo}
-                      </span>
-                      
-                      {/* Status Indicator */}
-                      {status && (
-                        <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${status.color}`}>
-                          {status.status === 'warning' && (
-                            <ExclamationTriangleIcon className="w-2 h-2 text-white m-0.5" />
-                          )}
-                          {status.status === 'normal' && (
-                            <CheckCircleIcon className="w-2 h-2 text-white m-0.5" />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Pressure Value (Bottom) */}
-                    <div className="text-xs font-medium text-gray-600 mt-2">
-                      {tireInfo ? `${tireInfo.pressure_kpa} kPa` : '--'}
-                    </div>
-                    
-                    {/* Temperature Value (Bottom) */}
-                    <div className="text-xs text-gray-500 mt-1">
-                      {tireInfo ? `${tireInfo.temp_celsius}°C` : '--'}
-                    </div>
-                  </div>
-                );
-              })}
+      <div className="space-y-5">
+        {axleLayout.map((axle, idx) => {
+          return (
+            <div key={idx} className="relative flex items-center justify-center">
+              {/* Left side tires (stack for dual) */}
+              <div className="flex flex-col gap-2 items-center mr-8">
+                {axle.left.map((pos, i) => {
+                  const reading = tireData.find(t => t.tire_no === pos.tireNo);
+                  return <TireIcon key={`L-${idx}-${i}`} tireNo={pos.tireNo} reading={reading} />;
+                })}
+              </div>
+
+              {/* Axle bar */}
+              <div className="w-28 h-1 bg-gray-400/70 rounded" />
+
+              {/* Right side tires (stack for dual) */}
+              <div className="flex flex-col gap-2 items-center ml-8">
+                {axle.right.map((pos, i) => {
+                  const reading = tireData.find(t => t.tire_no === pos.tireNo);
+                  return <TireIcon key={`R-${idx}-${i}`} tireNo={pos.tireNo} reading={reading} />;
+                })}
+              </div>
             </div>
-            
-            {/* Axle Line */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-20 h-0.5 bg-gray-400 mt-8" 
-                 style={{ zIndex: -1 }} />
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Status Legend */}
