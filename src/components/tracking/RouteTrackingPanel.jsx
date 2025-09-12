@@ -9,10 +9,10 @@ import {
   ArrowPathIcon,
   TrashIcon,
   ChartBarIcon,
-  CalendarIcon
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
 
-const RouteTrackingPanel = ({ 
+const RouteTrackingPanel = ({
   vehicles = [],
   selectedVehicle,
   onVehicleSelect,
@@ -22,7 +22,7 @@ const RouteTrackingPanel = ({
   onClearTracks,
   onToggleVisibility,
   showAllTracks,
-  trackStats = {}
+  trackStats = {},
 }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyTimeRange, setHistoryTimeRange] = useState(2); // hours
@@ -52,7 +52,7 @@ const RouteTrackingPanel = ({
       active: 'bg-green-100 text-green-700 border-green-300',
       idle: 'bg-yellow-100 text-yellow-700 border-yellow-300',
       maintenance: 'bg-red-100 text-red-700 border-red-300',
-      offline: 'bg-gray-100 text-gray-700 border-gray-300'
+      offline: 'bg-gray-100 text-gray-700 border-gray-300',
     };
     return colors[status] || colors.offline;
   };
@@ -83,15 +83,15 @@ const RouteTrackingPanel = ({
           <button
             onClick={onToggleVisibility}
             className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              showAllTracks 
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+              showAllTracks
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {showAllTracks ? <EyeIcon className="w-3 h-3" /> : <EyeSlashIcon className="w-3 h-3" />}
             {showAllTracks ? 'All Routes' : 'Selected'}
           </button>
-          
+
           <button
             onClick={onRefreshTracks}
             className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-full text-xs font-medium transition-colors"
@@ -99,7 +99,7 @@ const RouteTrackingPanel = ({
             <ArrowPathIcon className="w-3 h-3" />
             Refresh
           </button>
-          
+
           <button
             onClick={onClearTracks}
             className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-full text-xs font-medium transition-colors"
@@ -151,9 +151,11 @@ const RouteTrackingPanel = ({
                   autoRefresh ? 'bg-blue-500' : 'bg-gray-300'
                 }`}
               >
-                <div className={`w-3 h-3 bg-white rounded-full transform transition-transform ${
-                  autoRefresh ? 'translate-x-4' : 'translate-x-0.5'
-                } mt-0.5`} />
+                <div
+                  className={`w-3 h-3 bg-white rounded-full transform transition-transform ${
+                    autoRefresh ? 'translate-x-4' : 'translate-x-0.5'
+                  } mt-0.5`}
+                />
               </button>
             </div>
           </div>
@@ -191,9 +193,7 @@ const RouteTrackingPanel = ({
               <div className="text-gray-500">Total Vehicles</div>
             </div>
             <div className="bg-white p-2 rounded border">
-              <div className="font-medium text-gray-900">
-                {Object.keys(trackStats).length}
-              </div>
+              <div className="font-medium text-gray-900">{Object.keys(trackStats).length}</div>
               <div className="text-gray-500">Tracked Routes</div>
             </div>
           </div>
@@ -210,7 +210,7 @@ const RouteTrackingPanel = ({
             vehicles.map((vehicle) => {
               const stats = trackStats[vehicle.id];
               const hasTrack = !!stats;
-              
+
               return (
                 <div
                   key={vehicle.id}
@@ -235,7 +235,9 @@ const RouteTrackingPanel = ({
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vehicle.status)}`}
+                      >
                         {vehicle.status}
                       </span>
                       {hasTrack && (
@@ -261,11 +263,15 @@ const RouteTrackingPanel = ({
                       <span className="text-gray-600">Fuel:</span>
                       <div className="flex items-center space-x-1">
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className={`h-full transition-all duration-300 ${
-                              vehicle.fuel > 50 ? 'bg-green-500' : 
-                              vehicle.fuel > 30 ? 'bg-yellow-500' : 
-                              vehicle.fuel > 15 ? 'bg-orange-500' : 'bg-red-500'
+                              vehicle.fuel > 50
+                                ? 'bg-green-500'
+                                : vehicle.fuel > 30
+                                  ? 'bg-yellow-500'
+                                  : vehicle.fuel > 15
+                                    ? 'bg-orange-500'
+                                    : 'bg-red-500'
                             }`}
                             style={{ width: `${Math.max(0, Math.min(100, vehicle.fuel))}%` }}
                           />
@@ -330,7 +336,12 @@ const RouteTrackingPanel = ({
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -390,7 +401,9 @@ const RouteTrackingPanel = ({
                 </label>
                 <select
                   value={(trackingSettings?.updateInterval || 30000) / 1000}
-                  onChange={(e) => handleSettingsChange('updateInterval', parseInt(e.target.value) * 1000)}
+                  onChange={(e) =>
+                    handleSettingsChange('updateInterval', parseInt(e.target.value) * 1000)
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value={15}>Every 15 seconds</option>
@@ -405,7 +418,9 @@ const RouteTrackingPanel = ({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium text-gray-700">Auto Refresh Routes</div>
-                  <div className="text-xs text-gray-500">Automatically update tracks in real-time</div>
+                  <div className="text-xs text-gray-500">
+                    Automatically update tracks in real-time
+                  </div>
                 </div>
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
@@ -423,25 +438,25 @@ const RouteTrackingPanel = ({
 
               {/* Track Colors */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Track Colors
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Track Colors</label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(trackingSettings?.colors || {}).map(([status, color]) => (
-                    <div key={status} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div
+                      key={status}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    >
                       <span className="text-xs capitalize">{status}</span>
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-4 h-2 rounded"
-                          style={{ backgroundColor: color }}
-                        />
+                        <div className="w-4 h-2 rounded" style={{ backgroundColor: color }} />
                         <input
                           type="color"
                           value={color}
-                          onChange={(e) => handleSettingsChange('colors', {
-                            ...trackingSettings.colors,
-                            [status]: e.target.value
-                          })}
+                          onChange={(e) =>
+                            handleSettingsChange('colors', {
+                              ...trackingSettings.colors,
+                              [status]: e.target.value,
+                            })
+                          }
                           className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
                         />
                       </div>
@@ -477,7 +492,7 @@ const RouteTrackingPanel = ({
   function formatTimeAgo(date) {
     const now = new Date();
     const diff = Math.floor((now - date) / 1000);
-    
+
     if (diff < 60) return `${diff}s ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;

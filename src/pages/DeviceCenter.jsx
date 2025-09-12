@@ -2,20 +2,18 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import {
-  devices,
-  trucks,
-  sensors,
-  lockEvents,
-  getDeviceStatus,
-} from '../data/index.js';
+import { devices, trucks, sensors, lockEvents, getDeviceStatus } from '../data/index.js';
 
 function useQuery() {
   const { search } = useLocation();
   return React.useMemo(() => new URLSearchParams(search), [search]);
 }
 
-const Tabs = [{ key: 'status', label: 'Status' }, { key: 'sensors', label: 'Sensors' }, { key: 'locks', label: 'Locks' }];
+const Tabs = [
+  { key: 'status', label: 'Status' },
+  { key: 'sensors', label: 'Sensors' },
+  { key: 'locks', label: 'Locks' },
+];
 
 const StatusTab = ({ search, truckFilter }) => {
   const rows = devices.map((d) => {
@@ -34,9 +32,11 @@ const StatusTab = ({ search, truckFilter }) => {
   });
 
   const filtered = rows.filter((r) => {
-    const matchesTruck = !truckFilter || r.truckId === truckFilter || (truckFilter === 'unassigned' && !r.truckId);
+    const matchesTruck =
+      !truckFilter || r.truckId === truckFilter || (truckFilter === 'unassigned' && !r.truckId);
     const q = search.trim().toLowerCase();
-    const matchesSearch = !q ||
+    const matchesSearch =
+      !q ||
       r.imei.toLowerCase().includes(q) ||
       r.truckName.toLowerCase().includes(q) ||
       String(r.battery).toLowerCase().includes(q) ||
@@ -95,9 +95,11 @@ const SensorsTab = ({ search, truckFilter }) => {
   });
 
   const filtered = rows.filter((r) => {
-    const matchesTruck = !truckFilter || r.truckId === truckFilter || (truckFilter === 'unassigned' && !r.truckId);
+    const matchesTruck =
+      !truckFilter || r.truckId === truckFilter || (truckFilter === 'unassigned' && !r.truckId);
     const q = search.trim().toLowerCase();
-    const matchesSearch = !q ||
+    const matchesSearch =
+      !q ||
       r.type.toLowerCase().includes(q) ||
       r.position.toLowerCase().includes(q) ||
       r.deviceName.toLowerCase().includes(q) ||
@@ -159,10 +161,12 @@ const LocksTab = ({ search, truckFilter, actionFilter }) => {
     });
 
   const filtered = rows.filter((r) => {
-    const matchesTruck = !truckFilter || r.truckId === truckFilter || (truckFilter === 'unassigned' && !r.truckId);
+    const matchesTruck =
+      !truckFilter || r.truckId === truckFilter || (truckFilter === 'unassigned' && !r.truckId);
     const matchesAction = !actionFilter || r.action === actionFilter;
     const q = search.trim().toLowerCase();
-    const matchesSearch = !q ||
+    const matchesSearch =
+      !q ||
       r.deviceName.toLowerCase().includes(q) ||
       r.truckName.toLowerCase().includes(q) ||
       r.action.toLowerCase().includes(q) ||
@@ -231,10 +235,12 @@ const DeviceCenter = () => {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {location.pathname.startsWith('/fleet/status') ? 'Vehicle Status' : 'IoT Device Center'}
+                {location.pathname.startsWith('/fleet/status')
+                  ? 'Vehicle Status'
+                  : 'IoT Device Center'}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                {location.pathname.startsWith('/fleet/status') 
+                {location.pathname.startsWith('/fleet/status')
                   ? 'Kondisi perangkat pada kendaraan (battery, signal, lock)'
                   : 'Status, Sensors, dan Locks dalam satu halaman'}
               </p>
@@ -274,7 +280,9 @@ const DeviceCenter = () => {
               <option value="">All Trucks</option>
               <option value="unassigned">Unassigned</option>
               {trucks.map((t) => (
-                <option key={t.id} value={t.id}>{t.name} ({t.plate_number || 'N/A'})</option>
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.plate_number || 'N/A'})
+                </option>
               ))}
             </select>
             {activeTab === 'locks' ? (
@@ -294,7 +302,9 @@ const DeviceCenter = () => {
 
           {activeTab === 'status' && <StatusTab search={search} truckFilter={truckFilter} />}
           {activeTab === 'sensors' && <SensorsTab search={search} truckFilter={truckFilter} />}
-          {activeTab === 'locks' && <LocksTab search={search} truckFilter={truckFilter} actionFilter={actionFilter} />}
+          {activeTab === 'locks' && (
+            <LocksTab search={search} truckFilter={truckFilter} actionFilter={actionFilter} />
+          )}
         </div>
       </div>
     </TailwindLayout>

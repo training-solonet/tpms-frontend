@@ -14,7 +14,6 @@ import {
   CpuChipIcon,
   ClockIcon,
   SignalIcon,
-  
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -35,21 +34,21 @@ const navigation = [
       { name: 'All Vehicles', href: '/trucks' },
       { name: 'Vehicle & IoT Status', href: '/fleet/status' },
       { name: 'Vendors', href: '/vendors' },
-    ]
+    ],
   },
-  { 
+  {
     name: 'IoT Devices',
     icon: CpuChipIcon,
     href: '/devices',
   },
-  { 
-    name: 'Telemetry', 
-    icon: SignalIcon, 
+  {
+    name: 'Telemetry',
+    icon: SignalIcon,
     children: [
       { name: 'Tire Pressure', href: '/telemetry/tires' },
       { name: 'Hub Temperature', href: '/telemetry/temperature' },
       { name: 'Fuel Levels', href: '/telemetry/fuel' },
-    ]
+    ],
   },
   // { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },
   // { name: 'Reports', href: '/reports', icon: DocumentTextIcon, current: false },
@@ -85,9 +84,9 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const toggleExpanded = (itemName) => {
-    setExpandedItems(prev => ({
+    setExpandedItems((prev) => ({
       ...prev,
-      [itemName]: !prev[itemName]
+      [itemName]: !prev[itemName],
     }));
   };
 
@@ -110,35 +109,15 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 const active = isActive(item);
                 const expanded = expandedItems[item.name] ?? (active && item.children);
                 return (
-                <li key={item.name}>
-                  {!item.children ? (
-                    <Link
-                      to={item.href}
-                      className={classNames(
-                        active
-                          ? 'bg-white/20 text-white shadow-md'
-                          : 'text-indigo-200 hover:text-white hover:bg-white/10',
-                        'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-200 border border-transparent hover:border-white/20 cursor-pointer relative z-[5001]'
-                      )}
-                    >
-                      <item.icon
-                        className={classNames(
-                          active ? 'text-white' : 'text-indigo-200 group-hover:text-white',
-                          'h-6 w-6 shrink-0'
-                        )}
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </Link>
-                  ) : (
-                    <div>
-                      <button
-                        onClick={() => toggleExpanded(item.name)}
+                  <li key={item.name}>
+                    {!item.children ? (
+                      <Link
+                        to={item.href}
                         className={classNames(
                           active
-                            ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/30'
-                            : 'text-indigo-200 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-md',
-                          'group flex w-full gap-x-3 rounded-xl p-3 text-left text-sm leading-6 font-semibold transition-all duration-200 relative z-[5001]'
+                            ? 'bg-white/20 text-white shadow-md'
+                            : 'text-indigo-200 hover:text-white hover:bg-white/10',
+                          'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-200 border border-transparent hover:border-white/20 cursor-pointer relative z-[5001]'
                         )}
                       >
                         <item.icon
@@ -149,40 +128,61 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           aria-hidden="true"
                         />
                         {item.name}
-                        <svg
+                      </Link>
+                    ) : (
+                      <div>
+                        <button
+                          onClick={() => toggleExpanded(item.name)}
                           className={classNames(
-                            expanded ? 'rotate-90' : '',
-                            'ml-auto h-5 w-5 shrink-0 text-indigo-200 transition-transform'
+                            active
+                              ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/30'
+                              : 'text-indigo-200 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-md',
+                            'group flex w-full gap-x-3 rounded-xl p-3 text-left text-sm leading-6 font-semibold transition-all duration-200 relative z-[5001]'
                           )}
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          aria-hidden="true"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                            clipRule="evenodd"
+                          <item.icon
+                            className={classNames(
+                              active ? 'text-white' : 'text-indigo-200 group-hover:text-white',
+                              'h-6 w-6 shrink-0'
+                            )}
+                            aria-hidden="true"
                           />
-                        </svg>
-                      </button>
-                      {expanded && (
-                        <ul className="mt-1 px-2">
-                          {item.children.map((subItem) => (
-                            <li key={subItem.name}>
-                              <Link
-                                to={subItem.href}
-                                className="block rounded-md py-2 pl-9 pr-2 text-sm leading-6 text-indigo-200 hover:text-white hover:bg-white/10 cursor-pointer relative z-[5001]"
-                              >
-                                {subItem.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );})}
+                          {item.name}
+                          <svg
+                            className={classNames(
+                              expanded ? 'rotate-90' : '',
+                              'ml-auto h-5 w-5 shrink-0 text-indigo-200 transition-transform'
+                            )}
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                        {expanded && (
+                          <ul className="mt-1 px-2">
+                            {item.children.map((subItem) => (
+                              <li key={subItem.name}>
+                                <Link
+                                  to={subItem.href}
+                                  className="block rounded-md py-2 pl-9 pr-2 text-sm leading-6 text-indigo-200 hover:text-white hover:bg-white/10 cursor-pointer relative z-[5001]"
+                                >
+                                  {subItem.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </li>
           <li className="mt-auto">

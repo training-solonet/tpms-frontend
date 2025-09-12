@@ -8,10 +8,7 @@ const TailwindLayout = ({ children }) => {
   return (
     <div className="relative h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-hidden">
       {/* Sidebar */}
-      <TailwindSidebar 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
-      />
+      <TailwindSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main content */}
       <div className="relative lg:pl-72 h-full flex flex-col z-0">
@@ -19,9 +16,7 @@ const TailwindLayout = ({ children }) => {
         <TailwindHeader setSidebarOpen={setSidebarOpen} />
 
         {/* Page content */}
-        <main className="flex-1 overflow-hidden">
-          {children}
-        </main>
+        <main className="flex-1 overflow-hidden">{children}</main>
       </div>
     </div>
   );

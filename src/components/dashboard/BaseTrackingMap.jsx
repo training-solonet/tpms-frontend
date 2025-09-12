@@ -1,21 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  MapIcon
-} from '@heroicons/react/24/outline';
+import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
 import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
 
-const BaseTrackingMap = ({ 
-  children, 
-  onMapReady, 
-  showCompass = true, 
+const BaseTrackingMap = ({
+  children,
+  onMapReady,
+  showCompass = true,
   showMapStyleToggle = true,
   showAutoCenter = true,
   showFitRoutes = false,
   onFitRoutes,
   additionalControls = null,
   sidebarContent = null,
-  bottomControls = null
+  bottomControls = null,
 }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -27,8 +25,9 @@ const BaseTrackingMap = ({
 
   // --- Geofence helpers & movement utilities ---
   // Extract primary polygon (first ring) as [lat, lng]
-  const polygonLatLng = (BORNEO_INDOBARA_GEOJSON?.features?.[0]?.geometry?.coordinates?.[0] || [])
-    .map(([lng, lat]) => [lat, lng]);
+  const polygonLatLng = (
+    BORNEO_INDOBARA_GEOJSON?.features?.[0]?.geometry?.coordinates?.[0] || []
+  ).map(([lng, lat]) => [lat, lng]);
 
   const toRad = (deg) => (deg * Math.PI) / 180;
   const toDeg = (rad) => (rad * 180) / Math.PI;
@@ -51,8 +50,7 @@ const BaseTrackingMap = ({
     const lat1 = toRad(start[0]);
     const lng1 = toRad(start[1]);
     const lat2 = Math.asin(
-      Math.sin(lat1) + (distanceM / R) * Math.cos(brng) * Math.cos(lat1) +
-      0 // keep formula simple for small distances; this is sufficient for 10m steps
+      Math.sin(lat1) + (distanceM / R) * Math.cos(brng) * Math.cos(lat1) + 0 // keep formula simple for small distances; this is sufficient for 10m steps
     );
     // For small distances, use equirectangular approximation for longitude delta
     const dLng = (distanceM / (R * Math.cos(lat1))) * Math.sin(brng);
@@ -64,10 +62,12 @@ const BaseTrackingMap = ({
   const pointInPolygon = (pt, poly) => {
     let inside = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const xi = poly[i][0], yi = poly[i][1];
-      const xj = poly[j][0], yj = poly[j][1];
-      const intersect = ((yi > pt[1]) !== (yj > pt[1])) &&
-        (pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi + 1e-12) + xi);
+      const xi = poly[i][0],
+        yi = poly[i][1];
+      const xj = poly[j][0],
+        yj = poly[j][1];
+      const intersect =
+        yi > pt[1] !== yj > pt[1] && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi + 1e-12) + xi;
       if (intersect) inside = !inside;
     }
     return inside;
@@ -76,8 +76,12 @@ const BaseTrackingMap = ({
   // Centroid of polygon (simple average; adequate for local movement guidance)
   const polygonCentroid = (poly) => {
     if (!poly || poly.length === 0) return [0, 0];
-    let sumLat = 0, sumLng = 0;
-    poly.forEach(([lat, lng]) => { sumLat += lat; sumLng += lng; });
+    let sumLat = 0,
+      sumLng = 0;
+    poly.forEach(([lat, lng]) => {
+      sumLat += lat;
+      sumLng += lng;
+    });
     return [sumLat / poly.length, sumLng / poly.length];
   };
 
@@ -92,8 +96,12 @@ const BaseTrackingMap = ({
         map ||
         initGuardRef.current ||
         (mapRef.current && mapRef.current._leaflet_id) ||
-        (mapRef.current && mapRef.current.classList && mapRef.current.classList.contains('leaflet-container')) ||
-        (mapRef.current && mapRef.current.querySelector && mapRef.current.querySelector('.leaflet-pane'))
+        (mapRef.current &&
+          mapRef.current.classList &&
+          mapRef.current.classList.contains('leaflet-container')) ||
+        (mapRef.current &&
+          mapRef.current.querySelector &&
+          mapRef.current.querySelector('.leaflet-pane'))
       ) {
         return;
       }
@@ -102,10 +110,10 @@ const BaseTrackingMap = ({
           // mark initializing before awaiting
           initGuardRef.current = true;
           const L = await import('leaflet');
-          
+
           // Initialize map centered on PT Borneo Indobara geofence area
           const mapInstance = L.default.map(mapRef.current, {
-            center: [-3.580000, 115.600000],
+            center: [-3.58, 115.6],
             zoom: 13,
             zoomControl: true,
             scrollWheelZoom: true,
@@ -113,7 +121,7 @@ const BaseTrackingMap = ({
             dragging: true,
             touchZoom: true,
             boxZoom: true,
-            keyboard: true
+            keyboard: true,
           });
 
           mapInstance.getContainer().style.outline = 'none';
@@ -131,36 +139,45 @@ const BaseTrackingMap = ({
           }
 
           // Add tile layers
-          const satelliteLayer = L.default.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri',
-            keepBuffer: 3,
-            updateWhenZooming: true,
-            updateWhenIdle: true
-          });
+          const satelliteLayer = L.default.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            {
+              attribution: 'Tiles &copy; Esri',
+              keepBuffer: 3,
+              updateWhenZooming: true,
+              updateWhenIdle: true,
+            }
+          );
 
-          const osmLayer = L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            keepBuffer: 3,
-            updateWhenZooming: true,
-            updateWhenIdle: true
-          });
-          
+          const osmLayer = L.default.tileLayer(
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+              keepBuffer: 3,
+              updateWhenZooming: true,
+              updateWhenIdle: true,
+            }
+          );
+
           satelliteLayer.addTo(mapInstance);
           mapInstance.satelliteLayer = satelliteLayer;
           mapInstance.osmLayer = osmLayer;
 
           // Add geofence
           if (BORNEO_INDOBARA_GEOJSON && BORNEO_INDOBARA_GEOJSON.features) {
-            L.default.geoJSON(BORNEO_INDOBARA_GEOJSON, {
-              style: {
-                color: '#3b82f6',
-                weight: 3,
-                opacity: 0.8,
-                fillColor: '#3b82f6',
-                fillOpacity: 0.1,
-                dashArray: '10, 10'
-              }
-            }).addTo(mapInstance);
+            L.default
+              .geoJSON(BORNEO_INDOBARA_GEOJSON, {
+                style: {
+                  color: '#3b82f6',
+                  weight: 3,
+                  opacity: 0.8,
+                  fillColor: '#3b82f6',
+                  fillOpacity: 0.1,
+                  dashArray: '10, 10',
+                },
+              })
+              .addTo(mapInstance);
           }
 
           // Compute mining area bounds for zoom-based hiding
@@ -173,7 +190,7 @@ const BaseTrackingMap = ({
 
           setMap(mapInstance);
           setLoading(false);
-          
+
           // Notify parent component that map is ready
           if (onMapReady) {
             onMapReady(mapInstance, {
@@ -181,7 +198,7 @@ const BaseTrackingMap = ({
               haversineMeters,
               moveByMeters,
               pointInPolygon,
-              polygonCentroid
+              polygonCentroid,
             });
           }
         } catch (error) {
@@ -199,17 +216,20 @@ const BaseTrackingMap = ({
     if (!map) return;
     // Delay to allow CSS transition to complete before recalculating map size
     const t = setTimeout(() => {
-      try { map.invalidateSize({ animate: false }); } catch (e) {}
+      try {
+        map.invalidateSize({ animate: false });
+      } catch (e) {}
     }, 250);
     return () => clearTimeout(t);
   }, [map, sidebarVisible]);
-
 
   // Invalidate map size on window resize
   useEffect(() => {
     if (!map) return;
     const onResize = () => {
-      try { map.invalidateSize({ animate: false }); } catch (e) {}
+      try {
+        map.invalidateSize({ animate: false });
+      } catch (e) {}
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -226,7 +246,7 @@ const BaseTrackingMap = ({
 
   const resetMapView = () => {
     if (map) {
-      map.setView([-3.580000, 115.600000], 13);
+      map.setView([-3.58, 115.6], 13);
     }
   };
 
@@ -237,19 +257,19 @@ const BaseTrackingMap = ({
         <button
           onClick={() => setSidebarVisible(!sidebarVisible)}
           className={`fixed top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 border border-gray-300 shadow-lg transition-all duration-300 flex items-center rounded-r-lg px-2 py-3`}
-          style={{ 
+          style={{
             // Ensure this stays below the sidebar (which uses z-50)
             zIndex: 40,
-            left: sidebarVisible ? '605px' : '288px'
+            left: sidebarVisible ? '605px' : '288px',
           }}
           title={sidebarVisible ? 'Hide Vehicle List' : 'Show Vehicle List'}
         >
-          <svg 
+          <svg
             className={`w-4 h-4 text-gray-600 transition-transform duration-300 ${
               sidebarVisible ? 'rotate-180' : ''
-            }`} 
-            fill="none" 
-            stroke="currentColor" 
+            }`}
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -259,9 +279,11 @@ const BaseTrackingMap = ({
 
       {/* Sidebar - only show if sidebarContent is provided */}
       {sidebarContent && (
-        <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
-          sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
-        }`}>
+        <div
+          className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
+            sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
+          }`}
+        >
           <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 h-full">
             {sidebarContent}
           </div>
@@ -271,15 +293,21 @@ const BaseTrackingMap = ({
 
       {/* Map Area */}
       <div className="flex-1 relative z-0">
-        <div 
+        <div
           ref={mapRef}
           className="absolute inset-0 w-full h-full"
           style={{ cursor: 'grab', zIndex: 0 }}
         />
-        
+
         {/* Map Controls */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2" style={{ zIndex: 1000, pointerEvents: 'none' }}>
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3 flex items-center gap-3" style={{ pointerEvents: 'auto' }}>
+        <div
+          className="absolute top-4 left-1/2 transform -translate-x-1/2"
+          style={{ zIndex: 1000, pointerEvents: 'none' }}
+        >
+          <div
+            className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3 flex items-center gap-3"
+            style={{ pointerEvents: 'auto' }}
+          >
             {/* Map Style Toggle */}
             {showMapStyleToggle && (
               <div className="flex items-center gap-2">
@@ -292,8 +320,8 @@ const BaseTrackingMap = ({
                     }
                   }}
                   className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                    mapStyle === 'osm' 
-                      ? 'bg-blue-500 text-white' 
+                    mapStyle === 'osm'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -308,8 +336,8 @@ const BaseTrackingMap = ({
                     }
                   }}
                   className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                    mapStyle === 'satellite' 
-                      ? 'bg-blue-500 text-white' 
+                    mapStyle === 'satellite'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -317,24 +345,40 @@ const BaseTrackingMap = ({
                 </button>
               </div>
             )}
-            
+
             {/* Additional Controls */}
             {additionalControls}
           </div>
         </div>
 
         {/* Top Right Controls */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2" style={{ zIndex: 1000, pointerEvents: 'none' }}>
+        <div
+          className="absolute top-4 right-4 flex flex-col gap-2"
+          style={{ zIndex: 1000, pointerEvents: 'none' }}
+        >
           {/* Compass */}
           {showCompass && (
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2" style={{ pointerEvents: 'auto' }}>
+            <div
+              className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2"
+              style={{ pointerEvents: 'auto' }}
+            >
               <div className="flex flex-col items-center relative">
                 <span className="text-xs font-bold text-gray-700 mb-1">N</span>
                 <svg className="w-6 h-6" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="8" stroke="#374151" strokeWidth="1" fill="white"/>
-                  <polygon points="12,6 13.5,11 12,10.5 10.5,11" fill="#ef4444" stroke="#dc2626" strokeWidth="0.5"/>
-                  <polygon points="12,18 10.5,13 12,13.5 13.5,13" fill="#6b7280" stroke="#4b5563" strokeWidth="0.5"/>
-                  <circle cx="12" cy="12" r="1" fill="#374151"/>
+                  <circle cx="12" cy="12" r="8" stroke="#374151" strokeWidth="1" fill="white" />
+                  <polygon
+                    points="12,6 13.5,11 12,10.5 10.5,11"
+                    fill="#ef4444"
+                    stroke="#dc2626"
+                    strokeWidth="0.5"
+                  />
+                  <polygon
+                    points="12,18 10.5,13 12,13.5 13.5,13"
+                    fill="#6b7280"
+                    stroke="#4b5563"
+                    strokeWidth="0.5"
+                  />
+                  <circle cx="12" cy="12" r="1" fill="#374151" />
                 </svg>
               </div>
             </div>
@@ -356,7 +400,7 @@ const BaseTrackingMap = ({
               <span className="text-sm font-medium">Fit Routes</span>
             </button>
           )}
-          
+
           {/* Auto Center Button */}
           {showAutoCenter && (
             <button
@@ -377,7 +421,10 @@ const BaseTrackingMap = ({
 
         {/* Loading Overlay */}
         {loading && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center" style={{ zIndex: 1001 }}>
+          <div
+            className="absolute inset-0 bg-white/80 flex items-center justify-center"
+            style={{ zIndex: 1001 }}
+          >
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading map...</p>

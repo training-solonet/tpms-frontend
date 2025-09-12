@@ -44,7 +44,7 @@ const CommandPalette = ({ open, setOpen }) => {
       try {
         const res = await trucksAPI.getRealTimeLocations();
         if (res?.success && Array.isArray(res.data?.features)) {
-          vehicles = res.data.features.map(f => ({
+          vehicles = res.data.features.map((f) => ({
             id: f.properties.truckNumber,
             name: f.properties.truckName || f.properties.truckNumber,
             status: (f.properties.status || 'offline').toLowerCase(),
@@ -54,13 +54,17 @@ const CommandPalette = ({ open, setOpen }) => {
         // ignore, fallback
       }
       if (!vehicles.length) {
-        vehicles = trucksList.map(t => ({ id: t.id, name: t.name, status: 'offline' }));
+        vehicles = trucksList.map((t) => ({ id: t.id, name: t.name, status: 'offline' }));
       }
-      const vMatches = vehicles.filter(v => `${v.id} ${v.name}`.toLowerCase().includes(term)).slice(0, 8);
+      const vMatches = vehicles
+        .filter((v) => `${v.id} ${v.name}`.toLowerCase().includes(term))
+        .slice(0, 8);
       setVehicleResults(vMatches);
 
       // Devices search from local
-      const dMatches = devices.filter(d => `${d.sn} ${d.sim_number}`.toLowerCase().includes(term)).slice(0, 8);
+      const dMatches = devices
+        .filter((d) => `${d.sn} ${d.sim_number}`.toLowerCase().includes(term))
+        .slice(0, 8);
       setDeviceResults(dMatches);
     } finally {
       setLoading(false);
@@ -131,7 +135,7 @@ const CommandPalette = ({ open, setOpen }) => {
                     <div className="text-xs text-slate-400">No results</div>
                   )}
                   <ul className="space-y-1">
-                    {vehicleResults.map(v => (
+                    {vehicleResults.map((v) => (
                       <li key={v.id}>
                         <button
                           onClick={() => onSelectVehicle(v)}
@@ -150,7 +154,7 @@ const CommandPalette = ({ open, setOpen }) => {
                     <div className="text-xs text-slate-400">No results</div>
                   )}
                   <ul className="space-y-1">
-                    {deviceResults.map(d => (
+                    {deviceResults.map((d) => (
                       <li key={d.id}>
                         <button
                           onClick={() => onSelectDevice(d)}

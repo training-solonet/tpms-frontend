@@ -16,7 +16,14 @@ import React from 'react';
  * - Common card thumbnail size works well at 160x100 (16:10) or 150x100 (3:2)
  * - Use object-cover to crop nicely inside rounded container
  */
-export default function TruckImage({ id, src, width = 160, height = 100, alt = 'Truck photo', className = '' }) {
+export default function TruckImage({
+  id,
+  src,
+  width = 160,
+  height = 100,
+  alt = 'Truck photo',
+  className = '',
+}) {
   // Prefer provided src; otherwise use a stable placeholder seed based on id
   const seed = encodeURIComponent(String(id || 'truck'));
   // placehold.co is fast and simple; picsum offers varied photos:

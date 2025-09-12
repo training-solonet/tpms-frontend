@@ -9,14 +9,14 @@ export function generateDummyTrucks(count = 1000) {
     const driver = {
       id: `DRV-${(i + 1).toString().padStart(4, '0')}`,
       name: `Driver ${(i + 1).toString().padStart(4, '0')}`,
-      phone: `0812${(1000000 + i).toString().slice(0,7)}`,
+      phone: `0812${(1000000 + i).toString().slice(0, 7)}`,
     };
 
     const tiresCount = 10; // default 10 tires per truck for dummy
     const tires = Array.from({ length: tiresCount }, (_, ti) => {
       const tireNo = ti + 1;
       const sn = `${i + 1}${tireNo}`.padEnd(10, '0');
-      const simNumber = `8986081426238${(100000 + i).toString().padStart(6,'0')}`;
+      const simNumber = `8986081426238${(100000 + i).toString().padStart(6, '0')}`;
       return {
         tireNo,
         sensor: {
@@ -54,7 +54,7 @@ export function generateDummyTrucks(count = 1000) {
       cluster,
       driver,
       device: {
-        sn: `${(3462680000 + i)}`,
+        sn: `${3462680000 + i}`,
         cmd: 'device',
         data: {
           lng: 113.86 + Math.random() * 0.1,

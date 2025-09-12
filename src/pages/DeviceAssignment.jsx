@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  CpuChipIcon, 
+import {
+  CpuChipIcon,
   TruckIcon,
-  MagnifyingGlassIcon, 
+  MagnifyingGlassIcon,
   PlusIcon,
   EyeIcon,
   PencilIcon,
@@ -12,7 +12,7 @@ import {
   ExclamationTriangleIcon,
   CalendarIcon,
   SignalIcon,
-  Battery0Icon
+  Battery0Icon,
 } from '@heroicons/react/24/outline';
 import { devices, trucks, sensors } from '../data/index.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
@@ -24,9 +24,10 @@ const DeviceAssignment = () => {
   const [filterStatus, setFilterStatus] = useState('all');
 
   // Filter devices
-  const filteredDevices = devices.filter(device => {
-    const matchesSearch = device.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         device.sim_number?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredDevices = devices.filter((device) => {
+    const matchesSearch =
+      device.sn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      device.sim_number?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTruck = filterTruck === 'all' || device.truck_id === filterTruck;
     const deviceStatus = device.truck_id ? 'assigned' : 'unassigned';
     const matchesStatus = filterStatus === 'all' || deviceStatus === filterStatus;
@@ -35,14 +36,14 @@ const DeviceAssignment = () => {
 
   // Get device statistics
   const getDeviceStats = () => {
-    const assignedDevices = devices.filter(d => d.truck_id).length;
-    const unassignedDevices = devices.filter(d => !d.truck_id).length;
-    
+    const assignedDevices = devices.filter((d) => d.truck_id).length;
+    const unassignedDevices = devices.filter((d) => !d.truck_id).length;
+
     return {
       total: devices.length,
       assigned: assignedDevices,
       unassigned: unassignedDevices,
-      online: devices.filter(d => Math.random() > 0.2).length // Simulated online status
+      online: devices.filter((d) => Math.random() > 0.2).length, // Simulated online status
     };
   };
 
@@ -51,13 +52,13 @@ const DeviceAssignment = () => {
   // Get truck name
   const getTruckName = (truckId) => {
     if (!truckId) return 'Unassigned';
-    const truck = trucks.find(t => t.id === truckId);
+    const truck = trucks.find((t) => t.id === truckId);
     return truck ? `${truck.name} (${truck.plate_number})` : 'Unknown Truck';
   };
 
   // Get device sensors
   const getDeviceSensors = (deviceId) => {
-    return sensors.filter(s => s.device_id === deviceId);
+    return sensors.filter((s) => s.device_id === deviceId);
   };
 
   const getStatusColor = (device) => {
@@ -78,7 +79,7 @@ const DeviceAssignment = () => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -167,8 +168,8 @@ const DeviceAssignment = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <select 
-                  value={filterStatus} 
+                <select
+                  value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
@@ -176,14 +177,16 @@ const DeviceAssignment = () => {
                   <option value="assigned">Assigned</option>
                   <option value="unassigned">Unassigned</option>
                 </select>
-                <select 
-                  value={filterTruck} 
+                <select
+                  value={filterTruck}
                   onChange={(e) => setFilterTruck(e.target.value)}
                   className="bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="all">All Trucks</option>
-                  {trucks.map(truck => (
-                    <option key={truck.id} value={truck.id}>{truck.name}</option>
+                  {trucks.map((truck) => (
+                    <option key={truck.id} value={truck.id}>
+                      {truck.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -194,7 +197,7 @@ const DeviceAssignment = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8 max-h-[600px] overflow-y-auto">
             {filteredDevices.map((device) => {
               const sensorCount = getDeviceSensors(device.id).length;
-              
+
               return (
                 <div
                   key={device.id}
@@ -211,7 +214,9 @@ const DeviceAssignment = () => {
                         <p className="text-sm text-gray-600">SIM: {device.sim_number}</p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(device)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(device)}`}
+                    >
                       {getStatusText(device)}
                     </span>
                   </div>
@@ -256,7 +261,7 @@ const DeviceAssignment = () => {
                       <h2 className="text-2xl font-bold text-gray-900">{selectedDevice.sn}</h2>
                       <p className="text-gray-600">SIM: {selectedDevice.sim_number}</p>
                     </div>
-                    <button 
+                    <button
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl transition-colors"
                       onClick={() => setSelectedDevice(null)}
                     >
@@ -267,7 +272,9 @@ const DeviceAssignment = () => {
                   <div className="space-y-6">
                     {/* Device Information */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Device Information</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Device Information
+                      </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
@@ -276,7 +283,7 @@ const DeviceAssignment = () => {
                           </div>
                           <p className="text-gray-600">{selectedDevice.sn}</p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
                             <SignalIcon className="h-5 w-5 text-gray-600" />
@@ -284,7 +291,7 @@ const DeviceAssignment = () => {
                           </div>
                           <p className="text-gray-600">{selectedDevice.sim_number}</p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
                             <TruckIcon className="h-5 w-5 text-gray-600" />
@@ -292,7 +299,7 @@ const DeviceAssignment = () => {
                           </div>
                           <p className="text-gray-600">{getTruckName(selectedDevice.truck_id)}</p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
                             <CalendarIcon className="h-5 w-5 text-gray-600" />
@@ -305,7 +312,9 @@ const DeviceAssignment = () => {
 
                     {/* Connected Sensors */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Connected Sensors</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Connected Sensors
+                      </h3>
                       <div className="space-y-3 max-h-60 overflow-y-auto">
                         {getDeviceSensors(selectedDevice.id).map((sensor) => (
                           <div key={sensor.id} className="bg-gray-50 rounded-xl p-4">
@@ -314,7 +323,9 @@ const DeviceAssignment = () => {
                               <div className="flex-1">
                                 <p className="font-medium text-gray-900">{sensor.type} Sensor</p>
                                 <p className="text-sm text-gray-600">Position: {sensor.position}</p>
-                                <p className="text-sm text-gray-600">Installed: {formatDate(sensor.installed_at)}</p>
+                                <p className="text-sm text-gray-600">
+                                  Installed: {formatDate(sensor.installed_at)}
+                                </p>
                               </div>
                             </div>
                           </div>

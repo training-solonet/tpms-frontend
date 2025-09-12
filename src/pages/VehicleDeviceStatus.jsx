@@ -16,7 +16,9 @@ const VehicleDeviceStatus = () => {
   // UI controls for scale
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all | active | idle | offline
-  const [clusterSelections, setClusterSelections] = useState(new Set(['1-199','200-399','400-599','600-799','800-999']));
+  const [clusterSelections, setClusterSelections] = useState(
+    new Set(['1-199', '200-399', '400-599', '600-799', '800-999'])
+  );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
 
@@ -27,7 +29,9 @@ const VehicleDeviceStatus = () => {
     const numMatch = idStr.match(/(\d{1,4})/);
     const num = numMatch ? numMatch[1] : null;
     if (num) {
-      const t = trucksList.find(tk => String(tk.name).includes(num) || String(tk.plate_number).includes(num));
+      const t = trucksList.find(
+        (tk) => String(tk.name).includes(num) || String(tk.plate_number).includes(num)
+      );
       if (t) return t.id;
     }
     return null;
@@ -40,7 +44,7 @@ const VehicleDeviceStatus = () => {
         if (USE_BACKEND) {
           const res = await trucksAPI.getRealTimeLocations();
           if (res?.success && res.data?.features?.length) {
-            const vehicleData = res.data.features.map(f => ({
+            const vehicleData = res.data.features.map((f) => ({
               id: f.properties.truckNumber,
               name: f.properties.truckName || f.properties.truckNumber,
               status: (f.properties.status || 'offline').toLowerCase(),
@@ -53,23 +57,25 @@ const VehicleDeviceStatus = () => {
           }
         }
         // fallback dummy
-        const demo = getLiveTrackingData()?.map(v => ({
-          id: v.id,
-          name: v.id,
-          status: v.status || 'offline',
-          speed: v.speed || 0,
-          lastUpdate: v.lastUpdate || new Date(),
-        })) || [];
+        const demo =
+          getLiveTrackingData()?.map((v) => ({
+            id: v.id,
+            name: v.id,
+            status: v.status || 'offline',
+            speed: v.speed || 0,
+            lastUpdate: v.lastUpdate || new Date(),
+          })) || [];
         setVehicles(demo);
         setError('Backend not available or empty - using demo data');
       } catch (e) {
-        const demo = getLiveTrackingData()?.map(v => ({
-          id: v.id,
-          name: v.id,
-          status: v.status || 'offline',
-          speed: v.speed || 0,
-          lastUpdate: v.lastUpdate || new Date(),
-        })) || [];
+        const demo =
+          getLiveTrackingData()?.map((v) => ({
+            id: v.id,
+            name: v.id,
+            status: v.status || 'offline',
+            speed: v.speed || 0,
+            lastUpdate: v.lastUpdate || new Date(),
+          })) || [];
         setVehicles(demo);
         setError('Failed to load backend - using demo data');
       } finally {
@@ -80,14 +86,17 @@ const VehicleDeviceStatus = () => {
   }, []);
 
   // Reset to first page when filters change
-  useEffect(() => { setPage(1); }, [query, statusFilter, clusterSelections, pageSize]);
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter, clusterSelections, pageSize]);
 
   const rows = useMemo(() => {
-    return vehicles.map(v => {
+    return vehicles.map((v) => {
       const uuid = resolveTruckUUID(v.id) || v.id;
-      const dev = devices.find(d => d.truck_id === uuid) || null;
-      const statusList = dev ? deviceStatusEvents.filter(e => e.device_id === dev.id) : [];
-      const latest = statusList.sort((a,b) => new Date(b.reported_at) - new Date(a.reported_at))[0] || null;
+      const dev = devices.find((d) => d.truck_id === uuid) || null;
+      const statusList = dev ? deviceStatusEvents.filter((e) => e.device_id === dev.id) : [];
+      const latest =
+        statusList.sort((a, b) => new Date(b.reported_at) - new Date(a.reported_at))[0] || null;
       return { vehicle: v, device: dev, deviceStatus: latest };
     });
   }, [vehicles]);
@@ -118,7 +127,10 @@ const VehicleDeviceStatus = () => {
         let ok = false;
         for (const key of clusterSelections) {
           const [lo, hi] = key.split('-').map(Number);
-          if (n >= lo && n <= hi) { ok = true; break; }
+          if (n >= lo && n <= hi) {
+            ok = true;
+            break;
+          }
         }
         if (!ok) return false;
       }
@@ -134,9 +146,12 @@ const VehicleDeviceStatus = () => {
 
   const badgeClass = (status) => {
     switch ((status || '').toLowerCase()) {
-      case 'active': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'idle': return 'bg-amber-100 text-amber-700 border-amber-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'active':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'idle':
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
@@ -146,7 +161,9 @@ const VehicleDeviceStatus = () => {
         <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Vehicle & IoT Status</h1>
-            <p className="text-sm text-slate-600">Informasi status kendaraan dan perangkat IoT dengan baterai & kunci</p>
+            <p className="text-sm text-slate-600">
+              Informasi status kendaraan dan perangkat IoT dengan baterai & kunci
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <input
@@ -181,16 +198,17 @@ const VehicleDeviceStatus = () => {
         {/* Cluster filter */}
         <div className="mb-4 flex items-center gap-4 flex-wrap">
           <div className="text-xs font-medium text-slate-600">Cluster (Truck No)</div>
-          {['1-199','200-399','400-599','600-799','800-999'].map(range => (
+          {['1-199', '200-399', '400-599', '600-799', '800-999'].map((range) => (
             <label key={range} className="flex items-center gap-2 text-xs text-slate-700">
               <input
                 type="checkbox"
                 className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 checked={clusterSelections.has(range)}
                 onChange={(e) => {
-                  setClusterSelections(prev => {
+                  setClusterSelections((prev) => {
                     const next = new Set(prev);
-                    if (e.target.checked) next.add(range); else next.delete(range);
+                    if (e.target.checked) next.add(range);
+                    else next.delete(range);
                     return next;
                   });
                 }}
@@ -200,7 +218,9 @@ const VehicleDeviceStatus = () => {
           ))}
           <button
             className="ml-2 text-xs px-2 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-50"
-            onClick={() => setClusterSelections(new Set(['1-199','200-399','400-599','600-799','800-999']))}
+            onClick={() =>
+              setClusterSelections(new Set(['1-199', '200-399', '400-599', '600-799', '800-999']))
+            }
           >
             Select All
           </button>
@@ -215,23 +235,55 @@ const VehicleDeviceStatus = () => {
         {/* Summary and pagination header */}
         <div className="mb-3 flex items-center justify-between text-xs text-slate-600">
           <div>
-            Showing {total === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + pageSize, total)} of {total}
+            Showing {total === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + pageSize, total)} of{' '}
+            {total}
           </div>
           <div className="flex items-center gap-2">
-            <button disabled={currentPage <= 1} onClick={() => setPage(1)} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">« First</button>
-            <button disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p-1))} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">‹ Prev</button>
-            <span className="px-2">Page {currentPage} / {pageCount}</span>
-            <button disabled={currentPage >= pageCount} onClick={() => setPage(p => Math.min(pageCount, p+1))} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">Next ›</button>
-            <button disabled={currentPage >= pageCount} onClick={() => setPage(pageCount)} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">Last »</button>
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setPage(1)}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              « First
+            </button>
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              ‹ Prev
+            </button>
+            <span className="px-2">
+              Page {currentPage} / {pageCount}
+            </span>
+            <button
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              Next ›
+            </button>
+            <button
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage(pageCount)}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              Last »
+            </button>
           </div>
         </div>
         {error && (
-          <div className="mb-4 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{error}</div>
+          <div className="mb-4 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            {error}
+          </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {pageRows.map(({ vehicle, device, deviceStatus }) => (
-            <div key={vehicle.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+            <div
+              key={vehicle.id}
+              className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4"
+            >
               {/* Truck thumbnail */}
               <div className="mb-3 rounded-lg overflow-hidden">
                 <TruckImage id={vehicle.id} width={320} height={200} />
@@ -241,7 +293,9 @@ const VehicleDeviceStatus = () => {
                   <div className="text-sm text-slate-500">Vehicle</div>
                   <div className="text-lg font-semibold text-slate-900">{vehicle.id}</div>
                 </div>
-                <span className={`px-3 py-1 rounded-lg text-xs font-semibold border ${badgeClass(vehicle.status)}`}>
+                <span
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold border ${badgeClass(vehicle.status)}`}
+                >
                   {String(vehicle.status || 'offline').toUpperCase()}
                 </span>
               </div>
@@ -253,7 +307,9 @@ const VehicleDeviceStatus = () => {
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Last Update</div>
-                  <div className="font-medium text-slate-800">{new Date(vehicle.lastUpdate).toLocaleString('id-ID')}</div>
+                  <div className="font-medium text-slate-800">
+                    {new Date(vehicle.lastUpdate).toLocaleString('id-ID')}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Device SN</div>
@@ -265,20 +321,28 @@ const VehicleDeviceStatus = () => {
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Host Battery</div>
-                  <div className="font-medium text-slate-800">{deviceStatus?.host_bat != null ? `${deviceStatus.host_bat}%` : '-'}</div>
+                  <div className="font-medium text-slate-800">
+                    {deviceStatus?.host_bat != null ? `${deviceStatus.host_bat}%` : '-'}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Repeater 1</div>
-                  <div className="font-medium text-slate-800">{deviceStatus?.repeater1_bat != null ? `${deviceStatus.repeater1_bat}%` : '-'}</div>
+                  <div className="font-medium text-slate-800">
+                    {deviceStatus?.repeater1_bat != null ? `${deviceStatus.repeater1_bat}%` : '-'}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Repeater 2</div>
-                  <div className="font-medium text-slate-800">{deviceStatus?.repeater2_bat != null ? `${deviceStatus.repeater2_bat}%` : '-'}</div>
+                  <div className="font-medium text-slate-800">
+                    {deviceStatus?.repeater2_bat != null ? `${deviceStatus.repeater2_bat}%` : '-'}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Lock</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${deviceStatus?.lock_state ? 'bg-emerald-500' : 'bg-gray-300'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${deviceStatus?.lock_state ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                    ></span>
                     {deviceStatus?.lock_state ? 'Locked' : 'Unlocked'}
                   </div>
                 </div>
@@ -290,14 +354,41 @@ const VehicleDeviceStatus = () => {
         {/* Pagination footer */}
         <div className="mt-4 flex items-center justify-between text-xs text-slate-600">
           <div>
-            Showing {total === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + pageSize, total)} of {total}
+            Showing {total === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + pageSize, total)} of{' '}
+            {total}
           </div>
           <div className="flex items-center gap-2">
-            <button disabled={currentPage <= 1} onClick={() => setPage(1)} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">« First</button>
-            <button disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p-1))} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">‹ Prev</button>
-            <span className="px-2">Page {currentPage} / {pageCount}</span>
-            <button disabled={currentPage >= pageCount} onClick={() => setPage(p => Math.min(pageCount, p+1))} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">Next ›</button>
-            <button disabled={currentPage >= pageCount} onClick={() => setPage(pageCount)} className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40">Last »</button>
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setPage(1)}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              « First
+            </button>
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              ‹ Prev
+            </button>
+            <span className="px-2">
+              Page {currentPage} / {pageCount}
+            </span>
+            <button
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              Next ›
+            </button>
+            <button
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage(pageCount)}
+              className="px-2 py-1 rounded border border-slate-300 disabled:opacity-40"
+            >
+              Last »
+            </button>
           </div>
         </div>
       </div>
