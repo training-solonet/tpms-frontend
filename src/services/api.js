@@ -2,11 +2,15 @@
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || 'http://connectis.my.id:3001',
-  WS_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) || 'ws://connectis.my.id:3001/ws',
+  BASE_URL:
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
+    'http://connectis.my.id:3001',
+  WS_URL:
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) ||
+    'ws://connectis.my.id:3001/ws',
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000
+  RETRY_DELAY: 1000,
 };
 
 // Vendors (master data) API - CRUD
@@ -24,22 +28,22 @@ export const vendorsAPI = {
   create: async (payload) => {
     return await apiRequest(`/api/vendors`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   update: async (id, payload) => {
     return await apiRequest(`/api/vendors/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   remove: async (id) => {
     return await apiRequest(`/api/vendors/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
-  }
+  },
 };
 
 // Connection status
@@ -63,8 +67,8 @@ const checkBackendConnection = async () => {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` })
-      }
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
     });
 
     clearTimeout(timeoutId);
@@ -94,9 +98,7 @@ const checkBackendConnection = async () => {
 // Generic API request
 const getAuthHeaders = () => {
   const token = getAuthToken();
-  return token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const apiRequest = async (endpoint, options = {}) => {
@@ -114,10 +116,10 @@ const apiRequest = async (endpoint, options = {}) => {
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
+      ...(token && { Authorization: `Bearer ${token}` }),
     },
     timeout: API_CONFIG.TIMEOUT,
-    ...options
+    ...options,
   };
 
   try {
@@ -126,7 +128,7 @@ const apiRequest = async (endpoint, options = {}) => {
 
     const response = await fetch(url, {
       ...defaultOptions,
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
@@ -154,7 +156,7 @@ const apiRequest = async (endpoint, options = {}) => {
     return {
       success: true,
       data: data.data || data,
-      online: true
+      online: true,
     };
   } catch (error) {
     isOnline = false;
@@ -166,7 +168,7 @@ const apiRequest = async (endpoint, options = {}) => {
       success: false,
       data: null,
       online: false,
-      error: error.message
+      error: error.message,
     };
   }
 };
@@ -176,7 +178,7 @@ export const authAPI = {
   login: async (credentials) => {
     const response = await apiRequest('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify(credentials)
+      body: JSON.stringify(credentials),
     });
 
     // Helper to decode JWT payload
@@ -255,12 +257,12 @@ export const authAPI = {
       return {
         success: true,
         data: JSON.parse(user),
-        token
+        token,
       };
     }
 
     return { success: false, data: null };
-  }
+  },
 };
 
 // Trucks API
@@ -278,14 +280,14 @@ export const trucksAPI = {
   update: async (id, payload) => {
     return await apiRequest(`/api/trucks/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   updateStatus: async (id, status) => {
     return await apiRequest(`/api/trucks/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status }),
     });
   },
 
@@ -310,7 +312,7 @@ export const trucksAPI = {
         '/api/trucks/locations',
         '/api/vehicles/realtime',
         '/api/tracking/realtime',
-        '/api/fleet/locations'
+        '/api/fleet/locations',
       ];
 
       for (const altEndpoint of alternatives) {
@@ -386,7 +388,7 @@ export const trucksAPI = {
     }
 
     return result;
-  }
+  },
 };
 
 // Dashboard API
@@ -411,7 +413,7 @@ export const dashboardAPI = {
 
   getMaintenanceReport: async () => {
     return await apiRequest('/api/dashboard/maintenance');
-  }
+  },
 };
 
 // Mining Area API
@@ -426,7 +428,7 @@ export const miningAreaAPI = {
 
   getTrucksInZone: async (zoneName) => {
     return await apiRequest(`/api/mining-area/${zoneName}/trucks`);
-  }
+  },
 };
 
 // Alerts API
@@ -439,9 +441,9 @@ export const alertsAPI = {
 
   resolve: async (alertId) => {
     return await apiRequest(`/api/alerts/${alertId}/resolve`, {
-      method: 'PUT'
+      method: 'PUT',
     });
-  }
+  },
 };
 
 // Connection status utilities
@@ -455,7 +457,7 @@ export const connectionUtils = {
     return setInterval(async () => {
       await checkBackendConnection();
     }, interval);
-  }
+  },
 };
 
 // WebSocket connection for real-time updates
@@ -513,7 +515,9 @@ export class FleetWebSocket {
   attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+      console.log(
+        `Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+      );
 
       setTimeout(() => {
         this.connect();
@@ -525,7 +529,7 @@ export class FleetWebSocket {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.send({
         type: 'subscribe',
-        channel: channel
+        channel: channel,
       });
 
       this.messageHandlers.set(channel, handler);
@@ -571,5 +575,5 @@ export default {
   connectionUtils,
   FleetWebSocket,
   API_CONFIG,
-  getAuthHeaders
+  getAuthHeaders,
 };

@@ -4,7 +4,7 @@ import ComingSoon from './ComingSoon';
 
 const Reports = () => {
   return (
-    <ComingSoon 
+    <ComingSoon
       title="Fleet Reports"
       description="Generate comprehensive reports on fleet performance, fuel consumption, driver behavior, and operational efficiency. Reporting system coming soon."
     />

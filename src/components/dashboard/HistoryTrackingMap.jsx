@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import {
-  PlayIcon,
-  PauseIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
+import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
 import { trucksAPI, alertsAPI } from '../../services/api.js';
 import TirePressureDisplay from './TirePressureDisplay';
@@ -23,12 +19,12 @@ const HistoryTrackingMap = () => {
     [-3.507221, 115.625322],
     [-3.507603, 115.625873],
     [-3.507746, 115.626132],
-    [-3.507841, 115.626260],
+    [-3.507841, 115.62626],
     [-3.507927, 115.626371],
-    [-3.508066, 115.626490],
+    [-3.508066, 115.62649],
     [-3.508177, 115.626646],
     [-3.508313, 115.626803],
-    [-3.508420, 115.626930],
+    [-3.50842, 115.62693],
     [-3.508403, 115.626905],
     [-3.508502, 115.627021],
     [-3.508645, 115.627177],
@@ -40,7 +36,7 @@ const HistoryTrackingMap = () => {
     [-3.509931, 115.628342],
     [-3.510025, 115.628491],
     [-3.510138, 115.628622],
-    [-3.510260, 115.628766],
+    [-3.51026, 115.628766],
     [-3.510399, 115.628956],
     [-3.510597, 115.629145],
     [-3.511003, 115.629446],
@@ -53,7 +49,7 @@ const HistoryTrackingMap = () => {
     [-3.512475, 115.629677],
     [-3.512764, 115.629602],
     [-3.512903, 115.629564],
-    [-3.513150, 115.629511],
+    [-3.51315, 115.629511],
     [-3.513284, 115.629462],
     [-3.513235, 115.629296],
     [-3.513193, 115.629087],
@@ -61,23 +57,33 @@ const HistoryTrackingMap = () => {
     [-3.513128, 115.628685],
     [-3.513235, 115.628593],
     [-3.513401, 115.628534],
-    [-3.513562, 115.628470],
+    [-3.513562, 115.62847],
     [-3.513749, 115.628459],
     [-3.513926, 115.628406],
-    [-3.514135, 115.628384]
+    [-3.514135, 115.628384],
   ];
   const [map, setMap] = useState(null);
   const [mapUtils, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [clusterSelections, setClusterSelections] = useState(new Set(['1-199','200-399','400-599','600-799','800-999']));
+  const [clusterSelections, setClusterSelections] = useState(
+    new Set(['1-199', '200-399', '400-599', '600-799', '800-999'])
+  );
   const [vehicleRoutes, setVehicleRoutes] = useState({});
   const [routeMetaByVehicle, setRouteMetaByVehicle] = useState({});
   const [routeVisible, setRouteVisible] = useState({});
   const [routeColors] = useState([
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#96CEB4',
+    '#FFEAA7',
+    '#DDA0DD',
+    '#98D8C8',
+    '#F7DC6F',
+    '#BB8FCE',
+    '#85C1E9',
   ]);
 
   // History-specific states
@@ -111,7 +117,9 @@ const HistoryTrackingMap = () => {
     const numMatch = idStr.match(/(\d{1,4})/);
     const num = numMatch ? numMatch[1] : null;
     if (num) {
-      const t = trucksList.find(tk => String(tk.name).includes(num) || String(tk.plate_number).includes(num));
+      const t = trucksList.find(
+        (tk) => String(tk.name).includes(num) || String(tk.plate_number).includes(num)
+      );
       if (t) return t.id;
     }
     return null;
@@ -164,41 +172,48 @@ const HistoryTrackingMap = () => {
   const loadRouteHistory = async (truckId, timeRange = '24h', windowOverride = null) => {
     try {
       console.log(`📍 Loading route history for ${truckId} (${timeRange})`);
-      
+
       const { start, end } = windowOverride || getDayWindow(selectedDate);
       const params = {
         timeRange: timeRange,
         limit: timeRange === 'shift' ? 1000 : 200,
         minSpeed: 0,
         startTime: start.toISOString(),
-        endTime: end.toISOString()
+        endTime: end.toISOString(),
       };
-      
+
       const numericId = (String(truckId).match(/\d{1,4}/) || [])[0];
       const primaryId = numericId || truckId;
       let response = await trucksAPI.getLocationHistory(primaryId, params);
-      
-      const toRecords = (records) => (records || [])
-        .map(record => {
-          const tStr = record.timestamp || record.recorded_at || record.created_at || record.time || record.gps_time || null;
-          const t = tStr ? new Date(tStr) : null;
-          const lat = parseFloat(record.latitude ?? record.lat);
-          const lng = parseFloat(record.longitude ?? record.lng ?? record.lon);
-          const speed = parseFloat(record.speed ?? record.speed_kmh ?? record.v) || null;
-          return { lat, lng, t, raw: record, speed };
-        })
-        .filter(r => !isNaN(r.lat) && !isNaN(r.lng) && r.lat !== 0 && r.lng !== 0)
-        .filter(r => {
-          if (!r.t || isNaN(r.t)) return true;
-          return r.t >= start && r.t <= end;
-        });
 
-      const toPoints = (recs) => (recs || []).map(r => [r.lat, r.lng]);
+      const toRecords = (records) =>
+        (records || [])
+          .map((record) => {
+            const tStr =
+              record.timestamp ||
+              record.recorded_at ||
+              record.created_at ||
+              record.time ||
+              record.gps_time ||
+              null;
+            const t = tStr ? new Date(tStr) : null;
+            const lat = parseFloat(record.latitude ?? record.lat);
+            const lng = parseFloat(record.longitude ?? record.lng ?? record.lon);
+            const speed = parseFloat(record.speed ?? record.speed_kmh ?? record.v) || null;
+            return { lat, lng, t, raw: record, speed };
+          })
+          .filter((r) => !isNaN(r.lat) && !isNaN(r.lng) && r.lat !== 0 && r.lng !== 0)
+          .filter((r) => {
+            if (!r.t || isNaN(r.t)) return true;
+            return r.t >= start && r.t <= end;
+          });
+
+      const toPoints = (recs) => (recs || []).map((r) => [r.lat, r.lng]);
 
       if (response.success && response.data) {
         let enriched = toRecords(response.data);
         let routePoints = toPoints(enriched);
-        
+
         if ((!routePoints || routePoints.length === 0) && primaryId !== truckId) {
           console.log(`🔁 Retrying history with raw ID: ${truckId}`);
           response = await trucksAPI.getLocationHistory(truckId, params);
@@ -207,11 +222,11 @@ const HistoryTrackingMap = () => {
             routePoints = toPoints(enriched);
           }
         }
-        
+
         console.log(`✅ Loaded ${routePoints.length} route points for ${truckId}`);
         return { points: routePoints, records: enriched };
       }
-      
+
       return { points: [], records: [] };
     } catch (error) {
       console.error(`❌ Failed to load route history for ${truckId}:`, error);
@@ -221,26 +236,29 @@ const HistoryTrackingMap = () => {
 
   const calculateRouteDistance = (routePoints) => {
     if (routePoints.length < 2) return 0;
-    
+
     let totalDistance = 0;
     for (let i = 1; i < routePoints.length; i++) {
       const lat1 = routePoints[i - 1][0];
       const lng1 = routePoints[i - 1][1];
       const lat2 = routePoints[i][0];
       const lng2 = routePoints[i][1];
-      
+
       const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const distance = R * c;
-      
+
       totalDistance += distance;
     }
-    
+
     return totalDistance;
   };
 
@@ -254,7 +272,7 @@ const HistoryTrackingMap = () => {
     const loadHistoryData = async () => {
       try {
         setLoading(true);
-        
+
         if (USE_TEST_ROUTE) {
           const testVehicle = {
             id: 'TRUCK-001',
@@ -268,11 +286,12 @@ const HistoryTrackingMap = () => {
             signal: 'good',
             lastUpdate: new Date(),
             route: 'Test Route',
-            load: 'Empty'
+            load: 'Empty',
           };
           // Load route2.md if available
           const r2pts = getDummyRealRoutePoints2();
-          const ROUTE2 = Array.isArray(r2pts) && r2pts.length > 1 ? r2pts.map(p => [p.lat, p.lng]) : [];
+          const ROUTE2 =
+            Array.isArray(r2pts) && r2pts.length > 1 ? r2pts.map((p) => [p.lat, p.lng]) : [];
           const vehiclesArr = [testVehicle];
           const routesData = { [testVehicle.id]: TEST_ROUTE };
           const routeVisibilityData = { [testVehicle.id]: true };
@@ -290,7 +309,7 @@ const HistoryTrackingMap = () => {
               signal: 'good',
               lastUpdate: new Date(),
               route: 'Test Route 2',
-              load: 'Empty'
+              load: 'Empty',
             };
             vehiclesArr.push(testVehicle2);
             routesData[testVehicle2.id] = ROUTE2;
@@ -303,9 +322,9 @@ const HistoryTrackingMap = () => {
           setSelectedVehicle(testVehicle);
           try {
             const allLatLngs = [];
-            TEST_ROUTE.forEach(p => allLatLngs.push(L.latLng(p[0], p[1])));
+            TEST_ROUTE.forEach((p) => allLatLngs.push(L.latLng(p[0], p[1])));
             if (routesData['TRUCK-002']) {
-              routesData['TRUCK-002'].forEach(p => allLatLngs.push(L.latLng(p[0], p[1])));
+              routesData['TRUCK-002'].forEach((p) => allLatLngs.push(L.latLng(p[0], p[1])));
             }
             if (allLatLngs.length > 1) {
               const bounds = L.latLngBounds(allLatLngs);
@@ -318,22 +337,25 @@ const HistoryTrackingMap = () => {
         // Load basic vehicle data (can be from API or dummy)
         const response = await trucksAPI.getRealTimeLocations();
         let vehicleData = [];
-        
+
         if (response.success && response.data) {
-          vehicleData = response.data.features?.map(feature => ({
-            id: feature.properties.truckNumber,
-            driver: feature.properties.driverName || 'Unknown Driver',
-            position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-            status: feature.properties.status?.toLowerCase() || 'offline',
-            speed: feature.properties.speed || 0,
-            heading: feature.properties.heading || 0,
-            fuel: feature.properties.fuelPercentage || 0,
-            battery: 90,
-            signal: 'good',
-            lastUpdate: new Date(),
-            route: 'Mining Area',
-            load: feature.properties.payloadTons ? `Coal - ${feature.properties.payloadTons} tons` : 'Unknown'
-          })) || [];
+          vehicleData =
+            response.data.features?.map((feature) => ({
+              id: feature.properties.truckNumber,
+              driver: feature.properties.driverName || 'Unknown Driver',
+              position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
+              status: feature.properties.status?.toLowerCase() || 'offline',
+              speed: feature.properties.speed || 0,
+              heading: feature.properties.heading || 0,
+              fuel: feature.properties.fuelPercentage || 0,
+              battery: 90,
+              signal: 'good',
+              lastUpdate: new Date(),
+              route: 'Mining Area',
+              load: feature.properties.payloadTons
+                ? `Coal - ${feature.properties.payloadTons} tons`
+                : 'Unknown',
+            })) || [];
         }
 
         // If no API data, create dummy vehicles
@@ -341,7 +363,7 @@ const HistoryTrackingMap = () => {
           vehicleData = Array.from({ length: 5 }).map((_, i) => ({
             id: `TRUCK-${String(i + 1).padStart(3, '0')}`,
             driver: `Demo Driver ${i + 1}`,
-            position: [-3.580000 + (Math.random() - 0.5) * 0.01, 115.600000 + (Math.random() - 0.5) * 0.01],
+            position: [-3.58 + (Math.random() - 0.5) * 0.01, 115.6 + (Math.random() - 0.5) * 0.01],
             status: ['active', 'idle', 'maintenance'][Math.floor(Math.random() * 3)],
             speed: Math.floor(Math.random() * 60),
             heading: Math.floor(Math.random() * 360),
@@ -350,7 +372,7 @@ const HistoryTrackingMap = () => {
             signal: 'good',
             lastUpdate: new Date(),
             route: 'Mining Area',
-            load: 'Empty'
+            load: 'Empty',
           }));
         }
 
@@ -359,7 +381,7 @@ const HistoryTrackingMap = () => {
         // Load route history for each vehicle
         const routesData = {};
         const routeVisibilityData = {};
-        
+
         for (const vehicle of vehicleData) {
           const history = await loadRouteHistory(vehicle.id, '24h');
           if (history.points.length > 0) {
@@ -369,12 +391,11 @@ const HistoryTrackingMap = () => {
             routeMetaByVehicleRef.current[vehicle.id] = history.records;
           }
         }
-        
+
         setVehicleRoutes(routesData);
         setRouteVisible(routeVisibilityData);
         // commit meta records from ref to state to avoid stale closure
-        setRouteMetaByVehicle(prev => ({ ...prev, ...routeMetaByVehicleRef.current }));
-        
+        setRouteMetaByVehicle((prev) => ({ ...prev, ...routeMetaByVehicleRef.current }));
       } catch (error) {
         console.error('Failed to load history data:', error);
       } finally {
@@ -390,20 +411,19 @@ const HistoryTrackingMap = () => {
   // Update markers and routes when data changes
   useEffect(() => {
     if (map && vehicles.length > 0) {
-      
       // Clear existing markers and routes
-      Object.values(markersRef.current).forEach(marker => {
+      Object.values(markersRef.current).forEach((marker) => {
         if (marker && map.hasLayer(marker)) {
           map.removeLayer(marker);
         }
       });
-      
-      Object.values(routeLinesRef.current).forEach(routeLine => {
+
+      Object.values(routeLinesRef.current).forEach((routeLine) => {
         if (routeLine && map.hasLayer(routeLine)) {
           map.removeLayer(routeLine);
         }
       });
-      
+
       markersRef.current = {};
       routeLinesRef.current = {};
 
@@ -413,7 +433,7 @@ const HistoryTrackingMap = () => {
           active: '#10b981',
           idle: '#f59e0b',
           maintenance: '#ef4444',
-          offline: '#6b7280'
+          offline: '#6b7280',
         };
 
         if (!inSelectedCluster(vehicle.id)) {
@@ -456,11 +476,17 @@ const HistoryTrackingMap = () => {
           iconAnchor: [14, 28],
         });
 
-        const marker = L.marker(vehicle.position, { icon, zIndexOffset: 2000, pane: 'markersPane' }).addTo(map);
+        const marker = L.marker(vehicle.position, {
+          icon,
+          zIndexOffset: 2000,
+          pane: 'markersPane',
+        }).addTo(map);
         markersRef.current[vehicle.id] = marker;
 
         marker.on('click', () => {
-          try { marker.bringToFront(); } catch {}
+          try {
+            marker.bringToFront();
+          } catch {}
           console.log('[History] Marker clicked:', vehicle.id);
           setSelectedVehicle(vehicle);
           setPlaybackIndex(0);
@@ -471,7 +497,7 @@ const HistoryTrackingMap = () => {
         const routeHistory = vehicleRoutes[vehicle.id] || [];
         if (routeHistory.length > 1 && routeVisible[vehicle.id] !== false) {
           const routeColor = routeColors[index % routeColors.length];
-          
+
           const routeLine = L.polyline(routeHistory, {
             color: routeColor,
             weight: 3,
@@ -480,11 +506,11 @@ const HistoryTrackingMap = () => {
             lineJoin: 'round',
             lineCap: 'round',
             dashArray: vehicle.status === 'active' ? undefined : '10, 10',
-            pane: 'routesPane'
+            pane: 'routesPane',
           }).addTo(map);
-          
+
           routeLinesRef.current[vehicle.id] = routeLine;
-          
+
           // Add route start marker
           if (routeHistory.length > 0) {
             const startIcon = L.divIcon({
@@ -512,25 +538,29 @@ const HistoryTrackingMap = () => {
               iconSize: [16, 16],
               iconAnchor: [8, 8],
             });
-            
-            L.marker(routeHistory[0], { icon: startIcon }).addTo(map)
-              .bindTooltip(`${vehicle.id} - Route Start (${routeHistory.length} points)`, { 
-                permanent: false, 
-                direction: 'top' 
+
+            L.marker(routeHistory[0], { icon: startIcon })
+              .addTo(map)
+              .bindTooltip(`${vehicle.id} - Route Start (${routeHistory.length} points)`, {
+                permanent: false,
+                direction: 'top',
               });
           }
-          
+
           // Add route info tooltip
-          routeLine.bindTooltip(`
+          routeLine.bindTooltip(
+            `
             <div class="text-sm">
               <strong>${vehicle.id} Route</strong><br/>
               Points: ${routeHistory.length}<br/>
               Distance: ~${calculateRouteDistance(routeHistory).toFixed(1)} km<br/>
               Status: ${vehicle.status.toUpperCase()}
             </div>
-          `, { 
-            sticky: true 
-          });
+          `,
+            {
+              sticky: true,
+            }
+          );
         }
       });
     }
@@ -544,7 +574,7 @@ const HistoryTrackingMap = () => {
     if (routeHistory.length === 0 || playbackIndex >= routeHistory.length) return;
 
     const currentPosition = routeHistory[playbackIndex];
-    
+
     // Create or update playback marker
     if (!playbackMarkerRef.current) {
       const L = window.L || require('leaflet');
@@ -571,11 +601,11 @@ const HistoryTrackingMap = () => {
         iconSize: [20, 20],
         iconAnchor: [10, 10],
       });
-      
-      playbackMarkerRef.current = L.marker(currentPosition, { 
-        icon: playbackIcon, 
+
+      playbackMarkerRef.current = L.marker(currentPosition, {
+        icon: playbackIcon,
         zIndexOffset: 3000,
-        pane: 'markersPane'
+        pane: 'markersPane',
       }).addTo(map);
     } else {
       playbackMarkerRef.current.setLatLng(currentPosition);
@@ -583,16 +613,19 @@ const HistoryTrackingMap = () => {
 
     // Update tooltip
     if (playbackMarkerRef.current) {
-      playbackMarkerRef.current.bindTooltip(`
+      playbackMarkerRef.current.bindTooltip(
+        `
         <div class="text-sm">
           <strong>${selectedVehicle.id} Playback</strong><br/>
           Point: ${playbackIndex + 1} / ${routeHistory.length}<br/>
           Progress: ${Math.round((playbackIndex / Math.max(1, routeHistory.length - 1)) * 100)}%
         </div>
-      `, { 
-        permanent: false,
-        direction: 'top'
-      });
+      `,
+        {
+          permanent: false,
+          direction: 'top',
+        }
+      );
     }
 
     // Auto-center map on playback marker if enabled
@@ -610,21 +643,29 @@ const HistoryTrackingMap = () => {
   // Compute journey stats for selected vehicle
   const [journeyStats, setJourneyStats] = useState(null);
   useEffect(() => {
-    if (!selectedVehicle) { setJourneyStats(null); return; }
+    if (!selectedVehicle) {
+      setJourneyStats(null);
+      return;
+    }
     const recs = routeMetaByVehicle[selectedVehicle.id] || [];
     const pts = vehicleRoutes[selectedVehicle.id] || [];
-    if (!recs.length && pts.length < 2) { setJourneyStats(null); return; }
+    if (!recs.length && pts.length < 2) {
+      setJourneyStats(null);
+      return;
+    }
 
     let distanceKm = calculateRouteDistance(pts);
-    let startT = null, endT = null;
-    let durationHrs = null, avgSpeed = null;
+    let startT = null,
+      endT = null;
+    let durationHrs = null,
+      avgSpeed = null;
     if (recs.length > 0) {
-      const sorted = recs.filter(r => r.t && !isNaN(r.t)).sort((a,b) => a.t - b.t);
+      const sorted = recs.filter((r) => r.t && !isNaN(r.t)).sort((a, b) => a.t - b.t);
       if (sorted.length > 1) {
         startT = sorted[0].t;
         endT = sorted[sorted.length - 1].t;
         const ms = endT - startT;
-        durationHrs = ms > 0 ? (ms / 3600000) : null;
+        durationHrs = ms > 0 ? ms / 3600000 : null;
         if (durationHrs && durationHrs > 0) avgSpeed = distanceKm / durationHrs;
       }
     }
@@ -636,7 +677,10 @@ const HistoryTrackingMap = () => {
   const [alertsLoading, setAlertsLoading] = useState(false);
   useEffect(() => {
     const loadAlerts = async () => {
-      if (!selectedVehicle) { setAlertCount(null); return; }
+      if (!selectedVehicle) {
+        setAlertCount(null);
+        return;
+      }
       const { start, end } = getDayWindow(selectedDate);
       try {
         setAlertsLoading(true);
@@ -644,7 +688,7 @@ const HistoryTrackingMap = () => {
           truckId: selectedVehicle.id,
           startTime: start.toISOString(),
           endTime: end.toISOString(),
-          limit: 500
+          limit: 500,
         };
         const res = await alertsAPI.getAll(params);
         if (res.success && Array.isArray(res.data)) {
@@ -681,7 +725,7 @@ const HistoryTrackingMap = () => {
             active: '#10b981',
             idle: '#f59e0b',
             maintenance: '#ef4444',
-            offline: '#6b7280'
+            offline: '#6b7280',
           };
           const truckNum = extractTruckNumber(vehicle.id) ?? '';
           const icon = L.divIcon({
@@ -718,10 +762,16 @@ const HistoryTrackingMap = () => {
             iconSize: [28, 28],
             iconAnchor: [14, 28],
           });
-          const marker = L.marker(vehicle.position, { icon, zIndexOffset: 2000, pane: 'markersPane' }).addTo(map);
+          const marker = L.marker(vehicle.position, {
+            icon,
+            zIndexOffset: 2000,
+            pane: 'markersPane',
+          }).addTo(map);
           markersRef.current[vehicle.id] = marker;
           marker.on('click', () => {
-            try { marker.bringToFront(); } catch {}
+            try {
+              marker.bringToFront();
+            } catch {}
             setSelectedVehicle(vehicle);
             setPlaybackIndex(0);
             setIsPlaybackPlaying(false);
@@ -741,7 +791,9 @@ const HistoryTrackingMap = () => {
           playbackTimerRef.current = null;
         }
         // Place the playback truck icon at the starting point
-        try { createOrUpdatePlaybackMarker(routeHistory[0]); } catch {}
+        try {
+          createOrUpdatePlaybackMarker(routeHistory[0]);
+        } catch {}
       }
     }
 
@@ -757,20 +809,24 @@ const HistoryTrackingMap = () => {
   useEffect(() => {
     if (!map) return;
     if (USE_TEST_ROUTE) return;
-    
+
     try {
       const pts = getDummyRealRoutePoints();
-      const coords = Array.isArray(pts) && pts.length > 1
-        ? pts.map(p => [p.lat, p.lng])
-        : [];
+      const coords = Array.isArray(pts) && pts.length > 1 ? pts.map((p) => [p.lat, p.lng]) : [];
 
       if (coords.length > 1) {
         const L = window.L || require('leaflet');
 
         if (manualRouteRef.current) {
-          try { map.removeLayer(manualRouteRef.current.line); } catch (e) {}
-          try { map.removeLayer(manualRouteRef.current.start); } catch (e) {}
-          try { map.removeLayer(manualRouteRef.current.end); } catch (e) {}
+          try {
+            map.removeLayer(manualRouteRef.current.line);
+          } catch (e) {}
+          try {
+            map.removeLayer(manualRouteRef.current.start);
+          } catch (e) {}
+          try {
+            map.removeLayer(manualRouteRef.current.end);
+          } catch (e) {}
           manualRouteRef.current = null;
         }
 
@@ -781,16 +837,16 @@ const HistoryTrackingMap = () => {
           opacity: 0.95,
           lineJoin: 'round',
           lineCap: 'round',
-          pane: 'routesPane'
+          pane: 'routesPane',
         }).addTo(map);
 
         const startIcon = L.divIcon({
           html: `<div style="background:white;border:2px solid ${color};border-radius:50%;width:14px;height:14px;"></div>`,
           className: 'manual-route-start',
           iconSize: [14, 14],
-          iconAnchor: [7, 7]
+          iconAnchor: [7, 7],
         });
-        
+
         const endIcon = L.divIcon({
           html: `
             <div style="position: relative;">
@@ -823,11 +879,15 @@ const HistoryTrackingMap = () => {
           `,
           className: 'manual-route-end',
           iconSize: [28, 28],
-          iconAnchor: [14, 28]
+          iconAnchor: [14, 28],
         });
 
-        const start = L.marker(coords[0], { icon: startIcon, pane: 'routesPane' }).addTo(map).bindTooltip('Start', {direction:'top'});
-        const end = L.marker(coords[coords.length - 1], { icon: endIcon, pane: 'routesPane' }).addTo(map).bindTooltip('End', {direction:'top'});
+        const start = L.marker(coords[0], { icon: startIcon, pane: 'routesPane' })
+          .addTo(map)
+          .bindTooltip('Start', { direction: 'top' });
+        const end = L.marker(coords[coords.length - 1], { icon: endIcon, pane: 'routesPane' })
+          .addTo(map)
+          .bindTooltip('End', { direction: 'top' });
 
         manualRouteRef.current = { line, start, end };
 
@@ -843,12 +903,10 @@ const HistoryTrackingMap = () => {
   const sidebarContent = (
     <>
       <h4 className="text-lg font-semibold text-gray-900">History Tracking</h4>
-      
+
       {/* Date filter */}
       <div className="mt-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          Date (06:00 – 16:00)
-        </label>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Date (06:00 – 16:00)</label>
         <input
           type="date"
           value={selectedDate}
@@ -856,7 +914,7 @@ const HistoryTrackingMap = () => {
           className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
           disabled={loading}
         />
-        
+
         {/* Shift selector */}
         <label className="block text-xs font-medium text-gray-700 mb-1">Shift</label>
         <select
@@ -869,7 +927,7 @@ const HistoryTrackingMap = () => {
           <option value="night">Night (16:00–06:00)</option>
           <option value="custom">Custom</option>
         </select>
-        
+
         {shiftMode === 'custom' && (
           <div className="grid grid-cols-2 gap-2 mb-2">
             <div>
@@ -893,23 +951,22 @@ const HistoryTrackingMap = () => {
           </div>
         )}
       </div>
-      
+
       {/* Cluster Filter */}
       <div className="mt-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          Cluster (Truck No)
-        </label>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Cluster (Truck No)</label>
         <div className="grid grid-cols-2 gap-2 text-xs">
-          {['1-199','200-399','400-599','600-799','800-999'].map(range => (
+          {['1-199', '200-399', '400-599', '600-799', '800-999'].map((range) => (
             <label key={range} className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 checked={clusterSelections.has(range)}
                 onChange={(e) => {
-                  setClusterSelections(prev => {
+                  setClusterSelections((prev) => {
                     const next = new Set(prev);
-                    if (e.target.checked) next.add(range); else next.delete(range);
+                    if (e.target.checked) next.add(range);
+                    else next.delete(range);
                     return next;
                   });
                 }}
@@ -931,14 +988,38 @@ const HistoryTrackingMap = () => {
         </div>
         {selectedVehicle && journeyStats ? (
           <div className="text-xs text-gray-800 space-y-1">
-            <div className="flex justify-between"><span>Poin</span><span>{journeyStats.points}</span></div>
-            <div className="flex justify-between"><span>Jarak</span><span>{journeyStats.distanceKm.toFixed(2)} km</span></div>
-            <div className="flex justify-between"><span>Durasi</span><span>{journeyStats.durationHrs ? journeyStats.durationHrs.toFixed(2) + ' jam' : '-'}</span></div>
-            <div className="flex justify-between"><span>Kecepatan Rata2</span><span>{journeyStats.avgSpeed ? journeyStats.avgSpeed.toFixed(1) + ' km/j' : '-'}</span></div>
-            <div className="flex justify-between"><span>Waktu</span><span>{journeyStats.startT ? new Date(journeyStats.startT).toLocaleTimeString() : '-'} — {journeyStats.endT ? new Date(journeyStats.endT).toLocaleTimeString() : '-'}</span></div>
+            <div className="flex justify-between">
+              <span>Poin</span>
+              <span>{journeyStats.points}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Jarak</span>
+              <span>{journeyStats.distanceKm.toFixed(2)} km</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Durasi</span>
+              <span>
+                {journeyStats.durationHrs ? journeyStats.durationHrs.toFixed(2) + ' jam' : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Kecepatan Rata2</span>
+              <span>
+                {journeyStats.avgSpeed ? journeyStats.avgSpeed.toFixed(1) + ' km/j' : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Waktu</span>
+              <span>
+                {journeyStats.startT ? new Date(journeyStats.startT).toLocaleTimeString() : '-'} —{' '}
+                {journeyStats.endT ? new Date(journeyStats.endT).toLocaleTimeString() : '-'}
+              </span>
+            </div>
           </div>
         ) : (
-          <div className="text-[11px] text-gray-500">Pilih kendaraan untuk melihat ringkasan perjalanan.</div>
+          <div className="text-[11px] text-gray-500">
+            Pilih kendaraan untuk melihat ringkasan perjalanan.
+          </div>
         )}
       </div>
 
@@ -948,13 +1029,15 @@ const HistoryTrackingMap = () => {
           <span className="text-xs font-medium text-gray-700">Alerts (Periode)</span>
         </div>
         <div className="text-xs text-gray-800">
-          {alertsLoading ? 'Memuat…' : (alertCount == null ? '—' : `${alertCount} kejadian`)}
+          {alertsLoading ? 'Memuat…' : alertCount == null ? '—' : `${alertCount} kejadian`}
         </div>
       </div>
 
       {/* Tire Pressure (same as live) */}
       <div className="mt-3">
-        <TirePressureDisplay selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id} />
+        <TirePressureDisplay
+          selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id}
+        />
       </div>
     </>
   );
@@ -964,7 +1047,7 @@ const HistoryTrackingMap = () => {
       <span className="text-xs text-gray-600">Routes:</span>
       <button
         onClick={() => {
-          vehicles.forEach(vehicle => {
+          vehicles.forEach((vehicle) => {
             if (!routeVisible[vehicle.id]) {
               // toggleRouteVisibility(vehicle.id);
             }
@@ -976,7 +1059,7 @@ const HistoryTrackingMap = () => {
       </button>
       <button
         onClick={() => {
-          vehicles.forEach(vehicle => {
+          vehicles.forEach((vehicle) => {
             if (routeVisible[vehicle.id]) {
               // toggleRouteVisibility(vehicle.id);
             }
@@ -998,14 +1081,14 @@ const HistoryTrackingMap = () => {
   const createOrUpdatePlaybackMarker = (latlng) => {
     if (!map || !latlng) return;
     const L = window.L || require('leaflet');
-    
+
     if (!playbackMarkerRef.current) {
       const truckNum = extractTruckNumber(selectedVehicle?.id) ?? '';
       const colors = {
         active: '#10b981',
         idle: '#f59e0b',
         maintenance: '#ef4444',
-        offline: '#6b7280'
+        offline: '#6b7280',
       };
       const badgeColor = colors[selectedVehicle?.status] || colors.offline;
       const icon = L.divIcon({
@@ -1040,17 +1123,17 @@ const HistoryTrackingMap = () => {
         `,
         className: 'playback-marker',
         iconSize: [28, 28],
-        iconAnchor: [14, 28]
+        iconAnchor: [14, 28],
       });
-      
-      playbackMarkerRef.current = L.marker(latlng, { 
-        icon, 
-        zIndexOffset: 3000, 
-        pane: 'markersPane' 
+
+      playbackMarkerRef.current = L.marker(latlng, {
+        icon,
+        zIndexOffset: 3000,
+        pane: 'markersPane',
       }).addTo(map);
     } else {
-      try { 
-        playbackMarkerRef.current.setLatLng(latlng); 
+      try {
+        playbackMarkerRef.current.setLatLng(latlng);
       } catch (e) {
         console.warn('Failed to update playback marker position:', e);
       }
@@ -1059,12 +1142,12 @@ const HistoryTrackingMap = () => {
 
   const startPlayback = () => {
     if (!selectedVehicle || !hasHistory(selectedVehicle.id)) return;
-    
+
     const routeHistory = vehicleRoutes[selectedVehicle.id] || [];
     if (playbackIndex >= routeHistory.length - 1) {
       setPlaybackIndex(0); // Reset to start if at end
     }
-    
+
     // Remove the static truck marker at the start so only the start dot remains
     try {
       const staticMarker = markersRef.current[selectedVehicle.id];
@@ -1076,7 +1159,7 @@ const HistoryTrackingMap = () => {
 
     setIsPlaybackPlaying(true);
     if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
-    
+
     playbackTimerRef.current = setInterval(() => {
       setPlaybackIndex((currentIndex) => {
         const maxIndex = routeHistory.length - 1;
@@ -1105,7 +1188,7 @@ const HistoryTrackingMap = () => {
   const stopPlayback = () => {
     pausePlayback();
     setPlaybackIndex(0);
-    const pts = selectedVehicle ? (vehicleRoutes[selectedVehicle.id] || []) : [];
+    const pts = selectedVehicle ? vehicleRoutes[selectedVehicle.id] || [] : [];
     if (pts.length > 0) createOrUpdatePlaybackMarker(pts[0]);
   };
 
@@ -1119,7 +1202,7 @@ const HistoryTrackingMap = () => {
   // Auto-stop playback when reaching the end
   useEffect(() => {
     if (!selectedVehicle || !isPlaybackPlaying) return;
-    
+
     const routeHistory = vehicleRoutes[selectedVehicle.id] || [];
     if (playbackIndex >= routeHistory.length - 1) {
       setIsPlaybackPlaying(false);
@@ -1135,7 +1218,9 @@ const HistoryTrackingMap = () => {
     return () => {
       if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
       if (playbackMarkerRef.current && map) {
-        try { map.removeLayer(playbackMarkerRef.current); } catch {}
+        try {
+          map.removeLayer(playbackMarkerRef.current);
+        } catch {}
         playbackMarkerRef.current = null;
       }
     };
@@ -1146,12 +1231,12 @@ const HistoryTrackingMap = () => {
       const allRoutes = Object.values(vehicleRoutes).flat();
       if (allRoutes.length > 0) {
         const bounds = [];
-        allRoutes.forEach(point => bounds.push(point));
-        
+        allRoutes.forEach((point) => bounds.push(point));
+
         if (bounds.length > 0) {
           const L = window.L || require('leaflet');
           const group = new L.featureGroup();
-          bounds.forEach(point => {
+          bounds.forEach((point) => {
             L.marker(point).addTo(group);
           });
           map.fitBounds(group.getBounds().pad(0.1));
@@ -1161,7 +1246,10 @@ const HistoryTrackingMap = () => {
   };
 
   const bottomControls = (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3" style={{ zIndex: 1000 }}>
+    <div
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3"
+      style={{ zIndex: 1000 }}
+    >
       {selectedVehicle && hasHistory(selectedVehicle.id) ? (
         <>
           {/* Play/Pause */}
@@ -1173,14 +1261,14 @@ const HistoryTrackingMap = () => {
           </button>
           {/* Step Back */}
           <button
-            onClick={() => setPlaybackIndex(i => Math.max(0, i - 1))}
+            onClick={() => setPlaybackIndex((i) => Math.max(0, i - 1))}
             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
           >
             -1
           </button>
           {/* Skip Back 10 */}
           <button
-            onClick={() => setPlaybackIndex(i => Math.max(0, i - 10))}
+            onClick={() => setPlaybackIndex((i) => Math.max(0, i - 10))}
             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
             title="Skip back 10 points"
           >
@@ -1197,19 +1285,28 @@ const HistoryTrackingMap = () => {
               className="w-64"
             />
             <span className="text-xs text-gray-700 min-w-[72px] text-right">
-              {Math.min(playbackIndex, (vehicleRoutes[selectedVehicle.id] || []).length - 1)} / {(vehicleRoutes[selectedVehicle.id] || []).length - 1}
+              {Math.min(playbackIndex, (vehicleRoutes[selectedVehicle.id] || []).length - 1)} /{' '}
+              {(vehicleRoutes[selectedVehicle.id] || []).length - 1}
             </span>
           </div>
           {/* Step Forward */}
           <button
-            onClick={() => setPlaybackIndex(i => Math.min((vehicleRoutes[selectedVehicle.id] || []).length - 1, i + 1))}
+            onClick={() =>
+              setPlaybackIndex((i) =>
+                Math.min((vehicleRoutes[selectedVehicle.id] || []).length - 1, i + 1)
+              )
+            }
             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
           >
             +1
           </button>
           {/* Skip Forward 10 */}
           <button
-            onClick={() => setPlaybackIndex(i => Math.min((vehicleRoutes[selectedVehicle.id] || []).length - 1, i + 10))}
+            onClick={() =>
+              setPlaybackIndex((i) =>
+                Math.min((vehicleRoutes[selectedVehicle.id] || []).length - 1, i + 10)
+              )
+            }
             className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
             title="Skip forward 10 points"
           >
@@ -1239,19 +1336,49 @@ const HistoryTrackingMap = () => {
       ) : (
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-600">Pilih kendaraan untuk playback.</span>
-          <button className="px-3 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed" disabled>Play</button>
-          <button className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed" disabled>-1</button>
-          <button className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed" disabled>-10</button>
+          <button
+            className="px-3 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed"
+            disabled
+          >
+            Play
+          </button>
+          <button
+            className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed"
+            disabled
+          >
+            -1
+          </button>
+          <button
+            className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed"
+            disabled
+          >
+            -10
+          </button>
           <input type="range" className="w-64 opacity-50" disabled />
-          <button className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed" disabled>+1</button>
-          <button className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed" disabled>+10</button>
+          <button
+            className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed"
+            disabled
+          >
+            +1
+          </button>
+          <button
+            className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed"
+            disabled
+          >
+            +10
+          </button>
           <div className="flex items-center gap-1 text-xs text-gray-700">
             <span>Speed:</span>
             <select className="border border-gray-300 rounded px-1 py-0.5 text-xs" disabled>
               <option>1x</option>
             </select>
           </div>
-          <button className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed" disabled>Stop</button>
+          <button
+            className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs cursor-not-allowed"
+            disabled
+          >
+            Stop
+          </button>
         </div>
       )}
     </div>

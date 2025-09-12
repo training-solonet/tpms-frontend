@@ -6,7 +6,10 @@ function Input({ label, ...props }) {
   return (
     <label className="block">
       <span className="block text-sm font-medium text-gray-700">{label}</span>
-      <input {...props} className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`} />
+      <input
+        {...props}
+        className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`}
+      />
     </label>
   );
 }
@@ -36,15 +39,19 @@ export default function VendorsList() {
     }
   }, []);
 
-  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase();
-    return vendors.filter(v => {
-      return !q ||
+    return vendors.filter((v) => {
+      return (
+        !q ||
         (v.name || '').toLowerCase().includes(q) ||
         (v.code || '').toLowerCase().includes(q) ||
-        (v.description || '').toLowerCase().includes(q);
+        (v.description || '').toLowerCase().includes(q)
+      );
     });
   }, [vendors, query]);
 
@@ -71,18 +78,37 @@ export default function VendorsList() {
               <h1 className="text-2xl font-semibold text-gray-900">Vendors</h1>
               <p className="text-sm text-gray-500">Master data vendor (non-live), mendukung CRUD</p>
             </div>
-            <a href="/vendors/new" className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">Add Vendor</a>
+            <a
+              href="/vendors/new"
+              className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700"
+            >
+              Add Vendor
+            </a>
           </div>
 
           <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input label="Search (name/code/description)" value={query} onChange={e => setQuery(e.target.value)} />
+            <Input
+              label="Search (name/code/description)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
             <label className="block">
               <span className="block text-sm font-medium text-gray-700">Page size</span>
-              <select value={pageSize} onChange={e => setPageSize(Number(e.target.value))} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                {[10,25,50,100].map(s => <option key={s} value={s}>{s}</option>)}
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              >
+                {[10, 25, 50, 100].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </label>
-            <div className="md:col-span-2 flex items-end text-sm text-gray-600">Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}</div>
+            <div className="md:col-span-2 flex items-end text-sm text-gray-600">
+              Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl shadow overflow-hidden">
@@ -98,33 +124,69 @@ export default function VendorsList() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>Loading...</td></tr>
-                ) : pageData.length === 0 ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>No data</td></tr>
-                ) : pageData.map(v => (
-                  <tr key={v.id}>
-                    <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
-                    <td className="px-3 py-2">{v.code}</td>
-                    <td className="px-3 py-2">{v.description}</td>
-                    <td className="px-3 py-2">
-                      <div>{v.contact_name || '-'}</div>
-                      <div className="text-xs text-gray-500">{v.contact_phone || ''} {v.contact_email ? `• ${v.contact_email}` : ''}</div>
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <a href={`/vendors/${v.id}`} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2">Edit</a>
-                      <button onClick={() => onDelete(v.id)} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600">Delete</button>
+                  <tr>
+                    <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                      Loading...
                     </td>
                   </tr>
-                ))}
+                ) : pageData.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                      No data
+                    </td>
+                  </tr>
+                ) : (
+                  pageData.map((v) => (
+                    <tr key={v.id}>
+                      <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
+                      <td className="px-3 py-2">{v.code}</td>
+                      <td className="px-3 py-2">{v.description}</td>
+                      <td className="px-3 py-2">
+                        <div>{v.contact_name || '-'}</div>
+                        <div className="text-xs text-gray-500">
+                          {v.contact_phone || ''} {v.contact_email ? `• ${v.contact_email}` : ''}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <a
+                          href={`/vendors/${v.id}`}
+                          className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2"
+                        >
+                          Edit
+                        </a>
+                        <button
+                          onClick={() => onDelete(v.id)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-gray-600">Page {currentPage} / {totalPages}</div>
+            <div className="text-sm text-gray-600">
+              Page {currentPage} / {totalPages}
+            </div>
             <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
-              <button className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
+              <button
+                className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </button>
+              <button
+                className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>

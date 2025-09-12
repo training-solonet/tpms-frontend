@@ -1,13 +1,13 @@
 import React from 'react';
 
-const TailwindStatCard = ({ 
-  title, 
-  value, 
-  change, 
-  changeType = 'positive', 
-  icon: Icon, 
+const TailwindStatCard = ({
+  title,
+  value,
+  change,
+  changeType = 'positive',
+  icon: Icon,
   color = 'indigo',
-  subtitle 
+  subtitle,
 }) => {
   const getChangeColor = () => {
     switch (changeType) {
@@ -48,13 +48,12 @@ const TailwindStatCard = ({
       </div>
       <div className="absolute inset-x-0 bottom-0 bg-gray-50 px-4 py-4 sm:px-6">
         <div className="text-sm">
-          {subtitle && (
-            <p className="text-gray-600 mb-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-gray-600 mb-1">{subtitle}</p>}
           {change && (
             <div className="flex items-center">
               <span className={`font-medium ${getChangeColor()}`}>
-                {getChangePrefix()}{change}
+                {getChangePrefix()}
+                {change}
               </span>
               <span className="ml-2 text-gray-500">vs last month</span>
             </div>

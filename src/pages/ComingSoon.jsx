@@ -3,7 +3,10 @@ import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import { ClockIcon, CogIcon } from '@heroicons/react/24/outline';
 
-const ComingSoon = ({ title = "Coming Soon", description = "This feature is under development and will be available soon." }) => {
+const ComingSoon = ({
+  title = 'Coming Soon',
+  description = 'This feature is under development and will be available soon.',
+}) => {
   return (
     <TailwindLayout>
       <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
@@ -19,19 +22,21 @@ const ComingSoon = ({ title = "Coming Soon", description = "This feature is unde
                 </div>
               </div>
             </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              {title}
-            </h1>
-            
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              {description}
-            </p>
-            
+
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{title}</h1>
+
+            <p className="text-gray-600 mb-6 leading-relaxed">{description}</p>
+
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              <div
+                className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                style={{ animationDelay: '0.1s' }}
+              ></div>
+              <div
+                className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                style={{ animationDelay: '0.2s' }}
+              ></div>
               <span className="ml-3">Under Development</span>
             </div>
           </div>

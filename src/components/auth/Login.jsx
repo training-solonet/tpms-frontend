@@ -2,26 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.js';
-import { 
-  Building2, 
-  MapPin, 
-  User, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Shield,
-  Wifi,
-  WifiOff
-} from 'lucide-react';
+import { Building2, MapPin, User, Lock, Eye, EyeOff, Shield, Wifi, WifiOff } from 'lucide-react';
 import { API_CONFIG } from '../../services/api.js';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading, isOnline } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +27,7 @@ const Login = () => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -49,7 +39,7 @@ const Login = () => {
     try {
       const result = await login(formData);
       console.log('🔑 Login form result:', result);
-      
+
       if (!result.success) {
         setError(result.message || 'Login failed');
       } else {
@@ -79,7 +69,7 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:32px_32px]"></div>
-      
+
       <div className="relative w-full max-w-md">
         {/* Company Logo Card */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
@@ -89,11 +79,11 @@ const Login = () => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl mb-4 shadow-lg">
               <Building2 className="w-8 h-8 text-white" />
             </div>
-            
+
             {/* Company Info */}
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Fleet Monitor</h1>
             <p className="text-gray-600 mb-1">Sistem Monitoring Truk Tambang</p>
-            
+
             {/* Company Badge */}
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
               <MapPin className="w-4 h-4" />
@@ -115,14 +105,12 @@ const Login = () => {
               )}
             </div>
           </div>
-          
+
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username Field */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Username
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -136,16 +124,14 @@ const Login = () => {
                 />
               </div>
             </div>
-            
+
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   value={formData.password}
@@ -162,7 +148,7 @@ const Login = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Error Message */}
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
@@ -170,7 +156,7 @@ const Login = () => {
                 <span className="text-sm">{error}</span>
               </div>
             )}
-            
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -187,20 +173,28 @@ const Login = () => {
               )}
             </button>
           </form>
-          
+
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <div className="text-center text-sm text-gray-600">
               <p className="font-medium mb-2">Demo Credentials:</p>
               <div className="space-y-1">
-                <p>Username: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin</code></p>
-                <p>Password: <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin123</code></p>
+                <p>
+                  Username:{' '}
+                  <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin</code>
+                </p>
+                <p>
+                  Password:{' '}
+                  <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">
+                    admin123
+                  </code>
+                </p>
               </div>
               <p className="mt-3 text-xs text-gray-500">Backend: {API_CONFIG.BASE_URL}</p>
             </div>
           </div>
         </div>
-        
+
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-white/70 text-sm"> 2024 PT Borneo Indobara. All rights reserved.</p>

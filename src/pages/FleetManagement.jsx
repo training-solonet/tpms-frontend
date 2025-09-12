@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  TruckIcon, 
-  MagnifyingGlassIcon, 
+import {
+  TruckIcon,
+  MagnifyingGlassIcon,
   FunnelIcon,
   PlusIcon,
   EyeIcon,
@@ -12,7 +12,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
-  ClockIcon
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { trucks, fleetGroups, devices } from '../data/index.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
@@ -25,9 +25,10 @@ const FleetManagement = () => {
   const [filterGroup, setFilterGroup] = useState('all');
 
   // Filter trucks
-  const filteredTrucks = trucks.filter(truck => {
-    const matchesSearch = truck.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         truck.plate_number?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTrucks = trucks.filter((truck) => {
+    const matchesSearch =
+      truck.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      truck.plate_number?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || truck.status === filterStatus;
     const matchesGroup = filterGroup === 'all' || truck.fleet_group_id === filterGroup;
     return matchesSearch && matchesStatus && matchesGroup;
@@ -35,15 +36,15 @@ const FleetManagement = () => {
 
   // Get fleet statistics
   const getFleetStats = () => {
-    const activeTrucks = trucks.filter(t => t.status === 'active').length;
-    const inactiveTrucks = trucks.filter(t => t.status === 'inactive').length;
-    const maintenanceTrucks = trucks.filter(t => t.status === 'maintenance').length;
-    
+    const activeTrucks = trucks.filter((t) => t.status === 'active').length;
+    const inactiveTrucks = trucks.filter((t) => t.status === 'inactive').length;
+    const maintenanceTrucks = trucks.filter((t) => t.status === 'maintenance').length;
+
     return {
       total: trucks.length,
       active: activeTrucks,
       inactive: inactiveTrucks,
-      maintenance: maintenanceTrucks
+      maintenance: maintenanceTrucks,
     };
   };
 
@@ -53,21 +54,25 @@ const FleetManagement = () => {
 
   // Get truck's devices
   const getTruckDevices = (truckId) => {
-    return devices.filter(d => d.truck_id === truckId);
+    return devices.filter((d) => d.truck_id === truckId);
   };
 
   // Get fleet group name
   const getFleetGroupName = (groupId) => {
-    const group = fleetGroups.find(g => g.id === groupId);
+    const group = fleetGroups.find((g) => g.id === groupId);
     return group ? group.name : 'Unknown';
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      case 'maintenance':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -76,7 +81,7 @@ const FleetManagement = () => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -165,8 +170,8 @@ const FleetManagement = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <select 
-                  value={filterStatus} 
+                <select
+                  value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
@@ -175,14 +180,16 @@ const FleetManagement = () => {
                   <option value="inactive">Inactive</option>
                   <option value="maintenance">Maintenance</option>
                 </select>
-                <select 
-                  value={filterGroup} 
+                <select
+                  value={filterGroup}
                   onChange={(e) => setFilterGroup(e.target.value)}
                   className="bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="all">All Groups</option>
-                  {fleetGroups.map(group => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
+                  {fleetGroups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -193,7 +200,7 @@ const FleetManagement = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {filteredTrucks.map((truck) => {
               const deviceCount = getTruckDevices(truck.id).length;
-              
+
               return (
                 <div
                   key={truck.id}
@@ -209,7 +216,9 @@ const FleetManagement = () => {
                       <h3 className="text-lg font-semibold text-gray-900">{truck.name}</h3>
                       <p className="text-sm text-gray-600">{truck.plate_number}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}
+                    >
                       {truck.status}
                     </span>
                   </div>
@@ -244,7 +253,7 @@ const FleetManagement = () => {
                       <h2 className="text-2xl font-bold text-gray-900">{selectedTruck.name}</h2>
                       <p className="text-gray-600">{selectedTruck.plate_number}</p>
                     </div>
-                    <button 
+                    <button
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl transition-colors"
                       onClick={() => setSelectedTruck(null)}
                     >
@@ -259,7 +268,9 @@ const FleetManagement = () => {
                     </div>
                     {/* Vehicle Information */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Information</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Vehicle Information
+                      </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
@@ -268,15 +279,17 @@ const FleetManagement = () => {
                           </div>
                           <p className="text-gray-600">{selectedTruck.type}</p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
                             <MapPinIcon className="h-5 w-5 text-gray-600" />
                             <span className="font-medium text-gray-900">Fleet Group</span>
                           </div>
-                          <p className="text-gray-600">{getFleetGroupName(selectedTruck.fleet_group_id)}</p>
+                          <p className="text-gray-600">
+                            {getFleetGroupName(selectedTruck.fleet_group_id)}
+                          </p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
                             <CalendarIcon className="h-5 w-5 text-gray-600" />
@@ -284,13 +297,15 @@ const FleetManagement = () => {
                           </div>
                           <p className="text-gray-600">{formatDate(selectedTruck.created_at)}</p>
                         </div>
-                        
+
                         <div className="bg-gray-50 rounded-xl p-4">
                           <div className="flex items-center gap-3 mb-2">
                             <CheckCircleIcon className="h-5 w-5 text-gray-600" />
                             <span className="font-medium text-gray-900">Status</span>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}
+                          >
                             {selectedTruck.status}
                           </span>
                         </div>
@@ -310,7 +325,9 @@ const FleetManagement = () => {
                               <div className="flex-1">
                                 <p className="font-medium text-gray-900">{device.sn}</p>
                                 <p className="text-sm text-gray-600">SIM: {device.sim_number}</p>
-                                <p className="text-sm text-gray-600">Installed: {formatDate(device.installed_at)}</p>
+                                <p className="text-sm text-gray-600">
+                                  Installed: {formatDate(device.installed_at)}
+                                </p>
                               </div>
                             </div>
                           </div>
