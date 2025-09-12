@@ -1,13 +1,14 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-// import { useAuth } from './hooks/useAuth';
+import { useAuth } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary';
-// import Login from './components/auth/Login';
+import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
 import DeviceCenter from './pages/DeviceCenter.jsx';
+import VehicleDeviceStatus from './pages/VehicleDeviceStatus.jsx';
 import TelemetryDashboard from './pages/TelemetryDashboard.jsx';
 import LiveTracking from './pages/LiveTracking';
 import HistoryTracking from './pages/HistoryTracking.jsx';
@@ -24,23 +25,32 @@ import VendorsList from './pages/VendorsList.jsx';
 import VendorForm from './pages/VendorForm.jsx';
 import './App.css';
 
-// Protected/Public Route Components disabled: passthrough (login off)
-const ProtectedRoute = ({ children }) => children;
-const PublicRoute = ({ children }) => children;
+// Protected/Public Route Components
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null; // could render a loader here
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+};
 
 function AppRoutes() {
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
-        {/* <Route 
+        <Route 
           path="/login" 
           element={
             <PublicRoute>
               <Login />
             </PublicRoute>
           } 
-        /> */}
+        />
         
         {/* Protected Routes */}
         <Route 
@@ -82,7 +92,7 @@ function AppRoutes() {
           path="/fleet/status" 
           element={
             <ProtectedRoute>
-              <DeviceCenter />
+              <VehicleDeviceStatus />
             </ProtectedRoute>
           } 
         />
@@ -168,24 +178,6 @@ function AppRoutes() {
           } 
         />
         
-        <Route 
-          path="/vendors" 
-          element={
-            <ProtectedRoute>
-              <VendorsList />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/vendors/:id" 
-          element={
-            <ProtectedRoute>
-              <VendorForm />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Vendors (master data) */}
         <Route 
           path="/vendors" 
           element={

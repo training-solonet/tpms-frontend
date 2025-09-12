@@ -6,7 +6,9 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
-import { trucksAPI } from '../../services/api.js';
+import { trucksAPI, alertsAPI } from '../../services/api.js';
+import TirePressureDisplay from './TirePressureDisplay';
+import { trucks as trucksList } from '../../data/trucks.js';
 import { getDummyRealRoutePoints, getDummyRealRoutePoints2 } from '../../data/index.js';
 
 const HistoryTrackingMap = () => {
@@ -71,6 +73,7 @@ const HistoryTrackingMap = () => {
   const [loading, setLoading] = useState(true);
   const [clusterSelections, setClusterSelections] = useState(new Set(['1-199','200-399','400-599','600-799','800-999']));
   const [vehicleRoutes, setVehicleRoutes] = useState({});
+  const [routeMetaByVehicle, setRouteMetaByVehicle] = useState({});
   const [routeVisible, setRouteVisible] = useState({});
   const [routeColors] = useState([
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
@@ -99,6 +102,20 @@ const HistoryTrackingMap = () => {
   const manualRouteRef = useRef(null);
   const playbackMarkerRef = useRef(null);
   const playbackTimerRef = useRef(null);
+
+  // Resolve a given vehicle identifier to the truck UUID used by local trucks list
+  const resolveTruckUUID = (vehicleId) => {
+    if (!vehicleId) return null;
+    const idStr = String(vehicleId);
+    if (idStr.length === 36 && idStr.includes('-')) return idStr;
+    const numMatch = idStr.match(/(\d{1,4})/);
+    const num = numMatch ? numMatch[1] : null;
+    if (num) {
+      const t = trucksList.find(tk => String(tk.name).includes(num) || String(tk.plate_number).includes(num));
+      if (t) return t.id;
+    }
+    return null;
+  };
 
   const getDayWindow = (dateStr) => {
     try {
@@ -161,40 +178,44 @@ const HistoryTrackingMap = () => {
       const primaryId = numericId || truckId;
       let response = await trucksAPI.getLocationHistory(primaryId, params);
       
-      const toPoints = (records) => (records || [])
-        .filter(record => {
-          try {
-            const t = new Date(
-              record.timestamp || record.recorded_at || record.created_at || record.time || record.gps_time || null
-            );
-            if (!isNaN(t)) {
-              return t >= start && t <= end;
-            }
-          } catch {}
-          return true;
+      const toRecords = (records) => (records || [])
+        .map(record => {
+          const tStr = record.timestamp || record.recorded_at || record.created_at || record.time || record.gps_time || null;
+          const t = tStr ? new Date(tStr) : null;
+          const lat = parseFloat(record.latitude ?? record.lat);
+          const lng = parseFloat(record.longitude ?? record.lng ?? record.lon);
+          const speed = parseFloat(record.speed ?? record.speed_kmh ?? record.v) || null;
+          return { lat, lng, t, raw: record, speed };
         })
-        .map(record => [parseFloat(record.latitude), parseFloat(record.longitude)])
-        .filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]) && pt[0] !== 0 && pt[1] !== 0);
+        .filter(r => !isNaN(r.lat) && !isNaN(r.lng) && r.lat !== 0 && r.lng !== 0)
+        .filter(r => {
+          if (!r.t || isNaN(r.t)) return true;
+          return r.t >= start && r.t <= end;
+        });
+
+      const toPoints = (recs) => (recs || []).map(r => [r.lat, r.lng]);
 
       if (response.success && response.data) {
-        let routePoints = toPoints(response.data);
+        let enriched = toRecords(response.data);
+        let routePoints = toPoints(enriched);
         
         if ((!routePoints || routePoints.length === 0) && primaryId !== truckId) {
           console.log(`🔁 Retrying history with raw ID: ${truckId}`);
           response = await trucksAPI.getLocationHistory(truckId, params);
           if (response.success && response.data) {
-            routePoints = toPoints(response.data);
+            enriched = toRecords(response.data);
+            routePoints = toPoints(enriched);
           }
         }
         
         console.log(`✅ Loaded ${routePoints.length} route points for ${truckId}`);
-        return routePoints;
+        return { points: routePoints, records: enriched };
       }
       
-      return [];
+      return { points: [], records: [] };
     } catch (error) {
       console.error(`❌ Failed to load route history for ${truckId}:`, error);
-      return [];
+      return { points: [], records: [] };
     }
   };
 
@@ -340,15 +361,19 @@ const HistoryTrackingMap = () => {
         const routeVisibilityData = {};
         
         for (const vehicle of vehicleData) {
-          const routeHistory = await loadRouteHistory(vehicle.id, '24h');
-          if (routeHistory.length > 0) {
-            routesData[vehicle.id] = routeHistory;
+          const history = await loadRouteHistory(vehicle.id, '24h');
+          if (history.points.length > 0) {
+            routesData[vehicle.id] = history.points;
             routeVisibilityData[vehicle.id] = true;
+            // store meta records for stats
+            routeMetaByVehicleRef.current[vehicle.id] = history.records;
           }
         }
         
         setVehicleRoutes(routesData);
         setRouteVisible(routeVisibilityData);
+        // commit meta records from ref to state to avoid stale closure
+        setRouteMetaByVehicle(prev => ({ ...prev, ...routeMetaByVehicleRef.current }));
         
       } catch (error) {
         console.error('Failed to load history data:', error);
@@ -575,6 +600,66 @@ const HistoryTrackingMap = () => {
       map.setView(currentPosition, map.getZoom());
     }
   }, [map, selectedVehicle, playbackIndex, vehicleRoutes, isAutoCenterEnabled]);
+
+  // Keep a ref for meta updates inside async loops
+  const routeMetaByVehicleRef = useRef({});
+  useEffect(() => {
+    routeMetaByVehicleRef.current = routeMetaByVehicle;
+  }, [routeMetaByVehicle]);
+
+  // Compute journey stats for selected vehicle
+  const [journeyStats, setJourneyStats] = useState(null);
+  useEffect(() => {
+    if (!selectedVehicle) { setJourneyStats(null); return; }
+    const recs = routeMetaByVehicle[selectedVehicle.id] || [];
+    const pts = vehicleRoutes[selectedVehicle.id] || [];
+    if (!recs.length && pts.length < 2) { setJourneyStats(null); return; }
+
+    let distanceKm = calculateRouteDistance(pts);
+    let startT = null, endT = null;
+    let durationHrs = null, avgSpeed = null;
+    if (recs.length > 0) {
+      const sorted = recs.filter(r => r.t && !isNaN(r.t)).sort((a,b) => a.t - b.t);
+      if (sorted.length > 1) {
+        startT = sorted[0].t;
+        endT = sorted[sorted.length - 1].t;
+        const ms = endT - startT;
+        durationHrs = ms > 0 ? (ms / 3600000) : null;
+        if (durationHrs && durationHrs > 0) avgSpeed = distanceKm / durationHrs;
+      }
+    }
+    setJourneyStats({ distanceKm, startT, endT, durationHrs, avgSpeed, points: pts.length });
+  }, [selectedVehicle, routeMetaByVehicle, vehicleRoutes]);
+
+  // Optionally load alerts count for selected vehicle within window
+  const [alertCount, setAlertCount] = useState(null);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  useEffect(() => {
+    const loadAlerts = async () => {
+      if (!selectedVehicle) { setAlertCount(null); return; }
+      const { start, end } = getDayWindow(selectedDate);
+      try {
+        setAlertsLoading(true);
+        const params = {
+          truckId: selectedVehicle.id,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          limit: 500
+        };
+        const res = await alertsAPI.getAll(params);
+        if (res.success && Array.isArray(res.data)) {
+          setAlertCount(res.data.length);
+        } else {
+          setAlertCount(null);
+        }
+      } catch (e) {
+        setAlertCount(null);
+      } finally {
+        setAlertsLoading(false);
+      }
+    };
+    loadAlerts();
+  }, [selectedVehicle, selectedDate, shiftMode, customStart, customEnd]);
 
   // Create/remove playback marker when vehicle is selected
   useEffect(() => {
@@ -834,6 +919,42 @@ const HistoryTrackingMap = () => {
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Journey Summary for selected vehicle */}
+      <div className="mt-4 p-3 bg-white/70 rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-gray-700">Ringkasan Perjalanan</span>
+          {selectedVehicle && (
+            <span className="text-[10px] text-gray-500">{selectedVehicle.id}</span>
+          )}
+        </div>
+        {selectedVehicle && journeyStats ? (
+          <div className="text-xs text-gray-800 space-y-1">
+            <div className="flex justify-between"><span>Poin</span><span>{journeyStats.points}</span></div>
+            <div className="flex justify-between"><span>Jarak</span><span>{journeyStats.distanceKm.toFixed(2)} km</span></div>
+            <div className="flex justify-between"><span>Durasi</span><span>{journeyStats.durationHrs ? journeyStats.durationHrs.toFixed(2) + ' jam' : '-'}</span></div>
+            <div className="flex justify-between"><span>Kecepatan Rata2</span><span>{journeyStats.avgSpeed ? journeyStats.avgSpeed.toFixed(1) + ' km/j' : '-'}</span></div>
+            <div className="flex justify-between"><span>Waktu</span><span>{journeyStats.startT ? new Date(journeyStats.startT).toLocaleTimeString() : '-'} — {journeyStats.endT ? new Date(journeyStats.endT).toLocaleTimeString() : '-'}</span></div>
+          </div>
+        ) : (
+          <div className="text-[11px] text-gray-500">Pilih kendaraan untuk melihat ringkasan perjalanan.</div>
+        )}
+      </div>
+
+      {/* Alerts summary */}
+      <div className="mt-2 p-3 bg-white/70 rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-gray-700">Alerts (Periode)</span>
+        </div>
+        <div className="text-xs text-gray-800">
+          {alertsLoading ? 'Memuat…' : (alertCount == null ? '—' : `${alertCount} kejadian`)}
+        </div>
+      </div>
+
+      {/* Tire Pressure (same as live) */}
+      <div className="mt-3">
+        <TirePressureDisplay selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id} />
       </div>
     </>
   );

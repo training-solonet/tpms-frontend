@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { allDummyTrucks } from '../data/dummyTrucks';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { trucksAPI, vendorsAPI } from '../services/api.js';
+import TruckImage from '../components/common/TruckImage.jsx';
 
 const allTrucks = allDummyTrucks;
 
@@ -146,8 +147,15 @@ export default function TrucksFormList() {
               ) : pageData.map(t => (
                 <tr key={t.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{t.name}</div>
-                    <div className="text-xs text-gray-500">{t.id}</div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-10 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
+                        <TruckImage id={t.id} width={160} height={100} className="w-16 h-10" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{t.name}</div>
+                        <div className="text-xs text-gray-500">{t.id}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">{t.plate}</td>
                   <td className="px-4 py-3">{t.cluster}</td>

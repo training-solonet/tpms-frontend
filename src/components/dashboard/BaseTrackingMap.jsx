@@ -204,6 +204,7 @@ const BaseTrackingMap = ({
     return () => clearTimeout(t);
   }, [map, sidebarVisible]);
 
+
   // Invalidate map size on window resize
   useEffect(() => {
     if (!map) return;
@@ -231,40 +232,42 @@ const BaseTrackingMap = ({
 
   return (
     <div className="h-full flex">
-      {/* Toggle Button */}
-      <button
-        onClick={() => setSidebarVisible(!sidebarVisible)}
-        className={`fixed top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 border border-gray-300 shadow-lg transition-all duration-300 flex items-center rounded-r-lg px-2 py-3`}
-        style={{ 
-          // Ensure this stays below the sidebar (which uses z-50)
-          zIndex: 40,
-          left: sidebarVisible ? '605px' : '288px'
-        }}
-        title={sidebarVisible ? 'Hide Vehicle List' : 'Show Vehicle List'}
-      >
-        <svg 
-          className={`w-4 h-4 text-gray-600 transition-transform duration-300 ${
-            sidebarVisible ? 'rotate-180' : ''
-          }`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
+      {/* Toggle Button - only show if sidebarContent is provided */}
+      {sidebarContent && (
+        <button
+          onClick={() => setSidebarVisible(!sidebarVisible)}
+          className={`fixed top-1/2 -translate-y-1/2 z-40 bg-white hover:bg-gray-50 border border-gray-300 shadow-lg transition-all duration-300 flex items-center rounded-r-lg px-2 py-3`}
+          style={{ 
+            // Ensure this stays below the sidebar (which uses z-50)
+            zIndex: 40,
+            left: sidebarVisible ? '605px' : '288px'
+          }}
+          title={sidebarVisible ? 'Hide Vehicle List' : 'Show Vehicle List'}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+          <svg 
+            className={`w-4 h-4 text-gray-600 transition-transform duration-300 ${
+              sidebarVisible ? 'rotate-180' : ''
+            }`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
 
-      {/* Sidebar */}
-      <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
-        sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
-      }`}>
-        {sidebarContent && (
+      {/* Sidebar - only show if sidebarContent is provided */}
+      {sidebarContent && (
+        <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
+          sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
+        }`}>
           <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 h-full">
             {sidebarContent}
           </div>
-        )}
-        <div className="flex-1" />
-      </div>
+          <div className="flex-1" />
+        </div>
+      )}
 
       {/* Map Area */}
       <div className="flex-1 relative z-0">

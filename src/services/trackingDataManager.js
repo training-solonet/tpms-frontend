@@ -1,5 +1,6 @@
 // src/services/trackingDataManager.js
 import { useState } from 'react';
+import { getAuthHeaders } from './api.js';
 import { generateGpsPositions, getLiveTrackingData, getTruckRoute, getDummyRealRoutePoints } from '../data/index.js';
 
 /**
@@ -41,8 +42,8 @@ export class TrackingDataManager {
           const primaryUrl = `${this.apiConfig.BASE_URL}/api/location-history/${encodeURIComponent(truckId)}?${primaryParams.toString()}`;
           const res1 = await fetch(primaryUrl, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
             }
           });
 
@@ -79,8 +80,8 @@ export class TrackingDataManager {
           });
           const res2 = await fetch(legacyUrl, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
             }
           });
 

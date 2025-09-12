@@ -1,6 +1,7 @@
 // src/pages/VehicleDeviceStatus.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
+import TruckImage from '../components/common/TruckImage.jsx';
 import { devices } from '../data/devices.js';
 import { deviceStatusEvents } from '../data/deviceStatusEvents.js';
 import { trucks as trucksList } from '../data/trucks.js';
@@ -231,6 +232,10 @@ const VehicleDeviceStatus = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {pageRows.map(({ vehicle, device, deviceStatus }) => (
             <div key={vehicle.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+              {/* Truck thumbnail */}
+              <div className="mb-3 rounded-lg overflow-hidden">
+                <TruckImage id={vehicle.id} width={320} height={200} />
+              </div>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="text-sm text-slate-500">Vehicle</div>

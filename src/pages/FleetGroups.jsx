@@ -13,6 +13,7 @@ import {
 import { fleetGroups, trucks, getLatestTruckStatus } from '../data/index.js';
 import { trucksAPI, vendorsAPI } from '../services/api.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
+import TruckImage from '../components/common/TruckImage.jsx';
 
 const FleetGroups = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -181,8 +182,11 @@ const FleetGroups = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
-                    <div className="bg-indigo-100 p-3 rounded-xl">
-                      <TruckIcon className="h-6 w-6 text-indigo-600" />
+                    <div className="p-1 rounded-xl bg-indigo-50 overflow-hidden">
+                      {/* Group thumbnail - dummy image */}
+                      <div className="w-16 h-12 rounded-md overflow-hidden">
+                        <TruckImage id={`group-${group.id}`} width={160} height={100} className="w-16 h-12" />
+                      </div>
                     </div>
                     <div className="ml-4">
                       <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
@@ -286,6 +290,10 @@ const FleetGroups = () => {
                 
                 return (
                   <div key={truck.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    {/* Truck photo */}
+                    <div className="mb-3 rounded-lg overflow-hidden">
+                      <TruckImage id={truck.id} width={320} height={200} />
+                    </div>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center">
                         <div className={`w-3 h-3 rounded-full bg-${statusColor}-500 mr-2`}></div>

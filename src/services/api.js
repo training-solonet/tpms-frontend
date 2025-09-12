@@ -46,6 +46,9 @@ export const vendorsAPI = {
 let isOnline = true;
 let connectionAttempts = 0;
 
+// Helper to get stored auth token
+const getAuthToken = () => localStorage.getItem('authToken');
+
 // Check if backend is available
 const checkBackendConnection = async () => {
   try {
@@ -54,11 +57,13 @@ const checkBackendConnection = async () => {
 
     console.log(`🔌 Checking backend connection to: ${API_CONFIG.BASE_URL}`);
 
+    const token = getAuthToken();
     const response = await fetch(`${API_CONFIG.BASE_URL}/api/dashboard/stats`, {
       method: 'GET',
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
       }
     });
 
@@ -87,9 +92,24 @@ const checkBackendConnection = async () => {
 };
 
 // Generic API request
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+};
+
 const apiRequest = async (endpoint, options = {}) => {
-  const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-  const token = localStorage.getItem('authToken');
+  // Normalize BASE_URL and endpoint to avoid double /api or missing slashes
+  let base = API_CONFIG.BASE_URL || '';
+  let path = endpoint || '';
+  if (base.endsWith('/')) base = base.slice(0, -1);
+  // If base already ends with /api and path starts with /api, strip one /api from path
+  if (base.toLowerCase().endsWith('/api') && path.toLowerCase().startsWith('/api')) {
+    path = path.slice(4); // remove leading '/api'
+  }
+  const url = `${base}${path}`;
+  const token = getAuthToken();
 
   const defaultOptions = {
     headers: {
@@ -112,7 +132,19 @@ const apiRequest = async (endpoint, options = {}) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Handle 401 globally
+      if (response.status === 401) {
+        console.warn('401 Unauthorized detected. Logging out...');
+        try {
+          authAPI.logout();
+        } finally {
+          if (typeof window !== 'undefined') {
+            window.location.replace('/login');
+          }
+        }
+      }
+      const message = `HTTP ${response.status}: ${response.statusText}`;
+      throw new Error(message);
     }
 
     const data = await response.json();
@@ -147,9 +179,43 @@ export const authAPI = {
       body: JSON.stringify(credentials)
     });
 
-    if (response.success && response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    // Helper to decode JWT payload
+    const decodeJwt = (token) => {
+      try {
+        const [, payload] = token.split('.');
+        const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(json);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    if (response.success && response.data) {
+      const d = response.data;
+      const token = d.token || d.accessToken || d.jwt || response.token || null;
+
+      if (token) {
+        localStorage.setItem('authToken', token);
+
+        // Prefer backend-provided user if available; otherwise derive from JWT
+        let user = d.user || response.user || null;
+        if (!user) {
+          const claims = decodeJwt(token);
+          if (claims) {
+            user = {
+              id: claims.sub || claims.userId || claims.id || null,
+              name: claims.name || claims.fullName || null,
+              username: claims.username || claims.preferred_username || claims.email || null,
+              email: claims.email || null,
+              role: claims.role || claims.roles || null,
+            };
+          }
+        }
+
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+      }
     }
 
     return response;
@@ -164,6 +230,26 @@ export const authAPI = {
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
     const token = localStorage.getItem('authToken');
+
+    if (token) {
+      // Validate JWT expiry if possible
+      try {
+        const [, payload] = token.split('.');
+        const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+        const claims = JSON.parse(json);
+        if (claims && claims.exp) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          if (claims.exp < nowSec) {
+            // Token expired
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            return { success: false, data: null };
+          }
+        }
+      } catch (e) {
+        // Ignore decode errors; assume token is valid if server accepts it
+      }
+    }
 
     if (user && token) {
       return {
@@ -484,5 +570,6 @@ export default {
   vendorsAPI,
   connectionUtils,
   FleetWebSocket,
-  API_CONFIG
+  API_CONFIG,
+  getAuthHeaders
 };

@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { trucks, fleetGroups, devices } from '../data/index.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
+import TruckImage from '../components/common/TruckImage.jsx';
 
 const FleetManagement = () => {
   const [selectedTruck, setSelectedTruck] = useState(null);
@@ -199,15 +200,14 @@ const FleetManagement = () => {
                   className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => setSelectedTruck(truck)}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="bg-indigo-100 p-3 rounded-xl">
-                        <TruckIcon className="h-6 w-6 text-indigo-600" />
-                      </div>
-                      <div className="ml-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{truck.name}</h3>
-                        <p className="text-sm text-gray-600">{truck.plate_number}</p>
-                      </div>
+                  {/* Truck photo */}
+                  <div className="mb-4 rounded-xl overflow-hidden">
+                    <TruckImage id={truck.id} width={480} height={280} />
+                  </div>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{truck.name}</h3>
+                      <p className="text-sm text-gray-600">{truck.plate_number}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
                       {truck.status}
@@ -253,6 +253,10 @@ const FleetManagement = () => {
                   </div>
 
                   <div className="space-y-6">
+                    {/* Truck photo large */}
+                    <div className="rounded-xl overflow-hidden">
+                      <TruckImage id={selectedTruck.id} width={800} height={480} />
+                    </div>
                     {/* Vehicle Information */}
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Information</h3>

@@ -1,5 +1,6 @@
 // src/services/trackingService.js
 import { useState } from 'react';
+import { getAuthHeaders } from './api.js';
 import { getLiveTrackingData, getTruckRoute, generateGpsPositions, getDummyRealRoutePoints } from '../data/index.js';
 
 /**
@@ -10,6 +11,15 @@ import { getLiveTrackingData, getTruckRoute, generateGpsPositions, getDummyRealR
 export class TruckTrackingService {
     constructor(apiConfig) {
       this.apiConfig = apiConfig;
+      this.makeUrl = (path) => {
+        let base = this.apiConfig.BASE_URL || '';
+        let p = path || '';
+        if (base.endsWith('/')) base = base.slice(0, -1);
+        if (base.toLowerCase().endsWith('/api') && p.toLowerCase().startsWith('/api')) {
+          p = p.slice(4);
+        }
+        return `${base}${p}`;
+      };
       this.trackCache = new Map();
       this.trackSettings = {
         maxPoints: 100,
@@ -48,11 +58,11 @@ export class TruckTrackingService {
             limit: this.trackSettings.maxPoints.toString(),
             minSpeed: '0'
           });
-          const primaryUrl = `${this.apiConfig.BASE_URL}/api/location-history/${encodeURIComponent(truckId)}?${primaryParams.toString()}`;
+          const primaryUrl = this.makeUrl(`/api/location-history/${encodeURIComponent(truckId)}?${primaryParams.toString()}`);
           const res1 = await fetch(primaryUrl, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
             }
           });
           if (res1.ok) {
@@ -82,11 +92,11 @@ export class TruckTrackingService {
             endDate: endTime.toISOString(),
             limit: this.trackSettings.maxPoints.toString()
           });
-          const legacyUrl = `${this.apiConfig.BASE_URL}/api/trucks/${encodeURIComponent(truckId)}/history?${fallbackParams.toString()}`;
+          const legacyUrl = this.makeUrl(`/api/trucks/${encodeURIComponent(truckId)}/history?${fallbackParams.toString()}`);
           const res2 = await fetch(legacyUrl, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
             }
           });
           if (res2.ok) {
@@ -370,8 +380,8 @@ export class TruckTrackingService {
       try {
         const response = await fetch(`${this.baseURL}/api/trucks/realtime/locations`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
           }
         });
 
@@ -410,8 +420,8 @@ export class TruckTrackingService {
       try {
         const res1 = await fetch(primary, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
           }
         });
 
@@ -439,8 +449,8 @@ export class TruckTrackingService {
       try {
         const res2 = await fetch(legacy, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
           }
         });
         if (!res2.ok) throw new Error(`HTTP ${res2.status}: ${res2.statusText}`);
@@ -456,8 +466,8 @@ export class TruckTrackingService {
       try {
         const response = await fetch(`${this.baseURL}/api/trucks/${truckId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
           }
         });
 
