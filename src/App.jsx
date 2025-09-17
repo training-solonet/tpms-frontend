@@ -1,7 +1,9 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
@@ -24,13 +26,19 @@ import VendorForm from './pages/VendorForm.jsx';
 import './App.css';
 
 // Protected/Public Route Components
-const ProtectedRoute = ({ children }) => {
-  // Auth disabled: always allow access
-  return children;
+const ProtectedRoute = (props) => {
+  // const { isAuthenticated, loading } = useAuth();
+  // if (loading) return null; // could render a loader here
+  // return isAuthenticated ? props.children : <Navigate to="/login" replace />;
+  // AUTH DISABLED: always render protected content
+  return props.children;
 };
 
-const PublicRoute = ({ children }) => {
-  // Auth disabled: redirect public pages (like login) to dashboard
+const PublicRoute = (props) => {
+  // const { isAuthenticated, loading } = useAuth();
+  // if (loading) return null;
+  // return isAuthenticated ? <Navigate to="/dashboard" replace /> : props.children;
+  // AUTH DISABLED: prevent accessing login, always go to dashboard
   return <Navigate to="/dashboard" replace />;
 };
 
@@ -47,191 +55,197 @@ function AppRoutes() {
             </PublicRoute>
           } 
         />
-
+        
         {/* Protected Routes */}
-        <Route
-          path="/dashboard"
+        <Route 
+          path="/dashboard" 
           element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/live-tracking"
+        
+        <Route 
+          path="/live-tracking" 
           element={
             <ProtectedRoute>
               <LiveTracking />
             </ProtectedRoute>
-          }
+          } 
         />
-        <Route
-          path="/history-tracking"
+        <Route 
+          path="/history-tracking" 
           element={
             <ProtectedRoute>
               <HistoryTracking />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/fleet"
+        
+        <Route 
+          path="/fleet" 
           element={
             <ProtectedRoute>
               <FleetManagement />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/fleet/status"
+        
+        <Route 
+          path="/fleet/status" 
           element={
             <ProtectedRoute>
               <VehicleDeviceStatus />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/fleet/add"
+        
+        <Route 
+          path="/fleet/add" 
           element={
             <ProtectedRoute>
               <FleetManagement />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/fleet/groups"
+        
+        <Route 
+          path="/fleet/groups" 
           element={
             <ProtectedRoute>
               <FleetGroups />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/fleet/vehicles"
+        
+        <Route 
+          path="/fleet/vehicles" 
           element={
             <ProtectedRoute>
               <TrucksFormList />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/devices"
+        
+        <Route 
+          path="/devices" 
           element={
             <ProtectedRoute>
               <DeviceCenter />
             </ProtectedRoute>
-          }
+          } 
         />
-
+        
         {/* Trucks forms */}
-        <Route
-          path="/trucks"
+        <Route 
+          path="/trucks" 
           element={
             <ProtectedRoute>
               <TrucksFormList />
             </ProtectedRoute>
-          }
+          } 
         />
-        <Route
-          path="/trucks/:id"
+        <Route 
+          path="/trucks/:id" 
           element={
             <ProtectedRoute>
               <TruckForm />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/telemetry/tires"
+        
+        <Route 
+          path="/telemetry/tires" 
           element={
             <ProtectedRoute>
               <TelemetryTiresForm />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/telemetry/temperature"
+        
+        <Route 
+          path="/telemetry/temperature" 
           element={
             <ProtectedRoute>
               <TelemetryTemperatureForm />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/telemetry/fuel"
+        
+        <Route 
+          path="/telemetry/fuel" 
           element={
             <ProtectedRoute>
               <TelemetryFuelForm />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/vendors"
+        
+        <Route 
+          path="/vendors" 
           element={
             <ProtectedRoute>
               <VendorsList />
             </ProtectedRoute>
-          }
+          } 
         />
-        <Route
-          path="/vendors/:id"
+        <Route 
+          path="/vendors/:id" 
           element={
             <ProtectedRoute>
               <VendorForm />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/analytics"
+        
+        <Route 
+          path="/analytics" 
           element={
             <ProtectedRoute>
               <Analytics />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/reports"
+        
+        <Route 
+          path="/reports" 
           element={
             <ProtectedRoute>
               <Reports />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/alerts"
+        
+        <Route 
+          path="/alerts" 
           element={
             <ProtectedRoute>
               <Alerts />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/settings"
+        
+        <Route 
+          path="/settings" 
           element={
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
-          }
+          } 
         />
-
+        
         {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
+        <Route 
+          path="/" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
+        
         {/* Catch all route - redirect to dashboard */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route 
+          path="*" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
       </Routes>
     </Router>
   );

@@ -25,7 +25,6 @@ export default function TruckImage({
   className = '',
 }) {
   // Prefer provided src; otherwise use a stable placeholder seed based on id
-  const seed = encodeURIComponent(String(id || 'truck'));
   // placehold.co is fast and simple; picsum offers varied photos:
   // const placeholder = `https://picsum.photos/seed/${seed}/${width}/${height}`;
   const placeholder = `https://placehold.co/${width}x${height}?text=TRUCK`;

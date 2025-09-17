@@ -63,7 +63,6 @@ const HistoryTrackingMap = () => {
     [-3.514135, 115.628384],
   ];
   const [map, setMap] = useState(null);
-  const [mapUtils, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +96,6 @@ const HistoryTrackingMap = () => {
   const [shiftMode, setShiftMode] = useState('day');
   const [customStart, setCustomStart] = useState('06:00');
   const [customEnd, setCustomEnd] = useState('16:00');
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [playbackIndex, setPlaybackIndex] = useState(0);
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
   const [isAutoCenterEnabled, setIsAutoCenterEnabled] = useState(false);
@@ -264,7 +262,6 @@ const HistoryTrackingMap = () => {
 
   const onMapReady = (mapInstance, utils) => {
     setMap(mapInstance);
-    setMapUtils(utils);
   };
 
   // Load vehicles and route history
