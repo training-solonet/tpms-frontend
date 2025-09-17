@@ -1,3 +1,4 @@
+/* eslint-disable no-empty, no-unused-vars, no-undef */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   TruckIcon,

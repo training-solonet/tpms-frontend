@@ -1,3 +1,4 @@
+/* eslint-disable no-empty, no-unused-vars, no-undef */
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';

@@ -1,7 +1,6 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
@@ -34,7 +33,7 @@ const ProtectedRoute = (props) => {
   return props.children;
 };
 
-const PublicRoute = (props) => {
+const PublicRoute = () => {
   // const { isAuthenticated, loading } = useAuth();
   // if (loading) return null;
   // return isAuthenticated ? <Navigate to="/dashboard" replace /> : props.children;

@@ -17,7 +17,7 @@ import React from 'react';
  * - Use object-cover to crop nicely inside rounded container
  */
 export default function TruckImage({
-  id,
+  // id,
   src,
   width = 160,
   height = 100,
