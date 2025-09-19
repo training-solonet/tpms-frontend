@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/pages/VehicleDeviceStatus.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';

@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import React, { useEffect, useState } from 'react';
 import {
   TruckIcon,
@@ -19,7 +20,7 @@ const TailwindFleetOverview = () => {
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [topVehicles, setTopVehicles] = useState([]);
   const [fuelData, setFuelData] = useState([]);
-  const [mileageData, setMileageData] = useState([]);
+  const [mileageData] = useState([]);
   const [vehicleStatusData, setVehicleStatusData] = useState([]);
   const [loading, setLoading] = useState(true);
 

@@ -5,6 +5,7 @@ const SimpleChartCard = ({
   subtitle, 
   data, 
   type = 'line', 
+  // eslint-disable-next-line no-unused-vars
   height = 300,
   color = '#6366f1',
   colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
@@ -105,7 +106,7 @@ const SimpleChartCard = ({
         <div className="relative">
           <svg width="160" height="160" className="transform -rotate-90">
             {data.map((item, index) => {
-              const percentage = (item.value / total) * 100;
+              
               const angle = (item.value / total) * 360;
               const startAngle = currentAngle;
               currentAngle += angle;

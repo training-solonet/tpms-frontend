@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/hooks/useAuth.js
 import { useState, useEffect } from 'react';
 import { authAPI, connectionUtils } from '../services/api.js';

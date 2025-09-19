@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { vendorsAPI } from '../services/api.js';

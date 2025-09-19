@@ -1,9 +1,7 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
@@ -27,15 +25,13 @@ import './App.css';
 
 // Protected/Public Route Components
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return null; // could render a loader here
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  // Auth disabled: always allow access
+  return children;
 };
 
-const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+const PublicRoute = () => {
+  // Auth disabled: redirect any public route (e.g., /login) to dashboard
+  return <Navigate to="/dashboard" replace />;
 };
 
 function AppRoutes() {
@@ -45,11 +41,7 @@ function AppRoutes() {
         {/* Public Routes */}
         <Route 
           path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
+          element={<PublicRoute />} 
         />
         
         {/* Protected Routes */}

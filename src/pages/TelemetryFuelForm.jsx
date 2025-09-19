@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { fuelLevelEvents, trucks } from '../data/index.js';

@@ -5,7 +5,6 @@ const TailwindStatCard = ({
   value, 
   change, 
   changeType = 'positive', 
-  icon: Icon, 
   color = 'indigo',
   subtitle 
 }) => {

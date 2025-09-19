@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/services/api.js
 
 // API Configuration

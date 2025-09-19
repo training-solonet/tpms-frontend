@@ -50,7 +50,7 @@ export default function TelemetryTiresForm() {
               // Expect backend returns array of { tireNo, sensor: { data: {...} }, hub: {...} } or similar
               tires = tireRes.data;
             }
-          } catch {}
+          } catch { /* empty */ }
           const driverName = t.driver?.name || '-';
           const clusterName = t.cluster || '-';
           if (Array.isArray(tires)) {

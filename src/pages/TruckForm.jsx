@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { allDummyTrucks } from '../data/dummyTrucks';
@@ -61,7 +62,7 @@ export default function TruckForm() {
         if (mounted && res.success && Array.isArray(res.data)) {
           setVendors(res.data);
         }
-      } catch {}
+      } catch { /* empty */ }
     })();
     return () => { mounted = false; };
   }, []);

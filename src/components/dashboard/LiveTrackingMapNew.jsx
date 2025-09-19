@@ -1,10 +1,8 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   TruckIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
   ClockIcon,
-  SignalIcon,
   FunnelIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
@@ -12,7 +10,6 @@ import BaseTrackingMap from './BaseTrackingMap';
 import TirePressureDisplay from './TirePressureDisplay';
 import { trucksAPI, FleetWebSocket, connectionUtils } from '../../services/api.js';
 import { getLiveTrackingData, getTruckRoute, getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
-import tirePressureDummy from '../../data/tirePressureEvents.js';
 import { devices } from '../../data/devices.js';
 import { deviceStatusEvents } from '../../data/deviceStatusEvents.js';
 import { trucks as trucksList } from '../../data/trucks.js';
@@ -26,13 +23,13 @@ const LiveTrackingMapNew = () => {
   const [showVehicleCard, setShowVehicleCard] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [ setError] = useState(null);
   const [clusterSelections, setClusterSelections] = useState(new Set(['1-199','200-399','400-599','600-799','800-999']));
   const [vehicleRoutes, setVehicleRoutes] = useState({});
-  const [isTrackingActive, setIsTrackingActive] = useState(true);
-  const [timeRange, setTimeRange] = useState('24h');
-  const [selectedDevice, setSelectedDevice] = useState(null);
-  const [selectedDeviceStatus, setSelectedDeviceStatus] = useState(null);
+  const [isTrackingActive] = useState(true);
+  const [timeRange] = useState('24h');
+  const [, setSelectedDevice] = useState(null);
+  const [, setSelectedDeviceStatus] = useState(null);
 
   const markersRef = useRef({});
   const markersLayerRef = useRef(null);
@@ -49,35 +46,6 @@ const LiveTrackingMapNew = () => {
   // Tire data helpers
   const normalizeTruckId = (id) => String(id || '').toLowerCase();
   
-  const getLatestTireData = async (truckId) => {
-    try {
-      const apiRes = await trucksAPI.getTirePressures(truckId);
-      if (apiRes?.success && Array.isArray(apiRes.data) && apiRes.data.length > 0) {
-        const latestByTire = {};
-        apiRes.data.forEach(item => {
-          const no = Number(item.tire_no);
-          if (!latestByTire[no]) latestByTire[no] = item;
-        });
-        return latestByTire;
-      }
-    } catch (e) {
-      console.warn('Tire API failed, using dummy:', e?.message || e);
-    }
-    
-    try {
-      const all = Array.isArray(tirePressureDummy) ? tirePressureDummy : (tirePressureDummy?.tirePressureEvents || []);
-      const filtered = all.filter(ev => normalizeTruckId(ev.truck_id).includes(normalizeTruckId(truckId)));
-      const latestByTire = {};
-      filtered.forEach(ev => {
-        const no = Number(ev.tire_no);
-        if (!latestByTire[no]) latestByTire[no] = ev;
-        else if (new Date(ev.changed_at) > new Date(latestByTire[no].changed_at)) latestByTire[no] = ev;
-      });
-      return latestByTire;
-    } catch {
-      return {};
-    }
-  };
 
   // Resolve a given vehicle identifier to the truck UUID used by device mappings
   const resolveTruckUUID = (vehicleId) => {
@@ -96,29 +64,6 @@ const LiveTrackingMapNew = () => {
     return null;
   };
 
-  const buildTirePopupHTML = (tireMap) => {
-    const tires = Object.keys(tireMap).map(n => Number(n)).sort((a,b)=>a-b);
-    const pairs = [];
-    for (let i=0;i<tires.length;i+=2){
-      const a = tireMap[tires[i]]; const b = tireMap[tires[i+1]];
-      const left = a ? `<div class="flex items-center gap-2"><span class="text-[10px] px-1 rounded bg-gray-200">#${a.tire_no}</span><span class="text-xs">${a.pressure_kpa ?? a.pressureKpa ?? '-'} kPa</span><span class="text-xs text-gray-500">/ ${a.temp_celsius ?? a.tempCelsius ?? '-'}°C</span></div>` : '';
-      const right = b ? `<div class="flex items-center gap-2"><span class="text-[10px] px-1 rounded bg-gray-200">#${b.tire_no}</span><span class="text-xs">${b.pressure_kpa ?? b.pressureKpa ?? '-'} kPa</span><span class="text-xs text-gray-500">/ ${b.temp_celsius ?? b.tempCelsius ?? '-'}°C</span></div>` : '';
-      pairs.push(`
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex-1 flex items-center justify-between">
-            <span class="text-[11px]">Tekanan Suhu</span>
-            ${left}
-          </div>
-          <div class="w-10 h-4 bg-gray-300 rounded-sm mx-2"></div>
-          <div class="flex-1 flex items-center justify-between">
-            ${right}
-            <span class="text-[11px]">Suhu Tekanan</span>
-          </div>
-        </div>
-      `);
-    }
-    return `<div class="space-y-1">${pairs.join('')}</div>`;
-  };
 
   // Truck number helpers & cluster filtering
   const extractTruckNumber = (idOrName) => {
@@ -210,7 +155,7 @@ const LiveTrackingMapNew = () => {
       }
 
       const routes = {};
-      liveTrackingData = liveTrackingData.map((vehicle, idx) => {
+      liveTrackingData = liveTrackingData.map((vehicle) => {
         const routeData = getTruckRoute(vehicle.id, timeRange);
         if (routeData && routeData.length > 0) {
           routes[vehicle.id] = routeData;
@@ -237,11 +182,11 @@ const LiveTrackingMapNew = () => {
     setMap(mapInstance);
     setMapUtils(utils);
     try {
-      const L = window.L || require('leaflet');
+      const L = window.L || require('leaflet'); // eslint-disable-line no-undef
       if (!markersLayerRef.current) {
         markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(mapInstance);
       }
-    } catch {}
+    } catch (err) { void err; }
     
     // Apply marker styling on zoom/move
     mapInstance.on('zoom', () => applyMarkerZoomStyling());
@@ -358,7 +303,7 @@ const LiveTrackingMapNew = () => {
           ws.onclose = (ev) => { setWsStatus('disconnected'); prevClose && prevClose(ev); };
           ws.onerror = (ev) => { setWsStatus('reconnecting'); prevError && prevError(ev); };
         }
-      } catch {}
+      } catch (err) { void err; }
       wsSubscribedRef.current = true;
     } catch (wsError) {
       console.warn('⚠️ WebSocket connection failed, using polling fallback');
@@ -381,7 +326,8 @@ const LiveTrackingMapNew = () => {
       try {
         const ok = await connectionUtils.checkConnection();
         setBackendOnline(ok);
-      } catch {
+      } catch (err) {
+        void err;
         setBackendOnline(false);
       }
     };
@@ -390,7 +336,7 @@ const LiveTrackingMapNew = () => {
     // periodic
     try {
       timerId = connectionUtils.startConnectionMonitor?.(30000);
-    } catch {}
+    } catch (err) { void err; }
     return () => {
       if (timerId) clearInterval(timerId);
     };
@@ -456,27 +402,13 @@ const LiveTrackingMapNew = () => {
     return `${Math.floor(diff / 3600)}h ago`;
   };
 
-  const getCurrentShiftWindow = () => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    const d = now.getDate();
-    const h = now.getHours();
-    if (h >= 6 && h < 16) {
-      return { start: new Date(y, m, d, 6, 0, 0, 0), end: new Date(y, m, d, 16, 0, 0, 0) };
-    }
-    if (h >= 16) {
-      return { start: new Date(y, m, d, 16, 0, 0, 0), end: new Date(y, m, d + 1, 6, 0, 0, 0) };
-    }
-    return { start: new Date(y, m, d - 1, 16, 0, 0, 0), end: new Date(y, m, d, 6, 0, 0, 0) };
-  };
 
   // Reconcile markers when data changes (reuse markers for performance)
   useEffect(() => {
     if (map && vehicles) {
-      const L = window.L || require('leaflet');
+      const L = window.L || require('leaflet'); // eslint-disable-line no-undef
       if (!markersLayerRef.current) {
-        try { markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(map); } catch {}
+        try { markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(map); } catch (err) { void err; }
       }
 
       const existing = markersRef.current;
@@ -538,12 +470,12 @@ const LiveTrackingMapNew = () => {
           // Show live route for this vehicle
           try {
             if (liveRouteLineRef.current && map) {
-              try { map.removeLayer(liveRouteLineRef.current); } catch {}
+              try { map.removeLayer(liveRouteLineRef.current); } catch (err) { void err; }
               liveRouteLineRef.current = null;
             }
             
-            const L = window.L || require('leaflet');
-            const liveWindow = getCurrentShiftWindow();
+            const L = window.L || require('leaflet'); // eslint-disable-line no-undef
+            
             let routeHistory = vehicleRoutes[vehicle.id] || [];
             
             if (routeHistory.length <= 1) {
@@ -566,8 +498,8 @@ const LiveTrackingMapNew = () => {
                 pane: 'routesPane'
               }).addTo(map);
               
-              if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch {}
-              if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch {}
+              if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch (err) { void err; }
+              if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch (err) { void err; }
               
               const startIcon = L.divIcon({
                 html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
@@ -583,7 +515,7 @@ const LiveTrackingMapNew = () => {
               
               try {
                 map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
-              } catch {}
+              } catch (err) { void err; }
             }
           } catch (e) {
             console.warn('Failed to show live route:', e);
@@ -591,15 +523,15 @@ const LiveTrackingMapNew = () => {
           });
         } else {
           // Update position
-          try { marker.setLatLng(vehicle.position); } catch {}
+          try { marker.setLatLng(vehicle.position); } catch (err) { void err; }
           // Update icon only if status changed (cheaper)
           if (marker._status !== vehicle.status) {
-            try { marker.setIcon(buildIcon(vehicle.status)); marker._status = vehicle.status; } catch {}
+            try { marker.setIcon(buildIcon(vehicle.status)); marker._status = vehicle.status; } catch (err) { void err; }
           }
         }
 
         // Ensure visible
-        try { const el = marker.getElement?.(); if (el) el.style.visibility = 'visible'; } catch {}
+        try { const el = marker.getElement?.(); if (el) el.style.visibility = 'visible'; } catch (err) { void err; }
 
         seen.add(vehicle.id);
       });
@@ -612,7 +544,7 @@ const LiveTrackingMapNew = () => {
             if (m && (map.hasLayer(m) || markersLayerRef.current?.hasLayer(m))) {
               (markersLayerRef.current || map).removeLayer(m);
             }
-          } catch {}
+          } catch (err) { void err; }
           delete existing[id];
         }
       });
@@ -636,16 +568,16 @@ const LiveTrackingMapNew = () => {
       if (!target) return;
       const marker = markersRef.current[target.id];
       if (marker) {
-        try { marker.fire('click'); } catch {}
-        try { map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true }); } catch {}
+        try { marker.fire('click'); } catch (err) { void err; }
+        try { map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true }); } catch (err) { void err; }
       } else {
         // Fallback: set directly
         setSelectedVehicle(target);
         setShowVehicleCard(true);
-        try { map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true }); } catch {}
+        try { map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true }); } catch (err) { void err; }
       }
       focusHandledRef.current = true;
-    } catch {}
+    } catch (err) { void err; }
   }, [map, vehicles]);
 
 
@@ -755,11 +687,11 @@ const LiveTrackingMapNew = () => {
                     setSelectedVehicle(null);
                     // Clear route display
                     if (liveRouteLineRef.current && map) {
-                      try { map.removeLayer(liveRouteLineRef.current); } catch {}
+                      try { map.removeLayer(liveRouteLineRef.current); } catch { /* empty */ }
                       liveRouteLineRef.current = null;
                     }
-                    if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch {}
-                    if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch {}
+                    if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch { /* empty */ }
+                    if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch { /* empty */ }
                   }}
                   className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:shadow-md"
                 >

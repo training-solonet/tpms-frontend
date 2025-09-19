@@ -23,7 +23,7 @@ const BaseTrackingMap = ({
   const [mapStyle, setMapStyle] = useState('satellite');
   const [loading, setLoading] = useState(true);
   const miningBoundsRef = useRef(null);
-  const rafRef = useRef(null);
+
 
   // --- Geofence helpers & movement utilities ---
   // Extract primary polygon (first ring) as [lat, lng]
@@ -192,14 +192,14 @@ const BaseTrackingMap = ({
     };
 
     initializeMap();
-  }, [onMapReady]);
+  }, [onMapReady, polygonLatLng, haversineMeters, moveByMeters, pointInPolygon, polygonCentroid]);
 
   // Invalidate map size when sidebar visibility changes to avoid right-edge clipping
   useEffect(() => {
     if (!map) return;
     // Delay to allow CSS transition to complete before recalculating map size
     const t = setTimeout(() => {
-      try { map.invalidateSize({ animate: false }); } catch (e) {}
+      try { map.invalidateSize({ animate: false }); } catch (e) { console.warn('invalidateSize (sidebar) failed:', e); }
     }, 250);
     return () => clearTimeout(t);
   }, [map, sidebarVisible]);
@@ -209,7 +209,7 @@ const BaseTrackingMap = ({
   useEffect(() => {
     if (!map) return;
     const onResize = () => {
-      try { map.invalidateSize({ animate: false }); } catch (e) {}
+      try { map.invalidateSize({ animate: false }); } catch (e) { console.warn('invalidateSize (resize) failed:', e); }
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -220,9 +220,11 @@ const BaseTrackingMap = ({
     return () => {
       try {
         if (map) map.remove();
-      } catch {}
+      } catch (e) {
+        console.warn('Error removing map on unmount:', e);
+      }
     };
-  }, []);
+  }, [map]);
 
   const resetMapView = () => {
     if (map) {

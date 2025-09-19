@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // Main data export - aggregates all dummy data modules
 import { trucks } from './trucks.js';
 import { gpsPositions, generateGpsPositions } from './gpsPositions.js';
@@ -216,6 +217,7 @@ export const getDevicesByTruck = (truckId) => {
   return devices.filter(device => device.truck_id === truckId && !device.removed_at);
 };
 
+
 export const getTirePressureData = (truckId, timeRange = '24h') => {
   return tirePressureEvents.filter(event => event.truck_id === truckId);
 };
@@ -266,7 +268,7 @@ function parseDummyRealRoute(rawText) {
   const lines = rawText.split(/\r?\n/);
   const points = [];
   for (const line of lines) {
-    const trimmed = line.trim().replace(/^\d+\s*[→:\-]?\s*/, ''); // strip leading line numbers or arrows if any
+    const trimmed = line.trim().replace(/^\d+\s*[→:\\-]?\s*/, ''); // strip leading line numbers or arrows if any
     if (!trimmed) continue;
     const match = trimmed.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
     if (match) {

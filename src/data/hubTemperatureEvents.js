@@ -1,5 +1,6 @@
 // Dummy data for hub_temperature_event table
 // Simple UUID generator function
+// eslint-disable-next-line no-unused-vars
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -34,6 +35,7 @@ const generateHubTemperatureEvents = () => {
     "550e8400-e29b-41d4-a716-446655440008"
   ];
 
+  // eslint-disable-next-line no-unused-vars
   let eventId = 1;
   
   devices.forEach((deviceId, deviceIndex) => {

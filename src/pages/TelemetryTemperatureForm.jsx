@@ -47,7 +47,7 @@ export default function TelemetryTemperatureForm() {
             if (tireRes.success && Array.isArray(tireRes.data)) {
               tires = tireRes.data; // expect hub data inside items
             }
-          } catch {}
+          } catch { /* empty */ }
 
           const driverName = t.driver?.name || '-';
           const clusterName = t.cluster || '-';
