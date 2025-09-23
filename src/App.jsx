@@ -21,6 +21,8 @@ import TelemetryTemperatureForm from './pages/TelemetryTemperatureForm.jsx';
 import TelemetryFuelForm from './pages/TelemetryFuelForm.jsx';
 import VendorsList from './pages/VendorsList.jsx';
 import VendorForm from './pages/VendorForm.jsx';
+import DriversList from './pages/DriversList.jsx';
+import DriverForm from './pages/DriverForm.jsx';
 import './App.css';
 
 // Protected/Public Route Components
@@ -183,6 +185,24 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <VendorForm />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Drivers */}
+        <Route 
+          path="/drivers" 
+          element={
+            <ProtectedRoute>
+              <DriversList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/drivers/:id" 
+          element={
+            <ProtectedRoute>
+              <DriverForm />
             </ProtectedRoute>
           } 
         />

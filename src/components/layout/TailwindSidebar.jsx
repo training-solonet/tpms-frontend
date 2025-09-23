@@ -34,6 +34,7 @@ const navigation = [
       { name: 'Fleet Groups', href: '/fleet/groups' },
       { name: 'All Vehicles', href: '/trucks' },
       { name: 'Vehicle & IoT Status', href: '/fleet/status' },
+      { name: 'Drivers', href: '/drivers' },
       { name: 'Vendors', href: '/vendors' },
     ]
   },

@@ -43,6 +43,39 @@ export const vendorsAPI = {
   }
 };
 
+// Drivers (master data) API - CRUD
+export const driversAPI = {
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/api/drivers${queryString ? `?${queryString}` : ''}`;
+    return await apiRequest(endpoint);
+  },
+
+  getById: async (id) => {
+    return await apiRequest(`/api/drivers/${encodeURIComponent(id)}`);
+  },
+
+  create: async (payload) => {
+    return await apiRequest(`/api/drivers`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  update: async (id, payload) => {
+    return await apiRequest(`/api/drivers/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  remove: async (id) => {
+    return await apiRequest(`/api/drivers/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
 // Connection status
 let isOnline = true;
 let connectionAttempts = 0;
@@ -569,6 +602,7 @@ export default {
   miningAreaAPI,
   alertsAPI,
   vendorsAPI,
+  driversAPI,
   connectionUtils,
   FleetWebSocket,
   API_CONFIG,
