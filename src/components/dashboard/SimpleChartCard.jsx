@@ -32,6 +32,15 @@ const SimpleChartCard = ({
   };
 
   const renderLineChart = () => {
+    // Handle case where data is not an array or is empty
+    if (!Array.isArray(data) || data.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          <span>No data available</span>
+        </div>
+      );
+    }
+    
     const maxValue = Math.max(...data.map(d => d.value));
     const minValue = Math.min(...data.map(d => d.value));
     const range = maxValue - minValue;

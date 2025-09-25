@@ -35,9 +35,21 @@ export default function TelemetryTemperatureForm() {
       try {
         setLoading(true);
         const trRes = await trucksAPI.getAll();
-        const trucks = trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0
-          ? trRes.data
-          : allDummyTrucks.map(t => ({ id: t.id, name: t.name, cluster: t.cluster, driver: { name: t.driver.name } , tires: t.tires }));
+        let trucks;
+        
+        if (trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0) {
+          trucks = trRes.data;
+          console.log('✅ Using real trucks data for TelemetryTemperatureForm');
+        } else {
+          trucks = allDummyTrucks.map(t => ({ 
+            id: t.id, 
+            name: t.name, 
+            cluster: t.cluster, 
+            driver: { name: t.driver.name }, 
+            tires: t.tires 
+          }));
+          console.log(`🔄 Backend trucks unavailable (${trRes.error || 'unknown error'}), using dummy data for TelemetryTemperatureForm`);
+        }
 
         const flattened = [];
         for (const t of trucks) {

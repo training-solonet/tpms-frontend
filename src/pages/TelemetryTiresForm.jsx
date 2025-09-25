@@ -34,11 +34,23 @@ export default function TelemetryTiresForm() {
     (async () => {
       try {
         setLoading(true);
-        // Load trucks from backend
+        // Load trucks from backend with fallback handling
         const trRes = await trucksAPI.getAll();
-        const trucks = trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0
-          ? trRes.data
-          : allDummyTrucks.map(t => ({ id: t.id, name: t.name, cluster: t.cluster, driver: { name: t.driver.name } , tires: t.tires }));
+        let trucks;
+        
+        if (trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0) {
+          trucks = trRes.data;
+          console.log('✅ Using real trucks data for telemetry');
+        } else {
+          trucks = allDummyTrucks.map(t => ({ 
+            id: t.id, 
+            name: t.name, 
+            cluster: t.cluster, 
+            driver: { name: t.driver.name }, 
+            tires: t.tires 
+          }));
+          console.log(`🔄 Backend trucks unavailable (${trRes.error || 'unknown error'}), using dummy data`);
+        }
 
         // Build flattened rows; try fetching tire data per truck when backend is online
         const flattened = [];
@@ -49,8 +61,14 @@ export default function TelemetryTiresForm() {
             if (tireRes.success && Array.isArray(tireRes.data)) {
               // Expect backend returns array of { tireNo, sensor: { data: {...} }, hub: {...} } or similar
               tires = tireRes.data;
+            } else if (tireRes.offline) {
+              // Backend unavailable, use dummy data
+              console.log(`🔄 Using offline tire data for truck ${t.id}`);
             }
-          } catch { /* empty */ }
+          } catch (error) {
+            console.log(`⚠️ Failed to fetch tire data for truck ${t.id}:`, error.message);
+            // Keep using dummy data from t.tires
+          }
           const driverName = t.driver?.name || '-';
           const clusterName = t.cluster || '-';
           if (Array.isArray(tires)) {

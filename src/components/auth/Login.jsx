@@ -1,6 +1,5 @@
 // src/components/auth/Login.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { 
   Building2, 
@@ -16,8 +15,7 @@ import {
 import { API_CONFIG } from '../../services/api.js';
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { login, isAuthenticated, loading, isOnline } = useAuth();
+  const { login, loading, isOnline } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -26,13 +24,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, loading, navigate]);
 
   const handleChange = (e) => {
     setFormData({

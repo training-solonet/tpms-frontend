@@ -9,7 +9,8 @@ import {
 import BaseTrackingMap from './BaseTrackingMap';
 import TirePressureDisplay from './TirePressureDisplay';
 import { trucksAPI, FleetWebSocket, connectionUtils } from '../../services/api.js';
-import { getLiveTrackingData, getTruckRoute, getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
+import { dataService } from '../../services/dataService.js';
+import { getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
 import { devices } from '../../data/devices.js';
 import { deviceStatusEvents } from '../../data/deviceStatusEvents.js';
 import { trucks as trucksList } from '../../data/trucks.js';
@@ -128,7 +129,15 @@ const LiveTrackingMapNew = () => {
   const initializeSampleData = async () => {
     console.log('🔄 Backend not available - initializing comprehensive dummy data');
     try {
-      let liveTrackingData = getLiveTrackingData();
+      let liveTrackingData;
+      try {
+        liveTrackingData = await dataService.getLiveTrackingData(false);
+      } catch (apiError) {
+        console.warn('API call failed, falling back to local dummy data:', apiError);
+        // Fallback to local dummy data import
+        const { getLiveTrackingData } = await import('../../data/index.js');
+        liveTrackingData = getLiveTrackingData();
+      }
       console.log(`📊 Loaded ${liveTrackingData.length} vehicles from dummy data`);
 
       if (!liveTrackingData || liveTrackingData.length === 0) {
@@ -156,19 +165,36 @@ const LiveTrackingMapNew = () => {
       }
 
       const routes = {};
-      liveTrackingData = liveTrackingData.map((vehicle) => {
-        const routeData = getTruckRoute(vehicle.id, timeRange);
-        if (routeData && routeData.length > 0) {
-          routes[vehicle.id] = routeData;
-          const last = routeData[routeData.length - 1];
-          return { ...vehicle, position: last };
+      // Process routes sequentially to handle async calls
+      for (const vehicle of liveTrackingData) {
+        try {
+          const routeData = await dataService.getTruckRoute(vehicle.id, timeRange);
+          if (routeData && routeData.length > 0) {
+            routes[vehicle.id] = routeData;
+            const last = routeData[routeData.length - 1];
+            vehicle.position = last;
+          } else {
+            const mdLast = getDummyRealRouteLastPoint?.();
+            if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
+              vehicle.position = [mdLast.lat, mdLast.lng];
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to load route for ${vehicle.id}:`, error);
+          // Fallback to local dummy data for routes
+          try {
+            const { getTruckRoute } = await import('../../data/index.js');
+            const fallbackRoute = getTruckRoute(vehicle.id, timeRange);
+            if (fallbackRoute && fallbackRoute.length > 0) {
+              routes[vehicle.id] = fallbackRoute;
+              const last = fallbackRoute[fallbackRoute.length - 1];
+              vehicle.position = last;
+            }
+          } catch (fallbackError) {
+            console.warn(`Fallback route loading also failed for ${vehicle.id}:`, fallbackError);
+          }
         }
-        const mdLast = getDummyRealRouteLastPoint?.();
-        if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
-          return { ...vehicle, position: [mdLast.lat, mdLast.lng] };
-        }
-        return vehicle;
-      });
+      }
 
       setVehicleRoutes(routes);
       console.log(`✅ Initialized ${liveTrackingData.length} vehicles with comprehensive dummy data`);
@@ -209,38 +235,15 @@ const LiveTrackingMapNew = () => {
           return;
         }
 
-        const response = await trucksAPI.getRealTimeLocations();
+        const vehicleData = await dataService.getLiveTrackingData();
         
-        if (response.success && response.data) {
-          const vehicleData = response.data.features?.map(feature => ({
-            id: feature.properties.truckNumber,
-            driver: feature.properties.driverName || 'Unknown Driver',
-            position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-            status: feature.properties.status?.toLowerCase() || 'offline',
-            speed: feature.properties.speed || 0,
-            heading: feature.properties.heading || 0,
-            fuel: feature.properties.fuelPercentage || 0,
-            battery: 90,
-            signal: 'good',
-            lastUpdate: new Date(),
-            route: 'Mining Area',
-            load: feature.properties.payloadTons ? `Coal - ${feature.properties.payloadTons} tons` : 'Unknown'
-          })) || [];
-
-          if (vehicleData.length > 0) {
-            setVehicles(vehicleData);
-          } else {
-            console.log('ℹ️ API returned no vehicles, switching to sample data');
-            const sampleData = await initializeSampleData();
-            setVehicles(sampleData);
-            setError('No vehicles from backend - using demo data');
-          }
-
+        if (vehicleData && vehicleData.length > 0) {
+          setVehicles(vehicleData);
         } else {
-          console.log('🔌 Backend not available - using sample data for demo');
+          console.log('ℹ️ API returned no vehicles, switching to sample data');
           const sampleData = await initializeSampleData();
           setVehicles(sampleData);
-          setError('Backend not available - using demo data');
+          setError('No vehicles from backend - using demo data');
         }
       } catch (error) {
         console.error('❌ Failed to load truck data:', error);

@@ -28,16 +28,22 @@ export default function TrucksFormList() {
           trucksAPI.getAll(),
           vendorsAPI.getAll()
         ]);
-        const trData = trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0
-          ? trRes.data.map(t => ({
-              id: t.id,
-              plate: t.plate_number || t.plate || '-',
-              name: t.name || t.id,
-              cluster: t.cluster || '-',
-              driver: { name: t.driver?.name || '-' },
-              vendor_id: t.vendor_id || ''
-            }))
-          : allDummyTrucks;
+        
+        let trData;
+        if (trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0) {
+          trData = trRes.data.map(t => ({
+            id: t.id,
+            plate: t.plate_number || t.plate || '-',
+            name: t.name || t.id,
+            cluster: t.cluster || '-',
+            driver: { name: t.driver?.name || '-' },
+            vendor_id: t.vendor_id || ''
+          }));
+          console.log('✅ Using real trucks data for TrucksFormList');
+        } else {
+          trData = allDummyTrucks;
+          console.log(`🔄 Backend trucks unavailable (${trRes.error || 'unknown error'}), using dummy data for TrucksFormList`);
+        }
         if (mounted) {
           setRows(trData);
           if (vRes.success && Array.isArray(vRes.data)) setVendors(vRes.data);

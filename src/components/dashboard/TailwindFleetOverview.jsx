@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import React, { useEffect, useState } from 'react';
 import {
   TruckIcon,
@@ -12,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import TailwindStatCard from './TailwindStatCard';
 import SimpleChartCard from './SimpleChartCard';
-// import { dashboardAPI, trucksAPI, alertsAPI } from '../../services/api.js';
+import { dashboardAPI, trucksAPI, alertsAPI } from '../../services/api.js';
 
 
 const TailwindFleetOverview = () => {
@@ -104,6 +103,9 @@ const TailwindFleetOverview = () => {
             mileage: `${truck.odometer || 0} km`,
             status: truck.status?.toLowerCase() || 'offline'
           })));
+          console.log('✅ Using real trucks data for dashboard overview');
+        } else {
+          console.log(`🔄 Backend trucks unavailable (${trucksResponse.error || 'unknown error'}), using empty vehicles list for dashboard`);
         }
         
         // Load fuel report

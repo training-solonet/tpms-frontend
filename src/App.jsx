@@ -1,7 +1,9 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
 import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
@@ -27,13 +29,45 @@ import './App.css';
 
 // Protected/Public Route Components
 const ProtectedRoute = ({ children }) => {
-  // Auth disabled: always allow access
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
   return children;
 };
 
-const PublicRoute = () => {
-  // Auth disabled: redirect any public route (e.g., /login) to dashboard
-  return <Navigate to="/dashboard" replace />;
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
 };
 
 function AppRoutes() {
@@ -43,7 +77,11 @@ function AppRoutes() {
         {/* Public Routes */}
         <Route 
           path="/login" 
-          element={<PublicRoute />} 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
         />
         
         {/* Protected Routes */}

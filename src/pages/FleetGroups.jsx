@@ -38,14 +38,19 @@ const FleetGroups = () => {
       try {
         setLoadingTrucks(true);
         const tRes = await trucksAPI.getAll();
-        if (mounted && tRes.success && Array.isArray(tRes.data)) {
-          setBackendTrucks(tRes.data.map(t => ({
-            ...t,
-            fleet_group_id: t.fleet_group_id || t.fleetGroupId || t.fleet_group || null,
-            vendor_id: t.vendor_id || t.vendorId || null,
-            name: t.name || t.id,
-            plate_number: t.plate_number || t.plate || '-'
-          })));
+        if (mounted) {
+          if (tRes.success && Array.isArray(tRes.data)) {
+            setBackendTrucks(tRes.data.map(t => ({
+              ...t,
+              fleet_group_id: t.fleet_group_id || t.fleetGroupId || t.fleet_group || null,
+              vendor_id: t.vendor_id || t.vendorId || null,
+              name: t.name || t.id,
+              plate_number: t.plate_number || t.plate || '-'
+            })));
+            console.log('✅ Using real trucks data for FleetGroups');
+          } else {
+            console.log(`🔄 Backend trucks unavailable (${tRes.error || 'unknown error'}), using dummy data for FleetGroups`);
+          }
         }
       } finally {
         if (mounted) setLoadingTrucks(false);
