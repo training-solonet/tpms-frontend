@@ -8,15 +8,14 @@ import {
 } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
 import TirePressureDisplay from './TirePressureDisplay';
-import { trucksAPI, FleetWebSocket, connectionUtils } from '../../services/api.js';
-import { dataService } from '../../services/dataService.js';
+import { getLiveTrackingData } from '../../data/dataManagement.js';
 import { getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
 import { devices } from '../../data/devices.js';
 import { deviceStatusEvents } from '../../data/deviceStatusEvents.js';
 import { trucks as trucksList } from '../../data/trucks.js';
 
 const LiveTrackingMapNew = () => {
-  const USE_BACKEND = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_USE_BACKEND) ?? 'true') === 'true';
+  const USE_BACKEND = false; // Force use dummy data
   const [map, setMap] = useState(null);
   const [mapUtils, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -41,7 +40,7 @@ const LiveTrackingMapNew = () => {
   const lastHideStateRef = useRef(null);
   const rafRef = useRef(null);
   const focusHandledRef = useRef(false);
-  const [backendOnline, setBackendOnline] = useState(connectionUtils?.isOnline?.() ?? false);
+  const [backendOnline, setBackendOnline] = useState(false);
   const [wsStatus, setWsStatus] = useState('disconnected'); // connecting | connected | reconnecting | disconnected
 
   // Tire data helpers
@@ -129,17 +128,11 @@ const LiveTrackingMapNew = () => {
   const initializeSampleData = async () => {
     console.log('🔄 Backend not available - initializing comprehensive dummy data');
     try {
-      let liveTrackingData;
-      try {
-        liveTrackingData = await dataService.getLiveTrackingData(false);
-      } catch (apiError) {
-        console.warn('API call failed, falling back to local dummy data:', apiError);
-        // Fallback to local dummy data import
-        const { getLiveTrackingData } = await import('../../data/index.js');
-        liveTrackingData = getLiveTrackingData();
-      }
+      // Use dummy data directly
+      const liveTrackingData = getLiveTrackingData();
       console.log(`📊 Loaded ${liveTrackingData.length} vehicles from dummy data`);
 
+      let finalTrackingData = liveTrackingData;
       if (!liveTrackingData || liveTrackingData.length === 0) {
         console.warn('⚠️ Dummy data empty, synthesizing demo vehicles');
         const mdPts = getDummyRealRoutePoints();
@@ -161,44 +154,26 @@ const LiveTrackingMapNew = () => {
           route: 'Mining Area',
           load: 'Empty'
         }));
-        liveTrackingData = synth;
+        finalTrackingData = synth;
       }
 
       const routes = {};
-      // Process routes sequentially to handle async calls
-      for (const vehicle of liveTrackingData) {
-        try {
-          const routeData = await dataService.getTruckRoute(vehicle.id, timeRange);
-          if (routeData && routeData.length > 0) {
-            routes[vehicle.id] = routeData;
-            const last = routeData[routeData.length - 1];
-            vehicle.position = last;
-          } else {
-            const mdLast = getDummyRealRouteLastPoint?.();
-            if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
-              vehicle.position = [mdLast.lat, mdLast.lng];
-            }
-          }
-        } catch (error) {
-          console.warn(`Failed to load route for ${vehicle.id}:`, error);
-          // Fallback to local dummy data for routes
-          try {
-            const { getTruckRoute } = await import('../../data/index.js');
-            const fallbackRoute = getTruckRoute(vehicle.id, timeRange);
-            if (fallbackRoute && fallbackRoute.length > 0) {
-              routes[vehicle.id] = fallbackRoute;
-              const last = fallbackRoute[fallbackRoute.length - 1];
-              vehicle.position = last;
-            }
-          } catch (fallbackError) {
-            console.warn(`Fallback route loading also failed for ${vehicle.id}:`, fallbackError);
-          }
+      // Use dummy route data for all vehicles
+      for (const vehicle of finalTrackingData) {
+        const mdLast = getDummyRealRouteLastPoint?.();
+        if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
+          vehicle.position = [mdLast.lat, mdLast.lng];
+        }
+        // Generate dummy route points for each vehicle
+        const routePoints = getDummyRealRoutePoints();
+        if (routePoints && routePoints.length > 0) {
+          routes[vehicle.id] = routePoints.map(p => [p.lat, p.lng]);
         }
       }
 
       setVehicleRoutes(routes);
-      console.log(`✅ Initialized ${liveTrackingData.length} vehicles with comprehensive dummy data`);
-      return liveTrackingData;
+      console.log(`✅ Initialized ${finalTrackingData.length} vehicles with comprehensive dummy data`);
+      return finalTrackingData;
     } catch (error) {
       console.error('❌ Failed to initialize dummy data:', error);
       return [];
@@ -235,7 +210,7 @@ const LiveTrackingMapNew = () => {
           return;
         }
 
-        const vehicleData = await dataService.getLiveTrackingData();
+        const vehicleData = getLiveTrackingData();
         
         if (vehicleData && vehicleData.length > 0) {
           setVehicles(vehicleData);
@@ -261,90 +236,18 @@ const LiveTrackingMapNew = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, mapUtils]);
 
-  // Setup WebSocket once (guarded) to avoid double-subscribe in StrictMode
+  // WebSocket setup disabled for dummy data mode
   useEffect(() => {
-    if (!USE_BACKEND) return;
-    if (wsSubscribedRef.current) return;
-
-    wsRef.current = new FleetWebSocket();
-    try {
-      setWsStatus('connecting');
-      wsRef.current.connect();
-
-      const handleTruckUpdates = async (data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
-          console.log('📡 Received WebSocket truck updates:', data.length, 'vehicles');
-
-          const vehicleData = data.map(truck => ({
-            id: truck.truckNumber,
-            driver: truck.driverName || 'Unknown Driver',
-            position: [truck.latitude, truck.longitude],
-            status: truck.status?.toLowerCase() || 'offline',
-            speed: truck.speed || 0,
-            heading: truck.heading || 0,
-            fuel: truck.fuelPercentage || 0,
-            battery: 90,
-            signal: 'good',
-            lastUpdate: new Date(),
-            route: 'Mining Area',
-            load: truck.payloadTons ? `Coal - ${truck.payloadTons} tons` : 'Unknown'
-          }));
-
-          setVehicles(vehicleData);
-          setError(null);
-        }
-      };
-
-      wsRef.current.subscribe('truck_locations_update', handleTruckUpdates);
-      wsRef.current.subscribe('truck_updates', handleTruckUpdates);
-      // Wrap internal WS events to also update local status without breaking existing handlers
-      try {
-        const ws = wsRef.current.ws;
-        if (ws) {
-          const prevOpen = ws.onopen;
-          const prevClose = ws.onclose;
-          const prevError = ws.onerror;
-          ws.onopen = (ev) => { setWsStatus('connected'); prevOpen && prevOpen(ev); };
-          ws.onclose = (ev) => { setWsStatus('disconnected'); prevClose && prevClose(ev); };
-          ws.onerror = (ev) => { setWsStatus('reconnecting'); prevError && prevError(ev); };
-        }
-      } catch (err) { void err; }
-      wsSubscribedRef.current = true;
-    } catch (wsError) {
-      console.warn('⚠️ WebSocket connection failed, using polling fallback');
+    if (!USE_BACKEND) {
+      setWsStatus('disconnected');
+      return;
     }
+    // WebSocket logic removed since we're using dummy data only
+  }, [USE_BACKEND]);
 
-    return () => {
-      try {
-        if (wsRef.current) wsRef.current.disconnect();
-      } finally {
-        wsSubscribedRef.current = false;
-        setWsStatus('disconnected');
-      }
-    };
-  }, [USE_BACKEND, setError]);
-
-  // Backend connection monitor
+  // Backend connection monitor disabled for dummy data mode
   useEffect(() => {
-    let timerId;
-    const sync = async () => {
-      try {
-        const ok = await connectionUtils.checkConnection();
-        setBackendOnline(ok);
-      } catch (err) {
-        void err;
-        setBackendOnline(false);
-      }
-    };
-    // initial
-    sync();
-    // periodic
-    try {
-      timerId = connectionUtils.startConnectionMonitor?.(30000);
-    } catch (err) { void err; }
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
+    setBackendOnline(false);
   }, []);
 
   // Geofence-aware smooth movement for live tracking

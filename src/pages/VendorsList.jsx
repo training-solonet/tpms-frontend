@@ -86,39 +86,43 @@ export default function VendorsList() {
             <div className="md:col-span-2 flex items-end text-sm text-gray-600">Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}</div>
           </div>
 
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Name</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Code</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Description</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Contact</th>
-                  <th className="px-3 py-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>Loading...</td></tr>
-                ) : pageData.length === 0 ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>No data</td></tr>
-                ) : pageData.map(v => (
-                  <tr key={v.id}>
-                    <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
-                    <td className="px-3 py-2">{v.code}</td>
-                    <td className="px-3 py-2">{v.description}</td>
-                    <td className="px-3 py-2">
-                      <div>{v.contact_name || '-'}</div>
-                      <div className="text-xs text-gray-500">{v.contact_phone || ''} {v.contact_email ? `• ${v.contact_email}` : ''}</div>
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <a href={`/vendors/${v.id}`} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2">Edit</a>
-                      <button onClick={() => onDelete(v.id)} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600">Delete</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-white rounded-xl shadow">
+            <div className="overflow-x-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Name</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Code</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Description</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Contact</th>
+                      <th className="px-3 py-2" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {loading ? (
+                      <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>Loading...</td></tr>
+                    ) : pageData.length === 0 ? (
+                      <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>No data</td></tr>
+                    ) : pageData.map(v => (
+                      <tr key={v.id}>
+                        <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
+                        <td className="px-3 py-2">{v.code}</td>
+                        <td className="px-3 py-2">{v.description}</td>
+                        <td className="px-3 py-2">
+                          <div>{v.contact_name || '-'}</div>
+                          <div className="text-xs text-gray-500">{v.contact_phone || ''} {v.contact_email ? `• ${v.contact_email}` : ''}</div>
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <a href={`/vendors/${v.id}`} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2">Edit</a>
+                          <button onClick={() => onDelete(v.id)} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">

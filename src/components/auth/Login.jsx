@@ -1,6 +1,7 @@
 // src/components/auth/Login.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth.js';
+import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   MapPin, 
@@ -16,6 +17,7 @@ import { API_CONFIG } from '../../services/api.js';
 
 const Login = () => {
   const { login, loading, isOnline } = useAuth();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -44,7 +46,8 @@ const Login = () => {
       if (!result.success) {
         setError(result.message || 'Login failed');
       } else {
-        console.log('✅ Login successful, should redirect to dashboard');
+        console.log('✅ Login successful, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (error) {
       setError('Login failed - please try again');

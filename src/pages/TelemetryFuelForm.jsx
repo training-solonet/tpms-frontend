@@ -2,7 +2,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { fuelLevelEvents, trucks } from '../data/index.js';
-import { dashboardAPI } from '../services/api.js';
+// Removed dashboardAPI import - using dummy data
 
 function Input({ label, ...props }) {
   return (
@@ -35,15 +35,9 @@ export default function TelemetryFuelForm() {
     (async () => {
       try {
         setLoading(true);
-        const res = await dashboardAPI.getFuelReport();
-        if (mounted) {
-          if (res.success && res.data && Array.isArray(res.data)) {
-            setRows(res.data);
-          } else {
-            // Fallback to dummy
-            setRows(fuelLevelEvents.map(e => ({ ...e })));
-          }
-        }
+        // Use dummy fuel data directly
+        setRows(fuelLevelEvents.map(f => ({ ...f, truck_name: trucks.find(t => t.id === f.truck_id)?.name || 'Unknown' })));
+        console.log('✅ Using dummy fuel data for TelemetryFuelForm');
       } catch (e) {
         if (mounted) {
           setError(e.message || 'Failed to load fuel data');
@@ -108,34 +102,38 @@ export default function TelemetryFuelForm() {
             <div className="md:col-span-2 flex items-end text-sm text-gray-600">Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}</div>
           </div>
 
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Fuel %</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Changed At</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Source</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={4}>Loading...</td></tr>
-                ) : pageData.length === 0 ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={4}>No data</td></tr>
-                ) : pageData.map(r => (
-                  <tr key={r.id}>
-                    <td className="px-3 py-2">
-                      <div className="font-medium text-gray-900">{r.truckName}</div>
-                      <div className="text-xs text-gray-500">{r.truck_id} • {r.plate}</div>
-                    </td>
-                    <td className="px-3 py-2 w-40">{Number(r.fuel_percent).toFixed(1)}%</td>
-                    <td className="px-3 py-2 w-64">{r.changed_at ? new Date(r.changed_at).toLocaleString() : '-'}</td>
-                    <td className="px-3 py-2 w-56">{r.source || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-white rounded-xl shadow">
+            <div className="overflow-x-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Fuel %</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Changed At</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {loading ? (
+                      <tr><td className="px-3 py-6 text-gray-500" colSpan={4}>Loading...</td></tr>
+                    ) : pageData.length === 0 ? (
+                      <tr><td className="px-3 py-6 text-gray-500" colSpan={4}>No data</td></tr>
+                    ) : pageData.map(r => (
+                      <tr key={r.id}>
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-gray-900">{r.truckName}</div>
+                          <div className="text-xs text-gray-500">{r.truck_id} • {r.plate}</div>
+                        </td>
+                        <td className="px-3 py-2 w-40">{Number(r.fuel_percent).toFixed(1)}%</td>
+                        <td className="px-3 py-2 w-64">{r.changed_at ? new Date(r.changed_at).toLocaleString() : '-'}</td>
+                        <td className="px-3 py-2 w-56">{r.source || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">

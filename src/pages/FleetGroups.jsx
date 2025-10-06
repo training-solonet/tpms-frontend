@@ -11,9 +11,9 @@ import {
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { fleetGroups, trucks, getLatestTruckStatus } from '../data/index.js';
-import { trucksAPI, vendorsAPI } from '../services/api.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import TruckImage from '../components/common/TruckImage.jsx';
+import { vendorsAPI, trucksAPI } from '../services/api.js';
 
 const FleetGroups = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -24,39 +24,12 @@ const FleetGroups = () => {
 
   // Load vendors and trucks on mount so summary is visible immediately
   React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoadingVendors(true);
-        const vRes = await vendorsAPI.getAll();
-        if (mounted && vRes.success && Array.isArray(vRes.data)) setVendors(vRes.data);
-      } finally {
-        if (mounted) setLoadingVendors(false);
-      }
-    })();
-    (async () => {
-      try {
-        setLoadingTrucks(true);
-        const tRes = await trucksAPI.getAll();
-        if (mounted) {
-          if (tRes.success && Array.isArray(tRes.data)) {
-            setBackendTrucks(tRes.data.map(t => ({
-              ...t,
-              fleet_group_id: t.fleet_group_id || t.fleetGroupId || t.fleet_group || null,
-              vendor_id: t.vendor_id || t.vendorId || null,
-              name: t.name || t.id,
-              plate_number: t.plate_number || t.plate || '-'
-            })));
-            console.log('✅ Using real trucks data for FleetGroups');
-          } else {
-            console.log(`🔄 Backend trucks unavailable (${tRes.error || 'unknown error'}), using dummy data for FleetGroups`);
-          }
-        }
-      } finally {
-        if (mounted) setLoadingTrucks(false);
-      }
-    })();
-    return () => { mounted = false; };
+    // Use dummy data directly
+    setVendors([]);
+    setBackendTrucks(trucks);
+    setLoadingVendors(false);
+    setLoadingTrucks(false);
+    console.log('✅ Using dummy data for FleetGroups');
   }, []);
 
   // Get trucks by fleet group

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { driversAPI } from '../services/api.js';
+import { drivers } from '../data/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -41,23 +41,18 @@ export default function DriverForm() {
     let mounted = true;
     (async () => {
       if (!isNew) {
-        try {
-          setLoading(true);
-          const res = await driversAPI.getById(id);
-          if (mounted && res.success) {
-            setForm({
-              name: res.data.name || '',
-              badge_id: res.data.badge_id || '',
-              license_number: res.data.license_number || '',
-              phone: res.data.phone || '',
-              address: res.data.address || '',
-              notes: res.data.notes || '',
-              status: res.data.status || 'active'
-            });
-          }
-        } finally {
-          if (mounted) setLoading(false);
+        setLoading(true);
+        // Use dummy data
+        const driver = drivers.find(d => d.id === id);
+        if (driver) {
+          setForm({
+            name: `${driver.first_name} ${driver.last_name}` || '',
+            license_number: driver.license_number || '',
+            phone: driver.phone || '',
+            email: driver.email || ''
+          });
         }
+        setLoading(false);
       }
     })();
     return () => { mounted = false; };
@@ -67,17 +62,11 @@ export default function DriverForm() {
 
   const onSave = async () => {
     setSaving(true);
-    try {
-      if (isNew) {
-        const res = await driversAPI.create(form);
-        if (res.success) navigate('/drivers');
-      } else {
-        const res = await driversAPI.update(id, form);
-        if (res.success) navigate('/drivers');
-      }
-    } finally {
+    // Simulate save operation with dummy data
+    setTimeout(() => {
       setSaving(false);
-    }
+      navigate('/drivers');
+    }, 1000);
   };
 
   return (

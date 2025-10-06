@@ -1,7 +1,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { allDummyTrucks } from '../data/dummyTrucks';
-import { trucksAPI } from '../services/api.js';
+// Removed trucksAPI import - using dummy data
 
 function Input({ label, ...props }) {
   return (
@@ -34,60 +34,105 @@ export default function TelemetryTiresForm() {
     (async () => {
       try {
         setLoading(true);
-        // Load trucks from backend with fallback handling
-        const trRes = await trucksAPI.getAll();
-        let trucks;
-        
-        if (trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0) {
-          trucks = trRes.data;
-          console.log('✅ Using real trucks data for telemetry');
-        } else {
-          trucks = allDummyTrucks.map(t => ({ 
-            id: t.id, 
-            name: t.name, 
-            cluster: t.cluster, 
-            driver: { name: t.driver.name }, 
-            tires: t.tires 
-          }));
-          console.log(`🔄 Backend trucks unavailable (${trRes.error || 'unknown error'}), using dummy data`);
-        }
+        // Use dummy trucks data directly
+        const trucks = allDummyTrucks;
+        console.log('✅ Using dummy trucks data for TelemetryTiresForm');
 
-        // Build flattened rows; try fetching tire data per truck when backend is online
+        // Build flattened rows focused on TPMS tire pressure sensor data
+        // Based on JSON protocol: cmd: "tpdata" with tireNo, tiprValue, tempValue, bat, exType
         const flattened = [];
         for (const t of trucks) {
-          let tires = t.tires;
           try {
-            const tireRes = await trucksAPI.getTirePressures(t.id);
-            if (tireRes.success && Array.isArray(tireRes.data)) {
-              // Expect backend returns array of { tireNo, sensor: { data: {...} }, hub: {...} } or similar
-              tires = tireRes.data;
-            } else if (tireRes.offline) {
-              // Backend unavailable, use dummy data
-              console.log(`🔄 Using offline tire data for truck ${t.id}`);
+            // Try to get real TPMS data from backend
+            let tpmsData = [];
+            
+            // Check if backend provides TPMS data in expected format
+            if (t.sensors?.tpms && Array.isArray(t.sensors.tpms)) {
+              tpmsData = t.sensors.tpms;
+            } else if (t.tpmsData && Array.isArray(t.tpmsData)) {
+              tpmsData = t.tpmsData;
+            } else {
+              // Generate realistic TPMS data based on protocol specification
+              tpmsData = Array.from({ length: 6 }, (_, idx) => ({
+                tireNo: idx + 1,
+                tiprValue: Math.round((220 + Math.random() * 80) * 10) / 10, // 220-300 kPa (realistic truck tire pressure)
+                tempValue: Math.round((35 + Math.random() * 25) * 10) / 10,  // 35-60°C (realistic tire temperature)
+                bat: Math.floor(Math.random() * 5), // 0-4 battery level as per protocol
+                exType: Math.random() > 0.85 ? (Math.random() > 0.5 ? "1" : "3") : "", // Occasional exceptions
+                simNumber: t.simNumber || `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+                lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString()
+              }));
             }
-          } catch (error) {
-            console.log(`⚠️ Failed to fetch tire data for truck ${t.id}:`, error.message);
-            // Keep using dummy data from t.tires
-          }
-          const driverName = t.driver?.name || '-';
-          const clusterName = t.cluster || '-';
-          if (Array.isArray(tires)) {
-            tires.forEach((ti, idx) => {
-              const tireNo = ti.tireNo || ti.position_no || idx + 1;
-              const sensor = ti.sensor || { data: ti.tpdata || {} };
+
+            const driverName = t.driver?.name || '-';
+            const clusterName = t.cluster || '-';
+            
+            tpmsData.forEach((tpms, idx) => {
+              // Parse exception types according to protocol
+              const exceptionTypes = tpms.exType ? tpms.exType.split(',').map(e => e.trim()) : [];
+              const hasHighPressure = exceptionTypes.includes('1');
+              const hasLowPressure = exceptionTypes.includes('2');
+              const hasHighTemp = exceptionTypes.includes('3');
+              const hasSensorLost = exceptionTypes.includes('4');
+              const hasLowBattery = exceptionTypes.includes('5');
+              
+              // Determine overall status based on exceptions
+              let status = 'normal';
+              if (hasSensorLost) status = 'critical';
+              else if (hasHighPressure || hasLowPressure || hasHighTemp || hasLowBattery) status = 'warning';
+              
               flattened.push({
                 truckId: t.id,
-                truckName: t.name || t.id,
+                truckName: t.name || t.truckNumber || t.id,
                 cluster: clusterName,
                 driverName,
                 tireIndex: idx,
-                tireNo,
-                sensor,
+                tireNo: tpms.tireNo || idx + 1,
+                position: `Tire ${tpms.tireNo || idx + 1}`,
+                // Core TPMS data according to protocol
+                tiprValue: tpms.tiprValue || 0, // Pressure in kPa
+                tempValue: tpms.tempValue || 0, // Temperature in Celsius
+                bat: tpms.bat || 0, // Battery level 0-4
+                exType: tpms.exType || '', // Exception types
+                simNumber: tpms.simNumber || '-',
+                lastUpdated: tpms.lastUpdate || new Date().toISOString(),
+                // Status analysis based on protocol exceptions
+                status,
+                hasHighPressure,
+                hasLowPressure,
+                hasHighTemp,
+                hasSensorLost,
+                hasLowBattery,
+                // Human-readable status
+                pressureStatus: hasHighPressure ? 'high' : hasLowPressure ? 'low' : 'normal',
+                tempStatus: hasHighTemp ? 'high' : 'normal',
+                batteryStatus: hasLowBattery ? 'low' : tpms.bat > 2 ? 'good' : 'medium',
+                sensorStatus: hasSensorLost ? 'lost' : 'connected'
               });
+            });
+          } catch (error) {
+            console.error(`Error processing TPMS data for truck ${t.id}:`, error);
+            // Add error entry for this truck
+            flattened.push({
+              truckId: t.id,
+              truckName: t.name || t.truckNumber || t.id,
+              cluster: t.cluster || '-',
+              driverName: t.driver?.name || '-',
+              tireIndex: 0,
+              tireNo: 1,
+              position: 'Error',
+              tiprValue: 0,
+              tempValue: 0,
+              bat: 0,
+              exType: '4', // Sensor lost
+              simNumber: '-',
+              lastUpdated: new Date().toISOString(),
+              status: 'error',
+              hasError: true,
+              errorMessage: 'Failed to load TPMS data'
             });
           }
         }
-
         if (mounted) {
           setRows(flattened);
           const cls = Array.from(new Set(trucks.map(tt => tt.cluster).filter(Boolean)));
@@ -150,46 +195,80 @@ export default function TelemetryTiresForm() {
             <div className="flex items-end text-sm text-gray-600">Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}</div>
           </div>
 
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Tire</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">SN</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">SIM</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">exType</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Pressure (kPa)</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Temp (°C)</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Battery (0-4)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={8}>Loading...</td></tr>
-                ) : pageData.length === 0 ? (
-                  <tr><td className="px-3 py-6 text-gray-500" colSpan={8}>No data</td></tr>
-                ) : pageData.map(r => {
-                  const tp = r.sensor?.data || {};
-                  return (
-                    <tr key={`${r.truckId}-${r.tireNo}`} className="align-top">
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-gray-900">{r.truckName}</div>
-                        <div className="text-xs text-gray-500">{r.truckId} • {r.cluster}</div>
-                        <div className="text-xs text-gray-500">Driver: {r.driverName}</div>
-                      </td>
-                      <td className="px-3 py-2">#{r.tireNo}</td>
-                      <td className="px-3 py-2 w-48">{r.sensor?.sn || '-'}</td>
-                      <td className="px-3 py-2 w-56">{tp.simNumber || '-'}</td>
-                      <td className="px-3 py-2 w-56">{tp.exType || '-'}</td>
-                      <td className="px-3 py-2 w-40">{tp.tiprValue ?? '-'}</td>
-                      <td className="px-3 py-2 w-40">{tp.tempValue ?? '-'}</td>
-                      <td className="px-3 py-2 w-40">{tp.bat ?? '-'}</td>
+          <div className="bg-white rounded-xl shadow">
+            <div className="overflow-x-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Tire</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">SN</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">SIM</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">exType</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Pressure (kPa)</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Temp (°C)</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Battery (0-4)</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {loading ? (
+                      <tr><td className="px-3 py-6 text-gray-500" colSpan={8}>Loading...</td></tr>
+                    ) : pageData.length === 0 ? (
+                      <tr><td className="px-3 py-6 text-gray-500" colSpan={8}>No data</td></tr>
+                    ) : pageData.map(r => {
+                      return (
+                        <tr key={`${r.truckId}-${r.tireNo}`} className="align-top">
+                          <td className="px-3 py-2">
+                            <div className="font-medium text-gray-900">{r.truckName}</div>
+                            <div className="text-xs text-gray-500">{r.truckId} • {r.cluster}</div>
+                            <div className="text-xs text-gray-500">Driver: {r.driverName}</div>
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="font-medium">#{r.tireNo}</div>
+                            <div className="text-xs text-gray-500">{r.position}</div>
+                          </td>
+                          <td className="px-3 py-2 w-48">
+                            <div className="font-mono text-xs">TPMS-{String(r.tireNo).padStart(2, '0')}</div>
+                          </td>
+                          <td className="px-3 py-2 w-56">
+                            <div className="font-mono text-xs">{r.simNumber || '-'}</div>
+                          </td>
+                          <td className="px-3 py-2 w-56">
+                            <div className="flex flex-wrap gap-1">
+                              {r.exType ? r.exType.split(',').map(ex => (
+                                <span key={ex} className={`px-1 py-0.5 rounded text-xs ${
+                                  ex === '1' ? 'bg-red-100 text-red-700' : // High pressure
+                                  ex === '2' ? 'bg-blue-100 text-blue-700' : // Low pressure  
+                                  ex === '3' ? 'bg-orange-100 text-orange-700' : // High temp
+                                  ex === '4' ? 'bg-gray-100 text-gray-700' : // Sensor lost
+                                  ex === '5' ? 'bg-yellow-100 text-yellow-700' : // Low battery
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {ex === '1' ? 'High P' : ex === '2' ? 'Low P' : ex === '3' ? 'High T' : ex === '4' ? 'Lost' : ex === '5' ? 'Low Bat' : ex}
+                                </span>
+                              )) : <span className="text-gray-400 text-xs">Normal</span>}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 w-40">
+                            <div className="font-medium">{r.tiprValue}</div>
+                            <div className="text-xs text-gray-500">{r.pressureStatus}</div>
+                          </td>
+                          <td className="px-3 py-2 w-40">
+                            <div className="font-medium">{r.tempValue}</div>
+                            <div className="text-xs text-gray-500">{r.tempStatus}</div>
+                          </td>
+                          <td className="px-3 py-2 w-40">
+                            <div className="font-medium">{r.bat}/4</div>
+                            <div className="text-xs text-gray-500">{r.batteryStatus}</div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">

@@ -49,13 +49,14 @@ export class DataService {
       console.log('🚛 Loading fleet data from API...');
       
       // Get trucks with relationships
-      const trucksResponse = await trucksAPI.getAll();
+      const trucksResponse = await trucksAPI.getAll({ limit: 200 });
       
       if (!trucksResponse.success) {
         throw new Error('Failed to load trucks data');
       }
 
-      const trucks = trucksResponse.data.items || trucksResponse.data || [];
+      // Backend returns trucks nested under data.trucks
+      const trucks = trucksResponse.data.trucks || trucksResponse.data.items || trucksResponse.data || [];
       
       // Enhance trucks with additional data
       const enhancedTrucks = trucks.map(truck => ({

@@ -18,40 +18,68 @@ import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 const DeviceStatus = () => {
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [deviceInfos, setDeviceInfos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get device with truck and status information
-  const getDeviceInfo = (device) => {
-    const truck = trucks.find(t => t.id === device.truck_id);
-    const deviceStatus = getDeviceStatus(device.id);
-    const deviceSensors = getSensorsByDevice(device.id);
-    
-    // Determine overall device health
-    let healthStatus = 'good';
-    if (!deviceStatus) {
-      healthStatus = 'offline';
-    } else if (deviceStatus.host_bat < 20 || deviceStatus.repeater1_bat < 15 || deviceStatus.repeater2_bat < 10) {
-      healthStatus = 'warning';
-    } else if (deviceStatus.host_bat < 10) {
-      healthStatus = 'critical';
-    }
-
-    return {
-      ...device,
-      truck,
-      status: deviceStatus,
-      sensors: deviceSensors,
-      healthStatus
+  React.useEffect(() => {
+    const loadDeviceData = () => {
+      setLoading(true);
+      
+      // Use dummy data directly
+      const deviceData = devices.map((device, idx) => {
+        const truck = trucks.find(t => t.id === device.truck_id);
+        const deviceSensors = getSensorsByDevice(device.id);
+        const deviceStatus = getDeviceStatus(device.id);
+        
+        return {
+          id: device.id,
+          serialNumber: device.serial_number,
+          deviceType: device.device_type,
+          manufacturer: 'ConnectIS',
+          model: 'CIS-TPMS-G1',
+          firmwareVersion: `v2.${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 10)}`,
+          hardwareVersion: 'Rev 2.1',
+          truckId: truck?.id || device.truck_id,
+          truckName: truck?.name || 'Unknown',
+          truckPlate: truck?.plate_number || '-',
+          simNumber: device.sim_number,
+          imei: `${Math.floor(Math.random() * 900000000000000) + 100000000000000}`,
+          installDate: device.created_at,
+          lastMaintenance: device.updated_at,
+          warrantyExpiry: new Date(new Date(device.created_at).getTime() + 2 * 365 * 24 * 3600000).toISOString(),
+          status: deviceStatus?.status || 'active',
+          connectionStatus: deviceStatus?.connection_status || 'connected',
+          signalStrength: deviceStatus?.signal_strength || Math.round(60 + Math.random() * 40),
+          batteryLevel: deviceStatus?.battery_level || Math.round(70 + Math.random() * 30),
+          temperature: Math.round(25 + Math.random() * 20),
+          uptime: Math.round(Math.random() * 30 * 24 * 60),
+          dataUsage: Math.round(Math.random() * 500 + 100),
+          sensorCount: deviceSensors.length,
+          alertCount: Math.floor(Math.random() * 5),
+          lastPing: new Date(Date.now() - Math.random() * 1800000).toISOString(),
+          configVersion: `cfg-${Math.floor(Math.random() * 100) + 1}`,
+          networkType: Math.random() > 0.3 ? '4G' : '3G',
+          gpsAccuracy: Math.round(Math.random() * 8 + 2),
+          maintenanceNeeded: Math.random() > 0.8,
+          healthScore: Math.round(70 + Math.random() * 30)
+        };
+      });
+      
+      setDeviceInfos(deviceData);
+      console.log(`✅ Loaded ${deviceData.length} devices from dummy data`);
+      setLoading(false);
     };
-  };
-
-  const deviceInfos = devices.map(getDeviceInfo);
+    
+    // Simulate loading time
+    setTimeout(loadDeviceData, 300);
+  }, []);
   
   // Filter devices based on status
   const filteredDevices = deviceInfos.filter(device => {
     if (filterStatus === 'all') return true;
-    if (filterStatus === 'online') return device.status && device.healthStatus !== 'offline';
-    if (filterStatus === 'offline') return !device.status || device.healthStatus === 'offline';
-    if (filterStatus === 'warning') return device.healthStatus === 'warning' || device.healthStatus === 'critical';
+    if (filterStatus === 'online') return device.status === 'active' && device.connectionStatus === 'connected';
+    if (filterStatus === 'offline') return device.status === 'inactive' || device.connectionStatus === 'disconnected';
+    if (filterStatus === 'warning') return device.maintenanceNeeded || device.batteryLevel < 30 || device.alertCount > 0;
     return true;
   });
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { tirePressureEvents } from '../../data/tirePressureEvents.js';
 import { trucks } from '../../data/trucks.js';
+import WheelFrontIcon from '../icons/WheelFrontIcon.jsx';
 
 const TirePressureDisplay = ({ selectedTruckId, className = "", showHeader = true }) => {
   const [tireData, setTireData] = useState([]);
@@ -56,11 +57,13 @@ const TirePressureDisplay = ({ selectedTruckId, className = "", showHeader = tru
 
   const IconsLayout = () => {
     const kpaToPsi = (kpa) => Math.round((kpa || 0) * 0.1450377);
-    const colorClass = (reading) => {
+    const colorHex = (reading) => {
       const st = reading ? getTireStatus(reading.pressure_kpa, reading.temp_celsius, reading.ex_type) : null;
-      return st?.status === 'warning' ? 'text-red-500' : st?.status === 'caution' ? 'text-yellow-500' : 'text-green-500';
+      if (!st) return '#9ca3af';
+      return st.status === 'warning' ? '#ef4444' : st.status === 'caution' ? '#f59e0b' : '#10b981';
     };
-    const labelValue = (reading) => (reading ? kpaToPsi(reading.pressure_kpa) : '--');
+    const labelPsi = (reading) => (reading ? `${kpaToPsi(reading.pressure_kpa)} PSI` : '-- PSI');
+    const labelTemp = (reading) => (reading ? `${Math.round(reading.temp_celsius ?? 0)}°C` : '--°C');
 
     // Helper to render a pair of icons (for dual or single)
     const Pair = ({ leftTireNo, rightTireNo, gapClass = 'gap-20' }) => {
@@ -68,13 +71,15 @@ const TirePressureDisplay = ({ selectedTruckId, className = "", showHeader = tru
       const right = tireData.find(t=>t.tire_no===rightTireNo);
       return (
         <div className={`flex justify-center ${gapClass}`}>
-          <div className="flex flex-col items-center space-y-1">
-            <span className={`material-symbols-outlined text-4xl ${colorClass(left)}`}>trip_origin</span>
-            <span className="text-xs font-semibold">{labelValue(left)}</span>
+          <div className="flex flex-col items-center space-y-1 w-16">
+            <WheelFrontIcon size={28} color={colorHex(left)} />
+            <span className="text-xs font-semibold leading-tight">{labelPsi(left)}</span>
+            <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(left)}</span>
           </div>
-          <div className="flex flex-col items-center space-y-1">
-            <span className={`material-symbols-outlined text-4xl ${colorClass(right)}`}>trip_origin</span>
-            <span className="text-xs font-semibold">{labelValue(right)}</span>
+          <div className="flex flex-col items-center space-y-1 w-16">
+            <WheelFrontIcon size={28} color={colorHex(right)} />
+            <span className="text-xs font-semibold leading-tight">{labelPsi(right)}</span>
+            <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(right)}</span>
           </div>
         </div>
       );
@@ -91,25 +96,29 @@ const TirePressureDisplay = ({ selectedTruckId, className = "", showHeader = tru
           }
           // Dual tires per side
           return (
-            <div key={`icons-${idx}`} className="flex justify-center gap-12">
-              <div className="flex gap-2">
-                <div className="flex flex-col items-center space-y-1">
-                  <span className={`material-symbols-outlined text-4xl ${colorClass(tireData.find(t=>t.tire_no===axle.left[0]?.tireNo))}`}>trip_origin</span>
-                  <span className="text-xs font-semibold">{labelValue(tireData.find(t=>t.tire_no===axle.left[0]?.tireNo))}</span>
+            <div key={`icons-${idx}`} className="flex justify-center gap-10">
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center space-y-1 w-16">
+                  <WheelFrontIcon size={28} color={colorHex(tireData.find(t=>t.tire_no===axle.left[0]?.tireNo))} />
+                  <span className="text-xs font-semibold leading-tight">{labelPsi(tireData.find(t=>t.tire_no===axle.left[0]?.tireNo))}</span>
+                  <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(tireData.find(t=>t.tire_no===axle.left[0]?.tireNo))}</span>
                 </div>
-                <div className="flex flex-col items-center space-y-1">
-                  <span className={`material-symbols-outlined text-4xl ${colorClass(tireData.find(t=>t.tire_no===axle.left[1]?.tireNo))}`}>trip_origin</span>
-                  <span className="text-xs font-semibold">{labelValue(tireData.find(t=>t.tire_no===axle.left[1]?.tireNo))}</span>
+                <div className="flex flex-col items-center space-y-1 w-16">
+                  <WheelFrontIcon size={28} color={colorHex(tireData.find(t=>t.tire_no===axle.left[1]?.tireNo))} />
+                  <span className="text-xs font-semibold leading-tight">{labelPsi(tireData.find(t=>t.tire_no===axle.left[1]?.tireNo))}</span>
+                  <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(tireData.find(t=>t.tire_no===axle.left[1]?.tireNo))}</span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <div className="flex flex-col items-center space-y-1">
-                  <span className={`material-symbols-outlined text-4xl ${colorClass(tireData.find(t=>t.tire_no===axle.right[0]?.tireNo))}`}>trip_origin</span>
-                  <span className="text-xs font-semibold">{labelValue(tireData.find(t=>t.tire_no===axle.right[0]?.tireNo))}</span>
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center space-y-1 w-16">
+                  <WheelFrontIcon size={28} color={colorHex(tireData.find(t=>t.tire_no===axle.right[0]?.tireNo))} />
+                  <span className="text-xs font-semibold leading-tight">{labelPsi(tireData.find(t=>t.tire_no===axle.right[0]?.tireNo))}</span>
+                  <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(tireData.find(t=>t.tire_no===axle.right[0]?.tireNo))}</span>
                 </div>
-                <div className="flex flex-col items-center space-y-1">
-                  <span className={`material-symbols-outlined text-4xl ${colorClass(tireData.find(t=>t.tire_no===axle.right[1]?.tireNo))}`}>trip_origin</span>
-                  <span className="text-xs font-semibold">{labelValue(tireData.find(t=>t.tire_no===axle.right[1]?.tireNo))}</span>
+                <div className="flex flex-col items-center space-y-1 w-16">
+                  <WheelFrontIcon size={28} color={colorHex(tireData.find(t=>t.tire_no===axle.right[1]?.tireNo))} />
+                  <span className="text-xs font-semibold leading-tight">{labelPsi(tireData.find(t=>t.tire_no===axle.right[1]?.tireNo))}</span>
+                  <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(tireData.find(t=>t.tire_no===axle.right[1]?.tireNo))}</span>
                 </div>
               </div>
             </div>

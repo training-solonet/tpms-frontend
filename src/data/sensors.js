@@ -1,254 +1,55 @@
-// Dummy data for sensor table
-// Simple UUID generator function
-// eslint-disable-next-line no-unused-vars
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
+// Dummy data for sensor table - Updated structure
+// Each truck has multiple tires, each tire has 1 sensor, each sensor has battery
+
+// Generate sensors for each truck based on tire count
+const generateSensorsForAllTrucks = () => {
+  const sensors = [];
+  
+  // Truck configurations: [truckId, deviceId, tireCount]
+  const truckConfigs = [
+    ["550e8400-e29b-41d4-a716-446655440001", "d1e8d400-e29b-41d4-a716-446655440001", 6], // Truck Alpha
+    ["550e8400-e29b-41d4-a716-446655440002", "d1e8d400-e29b-41d4-a716-446655440002", 6], // Truck Beta
+    ["550e8400-e29b-41d4-a716-446655440003", "d1e8d400-e29b-41d4-a716-446655440003", 8], // Truck Gamma
+    ["550e8400-e29b-41d4-a716-446655440004", "d1e8d400-e29b-41d4-a716-446655440004", 6], // Truck Delta
+    ["550e8400-e29b-41d4-a716-446655440005", "d1e8d400-e29b-41d4-a716-446655440005", 8], // Truck Epsilon
+    ["550e8400-e29b-41d4-a716-446655440006", "d1e8d400-e29b-41d4-a716-446655440006", 4], // Truck Zeta
+    ["550e8400-e29b-41d4-a716-446655440007", "d1e8d400-e29b-41d4-a716-446655440007", 4], // Truck Eta
+    ["550e8400-e29b-41d4-a716-446655440008", "d1e8d400-e29b-41d4-a716-446655440008", 4]  // Truck Theta
+  ];
+  
+  const tirePositions = {
+    4: ["FRONT_LEFT", "FRONT_RIGHT", "REAR_LEFT", "REAR_RIGHT"],
+    6: ["FRONT_LEFT", "FRONT_RIGHT", "REAR_LEFT_1", "REAR_RIGHT_1", "REAR_LEFT_2", "REAR_RIGHT_2"],
+    8: ["FRONT_LEFT", "FRONT_RIGHT", "REAR_LEFT_1", "REAR_RIGHT_1", "REAR_LEFT_2", "REAR_RIGHT_2", "REAR_LEFT_3", "REAR_RIGHT_3"]
+  };
+  
+  truckConfigs.forEach(([truckId, deviceId, tireCount], truckIndex) => {
+    const positions = tirePositions[tireCount];
+    
+    for (let tireNo = 1; tireNo <= tireCount; tireNo++) {
+      const position = positions[tireNo - 1];
+      const sensorId = `s${(truckIndex + 1).toString().padStart(3, '0')}-tire-${tireNo.toString().padStart(2, '0')}-sensor`;
+      
+      sensors.push({
+        id: sensorId,
+        truck_id: truckId,
+        device_id: deviceId,
+        tire_number: tireNo,
+        sensor_type: "TIRE_PRESSURE",
+        position: position,
+        sn: `TP-${(truckIndex + 1).toString().padStart(3, '0')}-${tireNo.toString().padStart(2, '0')}`,
+        battery_level: 75 + Math.floor(Math.random() * 25), // 75-100%
+        battery_voltage: (3.0 + Math.random() * 0.7).toFixed(2), // 3.0-3.7V
+        last_battery_check: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+        installed_at: `2023-0${Math.floor(Math.random() * 3) + 1}-${Math.floor(Math.random() * 28) + 1}T${Math.floor(Math.random() * 12) + 8}:${Math.floor(Math.random() * 60)}:00Z`,
+        removed_at: null,
+        created_by: null,
+        updated_by: null
+      });
+    }
   });
+  
+  return sensors;
 };
 
-export const sensors = [
-  // Tire sensors for Truck Alpha (Device BRN-DEV-001)
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440001",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440001",
-    type: "tire",
-    position_no: 1,
-    sn: "TIRE-001-FL",
-    installed_at: "2023-01-15T10:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440002",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440001",
-    type: "tire",
-    position_no: 2,
-    sn: "TIRE-001-FR",
-    installed_at: "2023-01-15T10:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440003",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440001",
-    type: "tire",
-    position_no: 3,
-    sn: "TIRE-001-RL",
-    installed_at: "2023-01-15T10:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440004",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440001",
-    type: "tire",
-    position_no: 4,
-    sn: "TIRE-001-RR",
-    installed_at: "2023-01-15T10:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  // Hub sensors for Truck Alpha
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440005",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440001",
-    type: "hub",
-    position_no: 1,
-    sn: "HUB-001-F",
-    installed_at: "2023-01-15T10:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440006",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440001",
-    type: "hub",
-    position_no: 2,
-    sn: "HUB-001-R",
-    installed_at: "2023-01-15T10:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-
-  // Tire sensors for Truck Beta (Device BRN-DEV-002)
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440007",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440002",
-    type: "tire",
-    position_no: 1,
-    sn: "TIRE-002-FL",
-    installed_at: "2023-01-20T12:00:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440008",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440002",
-    type: "tire",
-    position_no: 2,
-    sn: "TIRE-002-FR",
-    installed_at: "2023-01-20T12:00:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440009",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440002",
-    type: "tire",
-    position_no: 3,
-    sn: "TIRE-002-RL",
-    installed_at: "2023-01-20T12:00:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440010",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440002",
-    type: "tire",
-    position_no: 4,
-    sn: "TIRE-002-RR",
-    installed_at: "2023-01-20T12:00:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  // Hub sensors for Truck Beta
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440011",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440002",
-    type: "hub",
-    position_no: 1,
-    sn: "HUB-002-F",
-    installed_at: "2023-01-20T12:00:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440012",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440002",
-    type: "hub",
-    position_no: 2,
-    sn: "HUB-002-R",
-    installed_at: "2023-01-20T12:00:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-
-  // Tire sensors for Truck Gamma (Device BRN-DEV-003) - 8x4 config has more tires
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440013",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "tire",
-    position_no: 1,
-    sn: "TIRE-003-FL",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440014",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "tire",
-    position_no: 2,
-    sn: "TIRE-003-FR",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440015",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "tire",
-    position_no: 3,
-    sn: "TIRE-003-RL1",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440016",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "tire",
-    position_no: 4,
-    sn: "TIRE-003-RR1",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440017",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "tire",
-    position_no: 5,
-    sn: "TIRE-003-RL2",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440018",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "tire",
-    position_no: 6,
-    sn: "TIRE-003-RR2",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  // Hub sensors for Truck Gamma
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440019",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "hub",
-    position_no: 1,
-    sn: "HUB-003-F",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440020",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "hub",
-    position_no: 2,
-    sn: "HUB-003-R1",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  },
-  {
-    id: "s1e8d400-e29b-41d4-a716-446655440021",
-    device_id: "d1e8d400-e29b-41d4-a716-446655440003",
-    type: "hub",
-    position_no: 3,
-    sn: "HUB-003-R2",
-    installed_at: "2023-02-01T09:30:00Z",
-    removed_at: null,
-    created_by: null,
-    updated_by: null
-  }
-];
-
-export default sensors;
+export const sensors = generateSensorsForAllTrucks();

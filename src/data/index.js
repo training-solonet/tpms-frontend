@@ -2,7 +2,11 @@
 // Main data export - aggregates all dummy data modules
 import { trucks } from './trucks.js';
 import { gpsPositions, generateGpsPositions } from './gpsPositions.js';
-import { fuelLevelEvents, speedEvents, alertEvents } from './telemetryEvents.js';
+import { fuelLevelEvents } from './fuelLevelEvents.js';
+import { speedEvents } from './speedEvents.js';
+import { alertEvents } from './alertEvents.js';
+import { drivers } from './drivers.js';
+import { vendors } from './vendors.js';
 import { trips } from './trips.js';
 import { dailyRoutes } from './dailyRoutes.js';
 
@@ -153,26 +157,38 @@ export const getDashboardStats = () => {
 
 // Export all data structures
 export {
-  // Original data
+  // Core fleet data
   trucks,
+  fleetGroups,
+  
+  // Tracking data
   generateGpsPositions,
   gpsPositions,
-  fuelLevelEvents,
-  speedEvents,
-  alertEvents,
   trips,
   dailyRoutes,
   
-  // New data structures from updated schema
-  fleetGroups,
+  // IoT devices and sensors
   devices,
   sensors,
-  truckStatusEvents,
+  
+  // Telemetry events
   tirePressureEvents,
   hubTemperatureEvents,
+  fuelLevelEvents,
+  speedEvents,
+  
+  // Status and alerts
+  truckStatusEvents,
   deviceStatusEvents,
   lockEvents,
+  alertEvents,
+  
+  // Reference data
   tireErrorCodes,
+  
+  // Removed from tracking-only scope (kept for compatibility)
+  drivers,
+  vendors,
   
   // Geofence data
   BORNEO_INDOBARA_GEOJSON
@@ -240,23 +256,37 @@ export default {
   getLatestHubTemperature,
   getDeviceStatus,
   
-  // All data structures
+  // All data structures organized by sidebar function
+  
+  // Fleet Management
   trucks,
-  gpsPositions,
   fleetGroups,
-  devices,
-  sensors,
-  truckStatusEvents,
-  tirePressureEvents,
-  hubTemperatureEvents,
-  deviceStatusEvents,
-  lockEvents,
-  tireErrorCodes,
-  fuelLevelEvents,
-  speedEvents,
-  alertEvents,
+  drivers, // Empty for tracking-only scope
+  vendors, // Empty for tracking-only scope
+  
+  // Tracking
+  gpsPositions,
   trips,
   dailyRoutes,
+  
+  // IoT Devices
+  devices,
+  sensors,
+  
+  // Telemetry
+  tirePressureEvents,
+  hubTemperatureEvents,
+  fuelLevelEvents,
+  speedEvents,
+  
+  // Status and Alerts
+  truckStatusEvents,
+  deviceStatusEvents,
+  lockEvents,
+  alertEvents,
+  
+  // Reference and Geographic
+  tireErrorCodes,
   BORNEO_INDOBARA_GEOJSON
 };
 

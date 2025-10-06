@@ -404,6 +404,49 @@ export const authAPI = {
 
 // Trucks API
 export const trucksAPI = {
+  // Get all trucks with automatic pagination
+  getAllTrucks: async (params = {}) => {
+    const allTrucks = [];
+    let page = 1;
+    let hasMore = true;
+    const limit = 200; // Maximum allowed per request
+    
+    while (hasMore) {
+      try {
+        const result = await trucksAPI.getAll({ ...params, page, limit });
+        if (result.success && result.data?.trucks) {
+          allTrucks.push(...result.data.trucks);
+          
+          // Check if there are more pages
+          const pagination = result.data.pagination;
+          if (pagination && page < pagination.total_pages) {
+            page++;
+          } else {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      } catch (error) {
+        console.error(`Error fetching page ${page}:`, error);
+        hasMore = false;
+      }
+    }
+    
+    return {
+      success: true,
+      data: {
+        trucks: allTrucks,
+        pagination: {
+          total: allTrucks.length,
+          total_pages: Math.ceil(allTrucks.length / limit),
+          current_page: 1,
+          per_page: allTrucks.length
+        }
+      }
+    };
+  },
+
   getAll: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = `/api/trucks${queryString ? `?${queryString}` : ''}`;
@@ -417,7 +460,9 @@ export const trucksAPI = {
       try {
         const result = await apiRequest(endpoint);
         if (result.success) {
-          console.log(`✅ Trucks data loaded: ${result.data?.length || 0} trucks`);
+          // Backend returns trucks nested under data.trucks
+          const trucksCount = result.data?.trucks?.length || result.data?.length || 0;
+          console.log(`✅ Trucks data loaded: ${trucksCount} trucks`);
           return result;
         } else {
           // If explicit HTTP 500 detected, enable backoff

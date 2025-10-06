@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage';
-import { trucksAPI, devicesAPI } from '../services/api';
-import { fleetGroups as fleetGroupsData } from '../data/fleetGroups';
+import { trucks, devices, fleetGroups } from '../data/index.js';
+import WheelFrontIcon from '../components/icons/WheelFrontIcon.jsx';
 
 const FleetManagement = () => {
-  const [trucks, setTrucks] = useState([]);
-  const [devices, setDevices] = useState([]);
+  const [trucksData, setTrucksData] = useState([]);
+  const [devicesData, setDevicesData] = useState([]);
   const [fleetGroupsState, setFleetGroupsState] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,51 +16,29 @@ const FleetManagement = () => {
   const [selectedTruck, setSelectedTruck] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch trucks data with fallback
-        console.log('🚛 Fetching trucks data...');
-        const trucksResult = await trucksAPI.getAll();
-        if (trucksResult.success) {
-          setTrucks(trucksResult.data || []);
-          console.log('✅ Trucks data loaded successfully:', trucksResult.data?.length || 0, 'trucks');
-        } else {
-          console.warn('⚠️ Failed to load trucks data:', trucksResult.error);
-          setTrucks([]);
-        }
-        
-        // Fetch devices data with fallback
-        console.log('📱 Fetching devices data...');
-        const devicesResult = await devicesAPI.getAll();
-        if (devicesResult.success) {
-          setDevices(devicesResult.data || []);
-          console.log('✅ Devices data loaded successfully:', devicesResult.data?.length || 0, 'devices');
-        } else {
-          console.warn('⚠️ Failed to load devices data:', devicesResult.error);
-          setDevices([]);
-        }
-        
-        // Always set fleet groups from local data
-        setFleetGroupsState(fleetGroupsData || []);
-        console.log('✅ Fleet groups loaded from local data:', fleetGroupsData?.length || 0, 'groups');
-        
-      } catch (error) {
-        console.error('❌ Error fetching fleet data:', error);
-        setTrucks([]);
-        setDevices([]);
-        setFleetGroupsState(fleetGroupsData || []);
-      } finally {
-        setLoading(false);
-      }
+    const loadData = () => {
+      setLoading(true);
+      
+      // Use dummy data directly
+      setTrucksData(trucks);
+      setDevicesData(devices);
+      setFleetGroupsState(fleetGroups);
+      
+      console.log('✅ Fleet management data loaded from dummy data:', {
+        trucks: trucks.length,
+        devices: devices.length,
+        fleetGroups: fleetGroups.length
+      });
+      
+      setLoading(false);
     };
 
-    fetchData();
+    // Simulate loading time
+    setTimeout(loadData, 300);
   }, []);
 
   const getTruckDevices = (truckId) => {
-    return devices.filter(device => device.truck_id === truckId);
+    return devicesData.filter(device => device.truck_id === truckId);
   };
 
   const getFleetGroupName = (groupId) => {
@@ -86,7 +64,7 @@ const FleetManagement = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const filteredTrucks = trucks.filter(truck => {
+  const filteredTrucks = trucksData.filter(truck => {
     const matchesSearch = truck.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          truck.plate_number?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || truck.status === statusFilter;
@@ -96,10 +74,10 @@ const FleetManagement = () => {
   });
 
   const stats = {
-    total: trucks.length,
-    active: trucks.filter(t => t.status === 'active').length,
-    maintenance: trucks.filter(t => t.status === 'maintenance').length,
-    inactive: trucks.filter(t => t.status === 'inactive').length
+    total: trucksData.length,
+    active: trucksData.filter(t => t.status === 'active').length,
+    maintenance: trucksData.filter(t => t.status === 'maintenance').length,
+    inactive: trucksData.filter(t => t.status === 'inactive').length
   };
 
   if (loading) {
@@ -314,6 +292,36 @@ const FleetManagement = () => {
                           <div className="flex justify-between">
                             <span className="text-gray-600">Capacity:</span>
                             <span className="font-medium">{selectedTruck.capacity || 'N/A'}</span>
+                          </div>
+                          {/* Tire Configuration with Icons */}
+                          <div>
+                            <div className="text-gray-600 mb-1">Tire Configuration:</div>
+                            <div className="text-sm text-gray-900 mb-2">{selectedTruck.tire_config} ({selectedTruck.tire_count} tires)</div>
+                            <div className="inline-flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                              {/* Simple front view layout: render tire_count as icons in rows */}
+                              {(() => {
+                                const count = selectedTruck.tire_count || 4;
+                                // Determine rows: 4 => 2x2, 6 => 3x2, 8 => 4x2
+                                const perRow = count / 2;
+                                const row = Array.from({ length: perRow });
+                                return (
+                                  <div className="space-y-1">
+                                    {/* Front row */}
+                                    <div className="flex items-center justify-between gap-1">
+                                      {row.map((_, i) => (
+                                        <WheelFrontIcon key={`front-${i}`} className="w-6 h-6 text-gray-700" />
+                                      ))}
+                                    </div>
+                                    {/* Rear row */}
+                                    <div className="flex items-center justify-between gap-1">
+                                      {row.map((_, i) => (
+                                        <WheelFrontIcon key={`rear-${i}`} className="w-6 h-6 text-gray-700" />
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </div>
                       </div>
