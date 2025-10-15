@@ -34,7 +34,7 @@ const generateAlertEvents = () => {
     { type: "BATTERY_LOW", severity: "MEDIUM", message: "Device battery level low" }
   ];
 
-  trucks.forEach((truckId, index) => {
+  trucks.forEach((truckId) => {
     // Generate 2-5 alerts per truck over the last week
     const numAlerts = 2 + Math.floor(Math.random() * 4);
     

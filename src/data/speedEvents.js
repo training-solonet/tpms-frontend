@@ -23,7 +23,7 @@ const generateSpeedEvents = () => {
     "550e8400-e29b-41d4-a716-446655440008"  // Truck Theta
   ];
 
-  trucks.forEach((truckId, index) => {
+  trucks.forEach((truckId) => {
     // Generate events for last 24 hours (every 30 minutes)
     for (let i = 0; i < 48; i++) {
       const timestamp = new Date(now.getTime() - (i * 30 * 60 * 1000));

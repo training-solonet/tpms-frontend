@@ -38,6 +38,7 @@ export default function DriverForm() {
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
+    // eslint-disable-next-line no-unused-vars
     let mounted = true;
     (async () => {
       if (!isNew) {
@@ -46,6 +47,7 @@ export default function DriverForm() {
         const driver = drivers.find(d => d.id === id);
         if (driver) {
           setForm({
+            // eslint-disable-next-line no-constant-binary-expression
             name: `${driver.first_name} ${driver.last_name}` || '',
             license_number: driver.license_number || '',
             phone: driver.phone || '',

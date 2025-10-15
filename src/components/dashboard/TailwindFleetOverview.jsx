@@ -177,14 +177,16 @@ const TailwindFleetOverview = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+
+        
+        {/* <div className="mb-8">
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
             Fleet Dashboard
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Real-time monitoring and analytics for your fleet operations
           </p>
-        </div>
+        </div> */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">

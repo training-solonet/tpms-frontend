@@ -71,7 +71,7 @@ const CommandPalette = ({ open, setOpen }) => {
 
   useEffect(() => {
     debounced(query);
-  }, [query]);
+  }, [debounced, query]);
 
   const onSelectVehicle = (v) => {
     setOpen(false);

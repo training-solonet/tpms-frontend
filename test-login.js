@@ -72,6 +72,7 @@ async function testLogin() {
     try {
       const jsonResponse = JSON.parse(responseText);
       console.log('Parsed JSON response:', jsonResponse);
+    // eslint-disable-next-line no-unused-vars
     } catch (e) {
       console.log('Response is not valid JSON');
     }

@@ -23,7 +23,7 @@ const generateFuelLevelEvents = () => {
     "550e8400-e29b-41d4-a716-446655440008"  // Truck Theta
   ];
 
-  trucks.forEach((truckId, index) => {
+  trucks.forEach((truckId) => {
     let currentFuel = 85 + Math.random() * 15; // Start with 85-100% fuel
     
     // Generate events for last 24 hours (every 2 hours)

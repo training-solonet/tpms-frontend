@@ -37,7 +37,6 @@ export default function VendorForm() {
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
-    let mounted = true;
     (async () => {
       if (!isNew) {
         setLoading(true);
@@ -54,7 +53,6 @@ export default function VendorForm() {
         setLoading(false);
       }
     })();
-    return () => { mounted = false; };
   }, [id, isNew]);
 
   const update = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
