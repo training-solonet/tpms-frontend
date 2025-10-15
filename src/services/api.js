@@ -1,15 +1,14 @@
 /* eslint-disable no-unused-vars */
 // src/services/api.js
 
-// API Configuration
+// API Configuration (read from .env via Vite)
 export const API_CONFIG = {
-  BASE_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || 'https://be-tpms.connectis.my.id',
-  WS_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) || 'wss://be-tpms.connectis.my.id/ws',
+  BASE_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '',
+  WS_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) || '',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 2,
   RETRY_DELAY: 2000
 };
-
 // Vendors (master data) API - CRUD
 export const vendorsAPI = {
   getAll: async (params = {}) => {
@@ -153,7 +152,7 @@ const checkBackendConnection = async () => {
     
     return false;
   }
-};
+};API_CONFIG
 
 // Generic API request
 const getAuthHeaders = () => {
