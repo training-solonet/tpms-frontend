@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 /* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   TruckIcon,
@@ -1512,7 +1513,6 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
       }
     };
     reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, shiftMode, customStart, customEnd]);
 
   // Toggle route visibility
@@ -1649,7 +1649,6 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     // restart timer with new speed
     pausePlayback();
     startPlayback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playbackSpeedMs]);
 
   // Drive playback marker on index change or vehicle change

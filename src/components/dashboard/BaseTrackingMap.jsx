@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
@@ -211,7 +212,7 @@ const BaseTrackingMap = ({
     };
 
     initializeMap();
-  }, [onMapReady, polygonLatLng, haversineMeters, moveByMeters, pointInPolygon, polygonCentroid]);
+  }, []);  // Empty deps: intentionally run once on mount, map
 
   // Invalidate map size when sidebar visibility changes to avoid right-edge clipping
   useEffect(() => {

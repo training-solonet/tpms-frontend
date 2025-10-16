@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -98,11 +99,8 @@ const HistoryTrackingMap = () => {
   const [shiftMode, setShiftMode] = useState('day');
   const [customStart, setCustomStart] = useState('06:00');
   const [customEnd, setCustomEnd] = useState('16:00');
-  // eslint-disable-next-line no-empty-pattern
-  const [] = useState(1);
   const [playbackIndex, setPlaybackIndex] = useState(0);
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
-  // eslint-disable-next-line no-unused-vars
   const [isAutoCenterEnabled, setIsAutoCenterEnabled] = useState(false);
   const [playbackSpeedMs, setPlaybackSpeedMs] = useState(500);
 

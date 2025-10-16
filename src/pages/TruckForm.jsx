@@ -3,7 +3,7 @@ import React from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { allDummyTrucks } from '../data/dummyTrucks';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendors, trucks } from '../data/index.js';
+import { vendors as vendorsData, trucks } from '../data/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -68,7 +68,7 @@ export default function TruckForm() {
     (async () => {
       try {
         // Use dummy vendors data from import
-        if (mounted) setVendors(vendors);
+        if (mounted) setVendors(vendorsData);
       } catch { /* empty */ }
     })();
     return () => {
