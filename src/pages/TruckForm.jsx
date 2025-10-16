@@ -1,8 +1,9 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import { allDummyTrucks } from '../data/dummyTrucks';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendorsAPI, trucksAPI } from '../services/api.js';
+import { vendors, trucks } from '../data/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -66,11 +67,9 @@ export default function TruckForm() {
     let mounted = true;
     (async () => {
       try {
-        const res = await vendorsAPI.getAll();
-        if (mounted && res.success && Array.isArray(res.data)) {
-          setVendors(res.data);
-        }
-      } catch {}
+        // Use dummy vendors data from import
+        if (mounted) setVendors(vendors);
+      } catch { /* empty */ }
     })();
     return () => {
       mounted = false;
@@ -88,7 +87,8 @@ export default function TruckForm() {
     try {
       // Persist vendor assignment if available
       if (selectedVendorId) {
-        await trucksAPI.update(truck.id, { vendor_id: selectedVendorId });
+        // Simulate truck update with dummy data
+        console.log('Updated truck vendor assignment:', { truck_id: truck.id, vendor_id: selectedVendorId });
       }
     } catch (e) {
       console.warn('Failed to update truck vendor:', e?.message);

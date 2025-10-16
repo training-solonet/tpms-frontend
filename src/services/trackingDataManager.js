@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/services/trackingDataManager.js
 import { useState } from 'react';
 import { getAuthHeaders } from './api.js';

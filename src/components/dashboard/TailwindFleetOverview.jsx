@@ -11,108 +11,118 @@ import {
 } from '@heroicons/react/24/outline';
 import TailwindStatCard from './TailwindStatCard';
 import SimpleChartCard from './SimpleChartCard';
-// import { dashboardAPI, trucksAPI, alertsAPI } from '../../services/api.js';
+import { getDashboardData, getAlertsData, getDriversData } from '../../data/dataManagement.js';
+import { trucks, gpsPositions } from '../../data/index.js';
+
 
 const TailwindFleetOverview = () => {
   const [fleetStats, setFleetStats] = useState([]);
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [topVehicles, setTopVehicles] = useState([]);
   const [fuelData, setFuelData] = useState([]);
-  const [mileageData, setMileageData] = useState([]);
+  const [mileageData] = useState([]);
   const [vehicleStatusData, setVehicleStatusData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load dashboard data from API
+  // Load dashboard data from dummy data
   useEffect(() => {
-    const loadDashboardData = async () => {
+    const loadDashboardData = () => {
       try {
         setLoading(true);
-
-        // Load dashboard stats
-        const statsResponse = await dashboardAPI.getStats();
-        if (statsResponse.success) {
-          const stats = statsResponse.data;
-          setFleetStats([
-            {
-              title: 'Total Vehicles',
-              value: stats.fleet?.total?.toString() || '0',
-              change: '0',
-              changeType: 'neutral',
-              icon: TruckIcon,
-              color: 'indigo',
-              subtitle: 'Active Fleet',
-            },
-            {
-              title: 'Active Vehicles',
-              value: stats.fleet?.active?.toString() || '0',
-              change: '0',
-              changeType: 'positive',
-              icon: CheckCircleIcon,
-              color: 'green',
-              subtitle: 'Currently Running',
-            },
-            {
-              title: 'Maintenance',
-              value: stats.fleet?.maintenance?.toString() || '0',
-              change: '0',
-              changeType: 'neutral',
-              icon: ExclamationTriangleIcon,
-              color: 'yellow',
-              subtitle: 'Under Maintenance',
-            },
-            {
-              title: 'Alerts',
-              value: stats.alerts?.unresolved?.toString() || '0',
-              change: '0',
-              changeType: 'negative',
-              icon: XCircleIcon,
-              color: 'red',
-              subtitle: 'Active Alerts',
-            },
-          ]);
-
-          // Set vehicle status data for pie chart
-          setVehicleStatusData([
-            { name: 'Active', value: stats.fleet?.active || 0 },
-            { name: 'Maintenance', value: stats.fleet?.maintenance || 0 },
-            { name: 'Idle', value: stats.fleet?.inactive || 0 },
-          ]);
-        }
-
-        // Load alerts
-        const alertsResponse = await alertsAPI.getAll({ limit: 4 });
-        if (alertsResponse.success && alertsResponse.data) {
-          setRecentAlerts(
-            alertsResponse.data.map((alert) => ({
-              id: alert.id,
-              vehicle: alert.truckNumber || 'Unknown',
-              type: alert.alertType || 'Alert',
-              message: alert.message,
-              time: formatTimeAgo(new Date(alert.createdAt)),
-              severity: alert.severity?.toLowerCase() || 'medium',
-            }))
-          );
-        }
-
-        // Load top vehicles
-        const trucksResponse = await trucksAPI.getAll({ limit: 4 });
-        if (trucksResponse.success && trucksResponse.data) {
-          setTopVehicles(
-            trucksResponse.data.map((truck) => ({
-              id: truck.truckNumber,
-              driver: truck.driverName || 'Unknown Driver',
-              efficiency: Math.round(Math.random() * 20 + 80), // Calculate based on real metrics
-              mileage: `${truck.odometer || 0} km`,
-              status: truck.status?.toLowerCase() || 'offline',
-            }))
-          );
-        }
-
-        // Load fuel report
-        const fuelResponse = await dashboardAPI.getFuelReport();
-        if (fuelResponse.success && fuelResponse.data) {
-          setFuelData(fuelResponse.data);
-        }
+        
+        // Load dashboard stats from dummy data
+        const dashboardData = getDashboardData();
+        const activeTrucks = gpsPositions.filter(pos => pos.speed_kph > 5).length;
+        const idleTrucks = trucks.length - activeTrucks;
+        const maintenanceTrucks = 2; // Dummy maintenance count
+        
+        setFleetStats([
+          {
+            title: 'Total Vehicles',
+            value: dashboardData.totalTrucks.toString(),
+            change: '+2',
+            changeType: 'positive',
+            icon: TruckIcon,
+            color: 'indigo',
+            subtitle: 'Active Fleet'
+          },
+          {
+            title: 'Active Vehicles',
+            value: activeTrucks.toString(),
+            change: '+1',
+            changeType: 'positive',
+            icon: CheckCircleIcon,
+            color: 'green',
+            subtitle: 'Currently Running'
+          },
+          {
+            title: 'Maintenance',
+            value: maintenanceTrucks.toString(),
+            change: '0',
+            changeType: 'neutral',
+            icon: ExclamationTriangleIcon,
+            color: 'yellow',
+            subtitle: 'Under Maintenance'
+          },
+          {
+            title: 'Alerts',
+            value: dashboardData.totalAlerts.toString(),
+            change: '-3',
+            changeType: 'positive',
+            icon: XCircleIcon,
+            color: 'red',
+            subtitle: 'Active Alerts'
+          },
+        ]);
+        
+        // Set vehicle status data for pie chart
+        setVehicleStatusData([
+          { name: 'Active', value: activeTrucks },
+          { name: 'Maintenance', value: maintenanceTrucks },
+          { name: 'Idle', value: idleTrucks },
+        ]);
+        
+        // Load alerts from dummy data
+        const alertsData = getAlertsData(false).slice(0, 4);
+        setRecentAlerts(alertsData.map(alert => ({
+          id: alert.id,
+          vehicle: alert.truckName,
+          type: alert.alert_type,
+          message: alert.message,
+          time: formatTimeAgo(new Date(alert.created_at)),
+          severity: alert.severity?.toLowerCase() || 'medium'
+        })));
+        
+        // Load top vehicles from dummy data
+        const driversData = getDriversData();
+        const topTrucksData = trucks.slice(0, 4).map(truck => {
+          const driver = driversData.find(d => d.id === truck.driver_id);
+          const position = gpsPositions.find(pos => pos.truck_id === truck.id);
+          
+          return {
+            id: truck.name,
+            driver: driver ? `${driver.first_name} ${driver.last_name}` : 'Unknown Driver',
+            efficiency: Math.round(Math.random() * 20 + 80),
+            mileage: `${Math.round(Math.random() * 5000 + 15000)} km`,
+            status: position?.speed_kph > 5 ? 'active' : 'idle'
+          };
+        });
+        setTopVehicles(topTrucksData);
+        
+        // Generate dummy fuel data for chart
+        const monthlyFuelData = [
+          { name: 'Jan', value: 2400 },
+          { name: 'Feb', value: 2210 },
+          { name: 'Mar', value: 2290 },
+          { name: 'Apr', value: 2000 },
+          { name: 'May', value: 2181 },
+          { name: 'Jun', value: 2500 },
+          { name: 'Jul', value: 2100 }
+        ];
+        setFuelData(monthlyFuelData);
+        
+        console.log('✅ Using dummy data for dashboard overview');
+        
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -179,14 +189,16 @@ const TailwindFleetOverview = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+
+        
+        {/* <div className="mb-8">
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
             Fleet Dashboard
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Real-time monitoring and analytics for your fleet operations
           </p>
-        </div>
+        </div> */}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">

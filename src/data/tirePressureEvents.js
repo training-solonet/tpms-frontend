@@ -12,40 +12,29 @@ const generateUUID = () => {
 const generateTirePressureEvents = () => {
   const events = [];
   const now = new Date();
-  const devices = [
-    'd1e8d400-e29b-41d4-a716-446655440001', // Truck Alpha
-    'd1e8d400-e29b-41d4-a716-446655440002', // Truck Beta
-    'd1e8d400-e29b-41d4-a716-446655440003', // Truck Gamma
-    'd1e8d400-e29b-41d4-a716-446655440004', // Truck Delta
-    'd1e8d400-e29b-41d4-a716-446655440005', // Truck Epsilon
-    'd1e8d400-e29b-41d4-a716-446655440006', // Truck Zeta
-    'd1e8d400-e29b-41d4-a716-446655440007', // Truck Eta
-    'd1e8d400-e29b-41d4-a716-446655440008', // Truck Theta
+  
+  // Truck configurations: [truckId, deviceId, tireCount]
+  const truckConfigs = [
+    ["550e8400-e29b-41d4-a716-446655440001", "d1e8d400-e29b-41d4-a716-446655440001", 6], // Truck Alpha
+    ["550e8400-e29b-41d4-a716-446655440002", "d1e8d400-e29b-41d4-a716-446655440002", 6], // Truck Beta
+    ["550e8400-e29b-41d4-a716-446655440003", "d1e8d400-e29b-41d4-a716-446655440003", 8], // Truck Gamma
+    ["550e8400-e29b-41d4-a716-446655440004", "d1e8d400-e29b-41d4-a716-446655440004", 6], // Truck Delta
+    ["550e8400-e29b-41d4-a716-446655440005", "d1e8d400-e29b-41d4-a716-446655440005", 8], // Truck Epsilon
+    ["550e8400-e29b-41d4-a716-446655440006", "d1e8d400-e29b-41d4-a716-446655440006", 4], // Truck Zeta
+    ["550e8400-e29b-41d4-a716-446655440007", "d1e8d400-e29b-41d4-a716-446655440007", 4], // Truck Eta
+    ["550e8400-e29b-41d4-a716-446655440008", "d1e8d400-e29b-41d4-a716-446655440008", 4]  // Truck Theta
   ];
 
-  const trucks = [
-    '550e8400-e29b-41d4-a716-446655440001',
-    '550e8400-e29b-41d4-a716-446655440002',
-    '550e8400-e29b-41d4-a716-446655440003',
-    '550e8400-e29b-41d4-a716-446655440004',
-    '550e8400-e29b-41d4-a716-446655440005',
-    '550e8400-e29b-41d4-a716-446655440006',
-    '550e8400-e29b-41d4-a716-446655440007',
-    '550e8400-e29b-41d4-a716-446655440008',
-  ];
-
-  const tireConfigs = [4, 4, 6, 4, 6, 4, 4, 4]; // Number of tires per truck
-
-  devices.forEach((deviceId, deviceIndex) => {
-    const truckId = trucks[deviceIndex];
-    const numTires = tireConfigs[deviceIndex];
-
+  truckConfigs.forEach(([truckId, deviceId, tireCount], truckIndex) => {
     // Generate events for last 24 hours (every hour)
     for (let i = 0; i < 24; i++) {
       const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
 
       // Generate pressure events for each tire
-      for (let tireNo = 1; tireNo <= numTires; tireNo++) {
+      for (let tireNo = 1; tireNo <= tireCount; tireNo++) {
+        // Generate sensor ID matching the pattern from sensors.js
+        const sensorId = `s${(truckIndex + 1).toString().padStart(3, '0')}-tire-${tireNo.toString().padStart(2, '0')}-sensor`;
+        
         // Normal pressure range: 800-900 kPa for mining trucks
         const basePressure = 850;
         const pressureVariation = Math.sin(i * 0.3) * 30 + Math.random() * 20;
@@ -64,6 +53,7 @@ const generateTirePressureEvents = () => {
 
         events.push({
           id: generateUUID(),
+          sensor_id: sensorId,
           device_id: deviceId,
           truck_id: truckId,
           tire_no: tireNo,

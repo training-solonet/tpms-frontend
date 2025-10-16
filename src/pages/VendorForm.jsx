@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendorsAPI } from '../services/api.js';
+import { vendors } from '../data/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -43,47 +43,33 @@ export default function VendorForm() {
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
-    let mounted = true;
     (async () => {
       if (!isNew) {
-        try {
-          setLoading(true);
-          const res = await vendorsAPI.getById(id);
-          if (mounted && res.success) {
-            setForm({
-              name: res.data.name || '',
-              code: res.data.code || '',
-              description: res.data.description || '',
-              contact_name: res.data.contact_name || '',
-              contact_phone: res.data.contact_phone || '',
-              contact_email: res.data.contact_email || '',
-            });
-          }
-        } finally {
-          if (mounted) setLoading(false);
+        setLoading(true);
+        // Use dummy data
+        const vendor = vendors.find(v => v.id === id);
+        if (vendor) {
+          setForm({
+            name: vendor.name || '',
+            contact_name: vendor.contact_name || '',
+            contact_phone: vendor.contact_phone || '',
+            contact_email: vendor.contact_email || ''
+          });
         }
+        setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
   }, [id, isNew]);
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
   const onSave = async () => {
     setSaving(true);
-    try {
-      if (isNew) {
-        const res = await vendorsAPI.create(form);
-        if (res.success) navigate('/vendors');
-      } else {
-        const res = await vendorsAPI.update(id, form);
-        if (res.success) navigate('/vendors');
-      }
-    } finally {
+    // Simulate save operation with dummy data
+    setTimeout(() => {
       setSaving(false);
-    }
+      navigate('/vendors');
+    }, 1000);
   };
 
   return (

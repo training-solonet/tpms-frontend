@@ -1,12 +1,7 @@
 // src/services/trackingService.js
 import { useState } from 'react';
 import { getAuthHeaders } from './api.js';
-import {
-  getLiveTrackingData,
-  getTruckRoute,
-  generateGpsPositions,
-  getDummyRealRoutePoints,
-} from '../data/index.js';
+import { getLiveTrackingData, generateGpsPositions, getDummyRealRoutePoints } from '../data/index.js';
 
 /**
  * Service untuk mengelola tracking dan route history truk
@@ -187,46 +182,47 @@ export class TruckTrackingService {
         timestamp: Date.now(),
       });
 
-      return points;
-    } catch (error) {
-      console.error(`Failed to load location history for truck ${truckId}:`, error);
-      return [];
+        return points;
+      } catch (error) {
+        console.error(`Failed to load location history for truck ${truckId}:`, error);
+        return [];
+      }
     }
-  }
-
-  /**
-   * Create Leaflet polyline from track points
-   */
-  createTrackPolyline(L, points, vehicleStatus, isSelected = false) {
-    if (points.length < 2) return null;
-
-    const coordinates = points.map((point) => [point.lat, point.lng]);
-    const trackColor =
-      this.trackSettings.colors[vehicleStatus] || this.trackSettings.colors.offline;
-
-    return L.polyline(coordinates, {
-      color: trackColor,
-      weight: isSelected ? 4 : 3,
-      opacity: isSelected ? 0.9 : 0.6,
-      smoothFactor: 1.5,
-      dashArray: vehicleStatus === 'maintenance' ? '10, 10' : null,
-      className: `route-track route-track-${vehicleStatus}${isSelected ? ' selected' : ''}`,
-    });
-  }
-
-  /**
-   * Create waypoint markers for start/end points
-   */
-  createWaypoints(L, points, vehicleId) {
-    if (points.length < 2) return [];
-
-    const waypoints = [];
-    const startPoint = points[0];
-    const endPoint = points[points.length - 1];
-
-    // Start waypoint (blue)
-    const startIcon = L.divIcon({
-      html: `
+  
+    /**
+     * Create Leaflet polyline from track points
+     */
+    createTrackPolyline(L, points, vehicleStatus, isSelected = false) {
+      if (points.length < 2) return null;
+  
+      const coordinates = points.map(point => [point.lat, point.lng]);
+      const trackColor = this.trackSettings.colors[vehicleStatus] || this.trackSettings.colors.offline;
+  
+      return L.polyline(coordinates, {
+        color: trackColor,
+        weight: isSelected ? 4 : 3,
+        opacity: isSelected ? 0.9 : 0.6,
+        smoothFactor: 1.5,
+        dashArray: vehicleStatus === 'maintenance' ? '10, 10' : null,
+        className: `route-track route-track-${vehicleStatus}${isSelected ? ' selected' : ''}`
+      });
+    }
+  
+    /**
+     * Create waypoint markers for start/end points
+     */
+    createWaypoints(L, points, _vehicleId) {
+      // Touch unused arg to satisfy ESLint when not used
+      void _vehicleId;
+      if (points.length < 2) return [];
+  
+      const waypoints = [];
+      const startPoint = points[0];
+      const endPoint = points[points.length - 1];
+  
+      // Start waypoint (blue)
+      const startIcon = L.divIcon({
+        html: `
           <div style="
             background: #3b82f6;
             border: 2px solid white;

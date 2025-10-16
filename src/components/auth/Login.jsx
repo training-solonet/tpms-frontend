@@ -1,14 +1,24 @@
 // src/components/auth/Login.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth.js';
-import { Building2, MapPin, User, Lock, Eye, EyeOff, Shield, Wifi, WifiOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Building2, 
+  MapPin, 
+  User, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Shield,
+  Wifi,
+  WifiOff
+} from 'lucide-react';
 import { API_CONFIG } from '../../services/api.js';
 
 const Login = () => {
+  const { login, loading, isOnline } = useAuth();
   const navigate = useNavigate();
-  const { login, isAuthenticated, loading, isOnline } = useAuth();
-
+  
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -16,13 +26,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, loading, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -43,7 +46,8 @@ const Login = () => {
       if (!result.success) {
         setError(result.message || 'Login failed');
       } else {
-        console.log('✅ Login successful, should redirect to dashboard');
+        console.log('✅ Login successful, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (error) {
       setError('Login failed - please try again');
