@@ -47,13 +47,13 @@ export default function VendorForm() {
       if (!isNew) {
         setLoading(true);
         // Use dummy data
-        const vendor = vendors.find(v => v.id === id);
+        const vendor = vendors.find((v) => v.id === id);
         if (vendor) {
           setForm({
             name: vendor.name || '',
             contact_name: vendor.contact_name || '',
             contact_phone: vendor.contact_phone || '',
-            contact_email: vendor.contact_email || ''
+            contact_email: vendor.contact_email || '',
           });
         }
         setLoading(false);

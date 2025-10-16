@@ -154,36 +154,36 @@ export {
   // Core fleet data
   trucks,
   fleetGroups,
-  
+
   // Tracking data
   generateGpsPositions,
   gpsPositions,
   trips,
   dailyRoutes,
-  
+
   // IoT devices and sensors
   devices,
   sensors,
-  
+
   // Telemetry events
   tirePressureEvents,
   hubTemperatureEvents,
   fuelLevelEvents,
   speedEvents,
-  
+
   // Status and alerts
   truckStatusEvents,
   deviceStatusEvents,
   lockEvents,
   alertEvents,
-  
+
   // Reference data
   tireErrorCodes,
-  
+
   // Removed from tracking-only scope (kept for compatibility)
   drivers,
   vendors,
-  
+
   // Geofence data
   BORNEO_INDOBARA_GEOJSON,
 };
@@ -227,7 +227,6 @@ export const getDevicesByTruck = (truckId) => {
   return devices.filter((device) => device.truck_id === truckId && !device.removed_at);
 };
 
-
 export const getTirePressureData = (truckId, timeRange = '24h') => {
   return tirePressureEvents.filter((event) => event.truck_id === truckId);
 };
@@ -248,39 +247,39 @@ export default {
   getLatestTirePressure,
   getLatestHubTemperature,
   getDeviceStatus,
-  
+
   // All data structures organized by sidebar function
-  
+
   // Fleet Management
   trucks,
   fleetGroups,
   drivers, // Empty for tracking-only scope
   vendors, // Empty for tracking-only scope
-  
+
   // Tracking
   gpsPositions,
   trips,
   dailyRoutes,
-  
+
   // IoT Devices
   devices,
   sensors,
-  
+
   // Telemetry
   tirePressureEvents,
   hubTemperatureEvents,
   fuelLevelEvents,
   speedEvents,
-  
+
   // Status and Alerts
   truckStatusEvents,
   deviceStatusEvents,
   lockEvents,
   alertEvents,
-  
+
   // Reference and Geographic
   tireErrorCodes,
-  BORNEO_INDOBARA_GEOJSON
+  BORNEO_INDOBARA_GEOJSON,
 };
 
 // --- Dummy Real Route Helpers ---

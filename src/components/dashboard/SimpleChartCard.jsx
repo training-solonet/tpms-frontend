@@ -1,10 +1,10 @@
 import React from 'react';
 
-const SimpleChartCard = ({ 
-  title, 
-  subtitle, 
-  data, 
-  type = 'line', 
+const SimpleChartCard = ({
+  title,
+  subtitle,
+  data,
+  type = 'line',
   // eslint-disable-next-line no-unused-vars
   height = 300,
   color = '#6366f1',
@@ -40,9 +40,9 @@ const SimpleChartCard = ({
         </div>
       );
     }
-    
-    const maxValue = Math.max(...data.map(d => d.value));
-    const minValue = Math.min(...data.map(d => d.value));
+
+    const maxValue = Math.max(...data.map((d) => d.value));
+    const minValue = Math.min(...data.map((d) => d.value));
     const range = maxValue - minValue;
 
     const points = data
@@ -114,7 +114,6 @@ const SimpleChartCard = ({
         <div className="relative">
           <svg width="160" height="160" className="transform -rotate-90">
             {data.map((item, index) => {
-              
               const angle = (item.value / total) * 360;
               const startAngle = currentAngle;
               currentAngle += angle;

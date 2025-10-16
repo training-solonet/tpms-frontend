@@ -127,24 +127,47 @@ export default function VendorsList() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
-                      <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>Loading...</td></tr>
-                    ) : pageData.length === 0 ? (
-                      <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>No data</td></tr>
-                    ) : pageData.map(v => (
-                      <tr key={v.id}>
-                        <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
-                        <td className="px-3 py-2">{v.code}</td>
-                        <td className="px-3 py-2">{v.description}</td>
-                        <td className="px-3 py-2">
-                          <div>{v.contact_name || '-'}</div>
-                          <div className="text-xs text-gray-500">{v.contact_phone || ''} {v.contact_email ? `• ${v.contact_email}` : ''}</div>
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <a href={`/vendors/${v.id}`} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2">Edit</a>
-                          <button onClick={() => onDelete(v.id)} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600">Delete</button>
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                          Loading...
                         </td>
                       </tr>
-                    ))}
+                    ) : pageData.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                          No data
+                        </td>
+                      </tr>
+                    ) : (
+                      pageData.map((v) => (
+                        <tr key={v.id}>
+                          <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
+                          <td className="px-3 py-2">{v.code}</td>
+                          <td className="px-3 py-2">{v.description}</td>
+                          <td className="px-3 py-2">
+                            <div>{v.contact_name || '-'}</div>
+                            <div className="text-xs text-gray-500">
+                              {v.contact_phone || ''}{' '}
+                              {v.contact_email ? `• ${v.contact_email}` : ''}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <a
+                              href={`/vendors/${v.id}`}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2"
+                            >
+                              Edit
+                            </a>
+                            <button
+                              onClick={() => onDelete(v.id)}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -44,11 +44,11 @@ const VehicleDeviceStatus = () => {
         const res = await trucksAPI.getAllTrucks();
         const trucksArray = res.data?.trucks || res.data;
         if (res?.success && Array.isArray(trucksArray) && trucksArray.length > 0) {
-          const vehicleData = trucksArray.map(t => {
+          const vehicleData = trucksArray.map((t) => {
             try {
               // Try to get real device connectivity data from backend
               let deviceData = null;
-              
+
               // Check if backend provides device data in expected format (cmd: "device")
               if (t.deviceData) {
                 deviceData = t.deviceData;
@@ -57,14 +57,16 @@ const VehicleDeviceStatus = () => {
               } else {
                 // Generate realistic device connectivity data based on protocol specification
                 deviceData = {
-                  lng: 113.86837000 + (Math.random() - 0.5) * 0.1, // Longitude with variation
-                  lat: 22.59955000 + (Math.random() - 0.5) * 0.1,  // Latitude with variation
+                  lng: 113.86837 + (Math.random() - 0.5) * 0.1, // Longitude with variation
+                  lat: 22.59955 + (Math.random() - 0.5) * 0.1, // Latitude with variation
                   bat1: Math.floor(Math.random() * 5), // Host battery level (0-4)
                   bat2: Math.floor(Math.random() * 5), // Repeater 1 battery level (0-4)
                   bat3: Math.floor(Math.random() * 5), // Repeater 2 battery level (0-4)
-                  lock: Math.random() > 0.3 ? 1 : 0,   // Device state 0-unlocked, 1-locked
-                  simNumber: t.simNumber || `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-                  lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString()
+                  lock: Math.random() > 0.3 ? 1 : 0, // Device state 0-unlocked, 1-locked
+                  simNumber:
+                    t.simNumber ||
+                    `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+                  lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString(),
                 };
               }
 
@@ -74,7 +76,7 @@ const VehicleDeviceStatus = () => {
                 lockData = t.lockData;
               } else {
                 lockData = {
-                  is_lock: deviceData.lock || (Math.random() > 0.3 ? 1 : 0)
+                  is_lock: deviceData.lock || (Math.random() > 0.3 ? 1 : 0),
                 };
               }
 
@@ -95,20 +97,30 @@ const VehicleDeviceStatus = () => {
                 simNumber: deviceData.simNumber || t.simNumber || '-',
                 lastPing: deviceData.lastUpdate || new Date().toISOString(),
                 // Derived connectivity status
-                connectionStatus: (deviceData.bat1 > 0 || deviceData.bat2 > 0 || deviceData.bat3 > 0) ? 'connected' : 'disconnected',
+                connectionStatus:
+                  deviceData.bat1 > 0 || deviceData.bat2 > 0 || deviceData.bat3 > 0
+                    ? 'connected'
+                    : 'disconnected',
                 signalStrength: Math.round(60 + Math.random() * 40), // Estimated signal strength
                 networkType: Math.random() > 0.5 ? '4G' : '3G',
                 gpsAccuracy: Math.round(Math.random() * 10 + 2), // 2-12 meters
                 // Battery status analysis
-                hostBatteryStatus: deviceData.bat1 > 2 ? 'good' : deviceData.bat1 > 0 ? 'low' : 'critical',
-                repeater1Status: deviceData.bat2 > 2 ? 'good' : deviceData.bat2 > 0 ? 'low' : 'critical',
-                repeater2Status: deviceData.bat3 > 2 ? 'good' : deviceData.bat3 > 0 ? 'low' : 'critical',
+                hostBatteryStatus:
+                  deviceData.bat1 > 2 ? 'good' : deviceData.bat1 > 0 ? 'low' : 'critical',
+                repeater1Status:
+                  deviceData.bat2 > 2 ? 'good' : deviceData.bat2 > 0 ? 'low' : 'critical',
+                repeater2Status:
+                  deviceData.bat3 > 2 ? 'good' : deviceData.bat3 > 0 ? 'low' : 'critical',
                 // Lock status analysis
                 lockStatus: lockData.is_lock === 1 ? 'locked' : 'unlocked',
                 securityStatus: lockData.is_lock === 1 ? 'secure' : 'unsecured',
                 // Overall device health
-                deviceHealth: (deviceData.bat1 + deviceData.bat2 + deviceData.bat3) > 6 ? 'good' : 
-                             (deviceData.bat1 + deviceData.bat2 + deviceData.bat3) > 3 ? 'warning' : 'critical'
+                deviceHealth:
+                  deviceData.bat1 + deviceData.bat2 + deviceData.bat3 > 6
+                    ? 'good'
+                    : deviceData.bat1 + deviceData.bat2 + deviceData.bat3 > 3
+                      ? 'warning'
+                      : 'critical',
               };
             } catch (error) {
               console.error(`Error processing device connectivity data for truck ${t.id}:`, error);
@@ -138,13 +150,15 @@ const VehicleDeviceStatus = () => {
                 securityStatus: 'unknown',
                 deviceHealth: 'error',
                 hasError: true,
-                errorMessage: 'Failed to load device connectivity data'
+                errorMessage: 'Failed to load device connectivity data',
               };
             }
           });
           setVehicles(vehicleData);
           setError(null);
-          console.log(`✅ Using real trucks data for Device Connectivity Status: ${trucksArray.length} vehicles`);
+          console.log(
+            `✅ Using real trucks data for Device Connectivity Status: ${trucksArray.length} vehicles`
+          );
           return;
         }
         // fallback dummy
@@ -398,11 +412,15 @@ const VehicleDeviceStatus = () => {
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Last Update</div>
-                  <div className="font-medium text-slate-800">{new Date(vehicle.lastUpdate).toLocaleString('id-ID')}</div>
+                  <div className="font-medium text-slate-800">
+                    {new Date(vehicle.lastUpdate).toLocaleString('id-ID')}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">GPS Position</div>
-                  <div className="font-medium text-slate-800">{vehicle.lat.toFixed(6)}, {vehicle.lng.toFixed(6)}</div>
+                  <div className="font-medium text-slate-800">
+                    {vehicle.lat.toFixed(6)}, {vehicle.lng.toFixed(6)}
+                  </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">SIM Number</div>
@@ -411,49 +429,63 @@ const VehicleDeviceStatus = () => {
                 <div>
                   <div className="text-[11px] text-slate-500">Signal</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.signalStrength > 80 ? 'bg-emerald-500' : vehicle.signalStrength > 50 ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.signalStrength > 80 ? 'bg-emerald-500' : vehicle.signalStrength > 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                    ></span>
                     {vehicle.signalStrength}% ({vehicle.networkType})
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Host Battery (bat1)</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.hostBatteryStatus === 'good' ? 'bg-emerald-500' : vehicle.hostBatteryStatus === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.hostBatteryStatus === 'good' ? 'bg-emerald-500' : vehicle.hostBatteryStatus === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    ></span>
                     {vehicle.bat1}/4
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Repeater 1 (bat2)</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.repeater1Status === 'good' ? 'bg-emerald-500' : vehicle.repeater1Status === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.repeater1Status === 'good' ? 'bg-emerald-500' : vehicle.repeater1Status === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    ></span>
                     {vehicle.bat2}/4
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Repeater 2 (bat3)</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.repeater2Status === 'good' ? 'bg-emerald-500' : vehicle.repeater2Status === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.repeater2Status === 'good' ? 'bg-emerald-500' : vehicle.repeater2Status === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    ></span>
                     {vehicle.bat3}/4
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Connection</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-red-500'}`}
+                    ></span>
                     {vehicle.connectionStatus}
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Lock State</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.lockStatus === 'locked' ? 'bg-emerald-500' : 'bg-gray-300'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.lockStatus === 'locked' ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                    ></span>
                     {vehicle.lockStatus} ({vehicle.is_lock === 1 ? 'Secure' : 'Unsecured'})
                   </div>
                 </div>
                 <div>
                   <div className="text-[11px] text-slate-500">Device Health</div>
                   <div className="font-medium text-slate-800 flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${vehicle.deviceHealth === 'good' ? 'bg-emerald-500' : vehicle.deviceHealth === 'warning' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${vehicle.deviceHealth === 'good' ? 'bg-emerald-500' : vehicle.deviceHealth === 'warning' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    ></span>
                     {vehicle.deviceHealth}
                   </div>
                 </div>

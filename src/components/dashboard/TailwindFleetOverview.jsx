@@ -14,7 +14,6 @@ import SimpleChartCard from './SimpleChartCard';
 import { getDashboardData, getAlertsData, getDriversData } from '../../data/dataManagement.js';
 import { trucks, gpsPositions } from '../../data/index.js';
 
-
 const TailwindFleetOverview = () => {
   const [fleetStats, setFleetStats] = useState([]);
   const [recentAlerts, setRecentAlerts] = useState([]);
@@ -29,13 +28,13 @@ const TailwindFleetOverview = () => {
     const loadDashboardData = () => {
       try {
         setLoading(true);
-        
+
         // Load dashboard stats from dummy data
         const dashboardData = getDashboardData();
-        const activeTrucks = gpsPositions.filter(pos => pos.speed_kph > 5).length;
+        const activeTrucks = gpsPositions.filter((pos) => pos.speed_kph > 5).length;
         const idleTrucks = trucks.length - activeTrucks;
         const maintenanceTrucks = 2; // Dummy maintenance count
-        
+
         setFleetStats([
           {
             title: 'Total Vehicles',
@@ -44,7 +43,7 @@ const TailwindFleetOverview = () => {
             changeType: 'positive',
             icon: TruckIcon,
             color: 'indigo',
-            subtitle: 'Active Fleet'
+            subtitle: 'Active Fleet',
           },
           {
             title: 'Active Vehicles',
@@ -53,7 +52,7 @@ const TailwindFleetOverview = () => {
             changeType: 'positive',
             icon: CheckCircleIcon,
             color: 'green',
-            subtitle: 'Currently Running'
+            subtitle: 'Currently Running',
           },
           {
             title: 'Maintenance',
@@ -62,7 +61,7 @@ const TailwindFleetOverview = () => {
             changeType: 'neutral',
             icon: ExclamationTriangleIcon,
             color: 'yellow',
-            subtitle: 'Under Maintenance'
+            subtitle: 'Under Maintenance',
           },
           {
             title: 'Alerts',
@@ -71,44 +70,46 @@ const TailwindFleetOverview = () => {
             changeType: 'positive',
             icon: XCircleIcon,
             color: 'red',
-            subtitle: 'Active Alerts'
+            subtitle: 'Active Alerts',
           },
         ]);
-        
+
         // Set vehicle status data for pie chart
         setVehicleStatusData([
           { name: 'Active', value: activeTrucks },
           { name: 'Maintenance', value: maintenanceTrucks },
           { name: 'Idle', value: idleTrucks },
         ]);
-        
+
         // Load alerts from dummy data
         const alertsData = getAlertsData(false).slice(0, 4);
-        setRecentAlerts(alertsData.map(alert => ({
-          id: alert.id,
-          vehicle: alert.truckName,
-          type: alert.alert_type,
-          message: alert.message,
-          time: formatTimeAgo(new Date(alert.created_at)),
-          severity: alert.severity?.toLowerCase() || 'medium'
-        })));
-        
+        setRecentAlerts(
+          alertsData.map((alert) => ({
+            id: alert.id,
+            vehicle: alert.truckName,
+            type: alert.alert_type,
+            message: alert.message,
+            time: formatTimeAgo(new Date(alert.created_at)),
+            severity: alert.severity?.toLowerCase() || 'medium',
+          }))
+        );
+
         // Load top vehicles from dummy data
         const driversData = getDriversData();
-        const topTrucksData = trucks.slice(0, 4).map(truck => {
-          const driver = driversData.find(d => d.id === truck.driver_id);
-          const position = gpsPositions.find(pos => pos.truck_id === truck.id);
-          
+        const topTrucksData = trucks.slice(0, 4).map((truck) => {
+          const driver = driversData.find((d) => d.id === truck.driver_id);
+          const position = gpsPositions.find((pos) => pos.truck_id === truck.id);
+
           return {
             id: truck.name,
             driver: driver ? `${driver.first_name} ${driver.last_name}` : 'Unknown Driver',
             efficiency: Math.round(Math.random() * 20 + 80),
             mileage: `${Math.round(Math.random() * 5000 + 15000)} km`,
-            status: position?.speed_kph > 5 ? 'active' : 'idle'
+            status: position?.speed_kph > 5 ? 'active' : 'idle',
           };
         });
         setTopVehicles(topTrucksData);
-        
+
         // Generate dummy fuel data for chart
         const monthlyFuelData = [
           { name: 'Jan', value: 2400 },
@@ -117,12 +118,11 @@ const TailwindFleetOverview = () => {
           { name: 'Apr', value: 2000 },
           { name: 'May', value: 2181 },
           { name: 'Jun', value: 2500 },
-          { name: 'Jul', value: 2100 }
+          { name: 'Jul', value: 2100 },
         ];
         setFuelData(monthlyFuelData);
-        
+
         console.log('✅ Using dummy data for dashboard overview');
-        
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -190,7 +190,6 @@ const TailwindFleetOverview = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
 
-        
         {/* <div className="mb-8">
           <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
             Fleet Dashboard

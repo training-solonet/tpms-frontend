@@ -29,7 +29,9 @@ const WheelFrontIcon = ({ size = 24, color = 'currentColor', filled = false, cla
       <circle cx="12" cy="12" r="9" stroke={stroke} strokeWidth="2" fill={fill} />
 
       {/* Sidewall ring (only when not filled) */}
-      {!filled && <circle cx="12" cy="12" r="6.5" stroke={stroke} strokeWidth="1.5" opacity="0.6" />}
+      {!filled && (
+        <circle cx="12" cy="12" r="6.5" stroke={stroke} strokeWidth="1.5" opacity="0.6" />
+      )}
 
       {/* Rim hub */}
       <circle cx="12" cy="12" r="2.25" stroke={stroke} strokeWidth="1.5" fill="white" />

@@ -1,11 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  TruckIcon,
-  ClockIcon,
-  FunnelIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+import { TruckIcon, ClockIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
 import TirePressureDisplay from './TirePressureDisplay';
 import { getLiveTrackingData } from '../../data/dataManagement.js';
@@ -23,8 +18,10 @@ const LiveTrackingMapNew = () => {
   const [showVehicleCard, setShowVehicleCard] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [ setError] = useState(null);
-  const [clusterSelections, setClusterSelections] = useState(new Set(['1-199','200-399','400-599','600-799','800-999']));
+  const [setError] = useState(null);
+  const [clusterSelections, setClusterSelections] = useState(
+    new Set(['1-199', '200-399', '400-599', '600-799', '800-999'])
+  );
   const [vehicleRoutes, setVehicleRoutes] = useState({});
   const [isTrackingActive] = useState(true);
   const [timeRange] = useState('24h');
@@ -45,7 +42,6 @@ const LiveTrackingMapNew = () => {
 
   // Tire data helpers
   const normalizeTruckId = (id) => String(id || '').toLowerCase();
-  
 
   // Resolve a given vehicle identifier to the truck UUID used by device mappings
   const resolveTruckUUID = (vehicleId) => {
@@ -65,7 +61,6 @@ const LiveTrackingMapNew = () => {
     // fallback: cannot resolve
     return null;
   };
-
 
   // Truck number helpers & cluster filtering
   const extractTruckNumber = (idOrName) => {
@@ -171,12 +166,14 @@ const LiveTrackingMapNew = () => {
         // Generate dummy route points for each vehicle
         const routePoints = getDummyRealRoutePoints();
         if (routePoints && routePoints.length > 0) {
-          routes[vehicle.id] = routePoints.map(p => [p.lat, p.lng]);
+          routes[vehicle.id] = routePoints.map((p) => [p.lat, p.lng]);
         }
       }
 
       setVehicleRoutes(routes);
-      console.log(`✅ Initialized ${finalTrackingData.length} vehicles with comprehensive dummy data`);
+      console.log(
+        `✅ Initialized ${finalTrackingData.length} vehicles with comprehensive dummy data`
+      );
       return finalTrackingData;
     } catch (error) {
       console.error('❌ Failed to initialize dummy data:', error);
@@ -192,8 +189,10 @@ const LiveTrackingMapNew = () => {
       if (!markersLayerRef.current) {
         markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(mapInstance);
       }
-    } catch (err) { void err; }
-    
+    } catch (err) {
+      void err;
+    }
+
     // Apply marker styling on zoom/move
     mapInstance.on('zoom', () => applyMarkerZoomStyling());
     mapInstance.on('zoomend', () => applyMarkerZoomStyling());
@@ -215,7 +214,7 @@ const LiveTrackingMapNew = () => {
         }
 
         const vehicleData = getLiveTrackingData();
-        
+
         if (vehicleData && vehicleData.length > 0) {
           setVehicles(vehicleData);
         } else {
@@ -237,7 +236,7 @@ const LiveTrackingMapNew = () => {
     };
 
     loadTruckData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, mapUtils]);
 
   // WebSocket setup disabled for dummy data mode
@@ -316,13 +315,16 @@ const LiveTrackingMapNew = () => {
     return `${Math.floor(diff / 3600)}h ago`;
   };
 
-
   // Reconcile markers when data changes (reuse markers for performance)
   useEffect(() => {
     if (map && vehicles) {
       const L = window.L || require('leaflet'); // eslint-disable-line no-undef
       if (!markersLayerRef.current) {
-        try { markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(map); } catch (err) { void err; }
+        try {
+          markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(map);
+        } catch (err) {
+          void err;
+        }
       }
 
       const existing = markersRef.current;
@@ -390,71 +392,112 @@ const LiveTrackingMapNew = () => {
               setSelectedDeviceStatus(null);
             }
 
-          // Show live route for this vehicle
-          try {
-            if (liveRouteLineRef.current && map) {
-              try { map.removeLayer(liveRouteLineRef.current); } catch (err) { void err; }
-              liveRouteLineRef.current = null;
-            }
-            
-            const L = window.L || require('leaflet'); // eslint-disable-line no-undef
-            
-            let routeHistory = vehicleRoutes[vehicle.id] || [];
-            
-            if (routeHistory.length <= 1) {
-              const pts = getDummyRealRoutePoints?.() || [];
-              const coords = Array.isArray(pts) && pts.length > 1 ? pts.map(p => [p.lat, p.lng]) : [];
-              if (coords.length > 1) {
-                routeHistory = coords;
+            // Show live route for this vehicle
+            try {
+              if (liveRouteLineRef.current && map) {
+                try {
+                  map.removeLayer(liveRouteLineRef.current);
+                } catch (err) {
+                  void err;
+                }
+                liveRouteLineRef.current = null;
               }
+
+              const L = window.L || require('leaflet'); // eslint-disable-line no-undef
+
+              let routeHistory = vehicleRoutes[vehicle.id] || [];
+
+              if (routeHistory.length <= 1) {
+                const pts = getDummyRealRoutePoints?.() || [];
+                const coords =
+                  Array.isArray(pts) && pts.length > 1 ? pts.map((p) => [p.lat, p.lng]) : [];
+                if (coords.length > 1) {
+                  routeHistory = coords;
+                }
+              }
+
+              if (Array.isArray(routeHistory) && routeHistory.length > 1) {
+                const routeColor = '#2563eb';
+                liveRouteLineRef.current = L.polyline(routeHistory, {
+                  color: routeColor,
+                  weight: 3,
+                  opacity: 0.9,
+                  smoothFactor: 2,
+                  lineJoin: 'round',
+                  lineCap: 'round',
+                  pane: 'routesPane',
+                }).addTo(map);
+
+                if (liveRouteMarkersRef.current.start)
+                  try {
+                    map.removeLayer(liveRouteMarkersRef.current.start);
+                  } catch (err) {
+                    void err;
+                  }
+                if (liveRouteMarkersRef.current.end)
+                  try {
+                    map.removeLayer(liveRouteMarkersRef.current.end);
+                  } catch (err) {
+                    void err;
+                  }
+
+                const startIcon = L.divIcon({
+                  html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
+                  className: 'live-route-start',
+                  iconSize: [14, 14],
+                  iconAnchor: [7, 7],
+                });
+                const endIcon = L.divIcon({
+                  html: `<div style="position:relative;"><div style="background:${routeColor};color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;min-width:20px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);">END</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${routeColor};margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));"></div></div>`,
+                  className: 'live-route-end',
+                  iconSize: [26, 26],
+                  iconAnchor: [13, 26],
+                });
+
+                liveRouteMarkersRef.current.start = L.marker(routeHistory[0], {
+                  icon: startIcon,
+                  pane: 'routesPane',
+                }).addTo(map);
+                liveRouteMarkersRef.current.end = L.marker(routeHistory[routeHistory.length - 1], {
+                  icon: endIcon,
+                  pane: 'routesPane',
+                }).addTo(map);
+
+                try {
+                  map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
+                } catch (err) {
+                  void err;
+                }
+              }
+            } catch (e) {
+              console.warn('Failed to show live route:', e);
             }
-            
-            if (Array.isArray(routeHistory) && routeHistory.length > 1) {
-              const routeColor = '#2563eb';
-              liveRouteLineRef.current = L.polyline(routeHistory, {
-                color: routeColor,
-                weight: 3,
-                opacity: 0.9,
-                smoothFactor: 2,
-                lineJoin: 'round',
-                lineCap: 'round',
-                pane: 'routesPane'
-              }).addTo(map);
-              
-              if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch (err) { void err; }
-              if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch (err) { void err; }
-              
-              const startIcon = L.divIcon({
-                html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
-                className: 'live-route-start', iconSize: [14,14], iconAnchor: [7,7]
-              });
-              const endIcon = L.divIcon({
-                html: `<div style="position:relative;"><div style="background:${routeColor};color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;min-width:20px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);">END</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${routeColor};margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));"></div></div>`,
-                className: 'live-route-end', iconSize: [26,26], iconAnchor: [13,26]
-              });
-              
-              liveRouteMarkersRef.current.start = L.marker(routeHistory[0], { icon: startIcon, pane: 'routesPane' }).addTo(map);
-              liveRouteMarkersRef.current.end = L.marker(routeHistory[routeHistory.length - 1], { icon: endIcon, pane: 'routesPane' }).addTo(map);
-              
-              try {
-                map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
-              } catch (err) { void err; }
-            }
-          } catch (e) {
-            console.warn('Failed to show live route:', e);
-          }
           });
         } else {
           // Update position
-          try { marker.setLatLng(vehicle.position); } catch (err) { void err; }
+          try {
+            marker.setLatLng(vehicle.position);
+          } catch (err) {
+            void err;
+          }
           // Update icon only if status changed (cheaper)
           if (marker._status !== vehicle.status) {
-            try { marker.setIcon(buildIcon(vehicle.status)); marker._status = vehicle.status; } catch (err) { void err; }
+            try {
+              marker.setIcon(buildIcon(vehicle.status));
+              marker._status = vehicle.status;
+            } catch (err) {
+              void err;
+            }
           }
         }
 
         // Ensure visible
-        try { const el = marker.getElement?.(); if (el) el.style.visibility = 'visible'; } catch (err) { void err; }
+        try {
+          const el = marker.getElement?.();
+          if (el) el.style.visibility = 'visible';
+        } catch (err) {
+          void err;
+        }
 
         seen.add(vehicle.id);
       });
@@ -467,7 +510,9 @@ const LiveTrackingMapNew = () => {
             if (m && (map.hasLayer(m) || markersLayerRef.current?.hasLayer(m))) {
               (markersLayerRef.current || map).removeLayer(m);
             }
-          } catch (err) { void err; }
+          } catch (err) {
+            void err;
+          }
           delete existing[id];
         }
       });
@@ -477,7 +522,7 @@ const LiveTrackingMapNew = () => {
   // Re-apply marker zoom styling whenever map or selection changes
   useEffect(() => {
     applyMarkerZoomStyling();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, vehicles, clusterSelections]);
 
   // Handle focus via URL param ?focus=<truck>
@@ -493,16 +538,30 @@ const LiveTrackingMapNew = () => {
       if (!target) return;
       const marker = markersRef.current[target.id];
       if (marker) {
-        try { marker.fire('click'); } catch (err) { void err; }
-        try { map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true }); } catch (err) { void err; }
+        try {
+          marker.fire('click');
+        } catch (err) {
+          void err;
+        }
+        try {
+          map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true });
+        } catch (err) {
+          void err;
+        }
       } else {
         // Fallback: set directly
         setSelectedVehicle(target);
         setShowVehicleCard(true);
-        try { map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true }); } catch (err) { void err; }
+        try {
+          map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true });
+        } catch (err) {
+          void err;
+        }
       }
       focusHandledRef.current = true;
-    } catch (err) { void err; }
+    } catch (err) {
+      void err;
+    }
   }, [map, vehicles]);
 
   const additionalControls = (
@@ -590,17 +649,17 @@ const LiveTrackingMapNew = () => {
           >
             {/* Vehicle banner image */}
             <div className="mb-4 overflow-hidden rounded-lg border border-gray-100">
-              <img
-                src="/icon2.png"
-                alt="Truck"
-                className="h-32 w-full object-cover"
-              />
+              <img src="/icon2.png" alt="Truck" className="h-32 w-full object-cover" />
             </div>
             {/* Header */}
             <div className="flex items-start justify-between">
               <div>
-                <h4 className="text-lg font-semibold text-gray-900 leading-tight">{selectedVehicle.id}</h4>
-                <p className="text-sm text-gray-500">Driver: {selectedVehicle.driver || 'Unknown'}</p>
+                <h4 className="text-lg font-semibold text-gray-900 leading-tight">
+                  {selectedVehicle.id}
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Driver: {selectedVehicle.driver || 'Unknown'}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span
@@ -608,8 +667,8 @@ const LiveTrackingMapNew = () => {
                     selectedVehicle.status === 'active'
                       ? 'bg-green-50 text-green-700 border-green-200'
                       : selectedVehicle.status === 'idle'
-                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                      : 'bg-gray-50 text-gray-700 border-gray-200'
+                        ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        : 'bg-gray-50 text-gray-700 border-gray-200'
                   }`}
                 >
                   <span
@@ -617,8 +676,8 @@ const LiveTrackingMapNew = () => {
                       selectedVehicle.status === 'active'
                         ? 'bg-green-500'
                         : selectedVehicle.status === 'idle'
-                        ? 'bg-yellow-500'
-                        : 'bg-gray-400'
+                          ? 'bg-yellow-500'
+                          : 'bg-gray-400'
                     }`}
                   />
                   {selectedVehicle.status}
@@ -628,11 +687,25 @@ const LiveTrackingMapNew = () => {
                     setShowVehicleCard(false);
                     setSelectedVehicle(null);
                     if (liveRouteLineRef.current && map) {
-                      try { map.removeLayer(liveRouteLineRef.current); } catch { /* empty */ }
+                      try {
+                        map.removeLayer(liveRouteLineRef.current);
+                      } catch {
+                        /* empty */
+                      }
                       liveRouteLineRef.current = null;
                     }
-                    if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch { /* empty */ }
-                    if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch { /* empty */ }
+                    if (liveRouteMarkersRef.current.start)
+                      try {
+                        map.removeLayer(liveRouteMarkersRef.current.start);
+                      } catch {
+                        /* empty */
+                      }
+                    if (liveRouteMarkersRef.current.end)
+                      try {
+                        map.removeLayer(liveRouteMarkersRef.current.end);
+                      } catch {
+                        /* empty */
+                      }
                   }}
                   className="p-1.5 rounded-md hover:bg-gray-100"
                   aria-label="Close vehicle card"
@@ -648,18 +721,24 @@ const LiveTrackingMapNew = () => {
               <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50/40 border border-blue-100">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-blue-100 border border-blue-200 text-blue-600">
-                    <span className="material-symbols-outlined text-[18px] leading-none">speed</span>
+                    <span className="material-symbols-outlined text-[18px] leading-none">
+                      speed
+                    </span>
                   </span>
                   <span className="text-sm text-gray-700">Speed</span>
                 </div>
-                <div className="text-sm font-semibold text-gray-900">{selectedVehicle.speed} km/h</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {selectedVehicle.speed} km/h
+                </div>
               </div>
 
               {/* Fuel */}
               <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50/40 border border-amber-100">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-amber-100 border border-amber-200 text-amber-600">
-                    <span className="material-symbols-outlined text-[18px] leading-none">local_gas_station</span>
+                    <span className="material-symbols-outlined text-[18px] leading-none">
+                      local_gas_station
+                    </span>
                   </span>
                   <span className="text-sm text-gray-700">Fuel</span>
                 </div>
@@ -670,7 +749,9 @@ const LiveTrackingMapNew = () => {
               <div className="flex items-center justify-between p-3 rounded-lg bg-violet-50/40 border border-violet-100">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-violet-100 border border-violet-200 text-violet-600">
-                    <span className="material-symbols-outlined text-[18px] leading-none">signal_cellular_alt</span>
+                    <span className="material-symbols-outlined text-[18px] leading-none">
+                      signal_cellular_alt
+                    </span>
                   </span>
                   <span className="text-sm text-gray-700">Signal</span>
                 </div>
@@ -684,7 +765,9 @@ const LiveTrackingMapNew = () => {
                 <ClockIcon className="w-4 h-4 text-gray-500" />
                 Last update
               </div>
-              <div className="text-sm font-medium text-gray-900">{formatLastUpdate(selectedVehicle.lastUpdate)}</div>
+              <div className="text-sm font-medium text-gray-900">
+                {formatLastUpdate(selectedVehicle.lastUpdate)}
+              </div>
             </div>
 
             {/* Tire Pressure Display */}

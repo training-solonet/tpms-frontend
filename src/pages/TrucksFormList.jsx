@@ -5,11 +5,11 @@ import TruckImage from '../components/common/TruckImage.jsx';
 import { trucks, drivers, vendors, gpsPositions, fuelLevelEvents } from '../data/index.js';
 
 // Transform dummy data to match expected format
-const allTrucks = trucks.map(truck => {
-  const driver = drivers.find(d => d.id === truck.driver_id);
-  const position = gpsPositions.find(pos => pos.truck_id === truck.id);
-  const fuel = fuelLevelEvents.find(f => f.truck_id === truck.id);
-  
+const allTrucks = trucks.map((truck) => {
+  const driver = drivers.find((d) => d.id === truck.driver_id);
+  const position = gpsPositions.find((pos) => pos.truck_id === truck.id);
+  const fuel = fuelLevelEvents.find((f) => f.truck_id === truck.id);
+
   return {
     id: truck.id,
     plate: truck.plate_number,
@@ -19,7 +19,9 @@ const allTrucks = trucks.map(truck => {
     vendor_id: truck.vendor_id || '',
     status: position?.speed_kph > 5 ? 'active' : 'idle',
     fuel: fuel?.fuel_percent || 0,
-    location: position ? { coordinates: [position.latitude, position.longitude] } : { coordinates: [0, 0] },
+    location: position
+      ? { coordinates: [position.latitude, position.longitude] }
+      : { coordinates: [0, 0] },
     speed: position?.speed_kph || 0,
     heading: position?.heading_deg || 0,
     payload: Math.round(Math.random() * 50000), // Random payload in kg
@@ -33,7 +35,7 @@ const allTrucks = trucks.map(truck => {
     year: truck.year,
     batteryLevel: Math.round(70 + Math.random() * 30),
     signalStrength: Math.round(60 + Math.random() * 40),
-    lastMaintenance: new Date(Date.now() - Math.random() * 90 * 24 * 3600000).toISOString()
+    lastMaintenance: new Date(Date.now() - Math.random() * 90 * 24 * 3600000).toISOString(),
   };
 });
 
@@ -57,7 +59,7 @@ export default function TrucksFormList() {
       setLoading(false);
       console.log(`✅ Using dummy data for All Vehicles table: ${allTrucks.length} trucks`);
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -151,50 +153,79 @@ export default function TrucksFormList() {
             </div>
           </div>
 
-        <div className="bg-white shadow rounded-xl">
-          <div className="overflow-x-auto">
-            <div className="max-h-[60vh] overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Truck</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plate</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cluster</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {loading ? (
-                    <tr><td className="px-4 py-6 text-gray-500" colSpan={6}>Loading...</td></tr>
-                  ) : pageData.map(t => (
-                    <tr key={t.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-16 h-10 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
-                            <TruckImage id={t.id} width={160} height={100} className="w-16 h-10" />
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">{t.name}</div>
-                            <div className="text-xs text-gray-500">{t.id}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">{t.plate}</td>
-                      <td className="px-4 py-3">{t.cluster}</td>
-                      <td className="px-4 py-3">{(vendorsList.find(v => v.id === t.vendor_id)?.name) || '-'}</td>
-                      <td className="px-4 py-3">{t.driver.name}</td>
-                      <td className="px-4 py-3 text-right">
-                        <Link to={`/trucks/${t.id}`} state={{ truck: t }} className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">Edit</Link>
-                      </td>
+          <div className="bg-white shadow rounded-xl">
+            <div className="overflow-x-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Truck
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Plate
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cluster
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Vendor
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Driver
+                      </th>
+                      <th className="px-4 py-3" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {loading ? (
+                      <tr>
+                        <td className="px-4 py-6 text-gray-500" colSpan={6}>
+                          Loading...
+                        </td>
+                      </tr>
+                    ) : (
+                      pageData.map((t) => (
+                        <tr key={t.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-16 h-10 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
+                                <TruckImage
+                                  id={t.id}
+                                  width={160}
+                                  height={100}
+                                  className="w-16 h-10"
+                                />
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">{t.name}</div>
+                                <div className="text-xs text-gray-500">{t.id}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">{t.plate}</td>
+                          <td className="px-4 py-3">{t.cluster}</td>
+                          <td className="px-4 py-3">
+                            {vendorsList.find((v) => v.id === t.vendor_id)?.name || '-'}
+                          </td>
+                          <td className="px-4 py-3">{t.driver.name}</td>
+                          <td className="px-4 py-3 text-right">
+                            <Link
+                              to={`/trucks/${t.id}`}
+                              state={{ truck: t }}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700"
+                            >
+                              Edit
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
 
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-gray-600">

@@ -69,7 +69,9 @@ export default function TruckForm() {
       try {
         // Use dummy vendors data from import
         if (mounted) setVendors(vendorsData);
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
     })();
     return () => {
       mounted = false;
@@ -88,7 +90,10 @@ export default function TruckForm() {
       // Persist vendor assignment if available
       if (selectedVendorId) {
         // Simulate truck update with dummy data
-        console.log('Updated truck vendor assignment:', { truck_id: truck.id, vendor_id: selectedVendorId });
+        console.log('Updated truck vendor assignment:', {
+          truck_id: truck.id,
+          vendor_id: selectedVendorId,
+        });
       }
     } catch (e) {
       console.warn('Failed to update truck vendor:', e?.message);

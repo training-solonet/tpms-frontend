@@ -330,7 +330,9 @@ const HistoryTrackingMap = () => {
               const bounds = L.latLngBounds(allLatLngs);
               map.fitBounds(bounds, { padding: [40, 40] });
             }
-          } catch { /* empty */ }
+          } catch {
+            /* empty */
+          }
           return;
         }
 
@@ -484,7 +486,11 @@ const HistoryTrackingMap = () => {
         markersRef.current[vehicle.id] = marker;
 
         marker.on('click', () => {
-          try { marker.bringToFront(); } catch { /* empty */ }
+          try {
+            marker.bringToFront();
+          } catch {
+            /* empty */
+          }
           console.log('[History] Marker clicked:', vehicle.id);
           setSelectedVehicle(vehicle);
           setPlaybackIndex(0);
@@ -768,14 +774,20 @@ const HistoryTrackingMap = () => {
           }).addTo(map);
           markersRef.current[vehicle.id] = marker;
           marker.on('click', () => {
-            try { marker.bringToFront(); } catch { /* empty */ }
+            try {
+              marker.bringToFront();
+            } catch {
+              /* empty */
+            }
             setSelectedVehicle(vehicle);
             setPlaybackIndex(0);
             setIsPlaybackPlaying(false);
           });
         }
       });
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
 
     // Reset playback when vehicle changes
     if (selectedVehicle) {
@@ -788,7 +800,11 @@ const HistoryTrackingMap = () => {
           playbackTimerRef.current = null;
         }
         // Place the playback truck icon at the starting point
-        try { createOrUpdatePlaybackMarker(routeHistory[0]); } catch { /* empty */ }
+        try {
+          createOrUpdatePlaybackMarker(routeHistory[0]);
+        } catch {
+          /* empty */
+        }
       }
     }
 
@@ -814,9 +830,21 @@ const HistoryTrackingMap = () => {
         const L = window.L || require('leaflet');
 
         if (manualRouteRef.current) {
-          try { map.removeLayer(manualRouteRef.current.line); } catch (e) { /* empty */ }
-          try { map.removeLayer(manualRouteRef.current.start); } catch (e) { /* empty */ }
-          try { map.removeLayer(manualRouteRef.current.end); } catch (e) { /* empty */ }
+          try {
+            map.removeLayer(manualRouteRef.current.line);
+          } catch (e) {
+            /* empty */
+          }
+          try {
+            map.removeLayer(manualRouteRef.current.start);
+          } catch (e) {
+            /* empty */
+          }
+          try {
+            map.removeLayer(manualRouteRef.current.end);
+          } catch (e) {
+            /* empty */
+          }
           manualRouteRef.current = null;
         }
 
@@ -883,7 +911,9 @@ const HistoryTrackingMap = () => {
 
         try {
           map.fitBounds(line.getBounds(), { padding: [40, 40] });
-        } catch (e) { /* empty */ }
+        } catch (e) {
+          /* empty */
+        }
       }
     } catch (err) {
       console.warn('Failed to render manual route from markdown:', err);
@@ -1146,7 +1176,9 @@ const HistoryTrackingMap = () => {
         map.removeLayer(staticMarker);
       }
       delete markersRef.current[selectedVehicle.id];
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
 
     setIsPlaybackPlaying(true);
     if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
@@ -1209,7 +1241,11 @@ const HistoryTrackingMap = () => {
     return () => {
       if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
       if (playbackMarkerRef.current && map) {
-        try { map.removeLayer(playbackMarkerRef.current); } catch { /* empty */ }
+        try {
+          map.removeLayer(playbackMarkerRef.current);
+        } catch {
+          /* empty */
+        }
         playbackMarkerRef.current = null;
       }
     };

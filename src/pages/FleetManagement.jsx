@@ -18,18 +18,18 @@ const FleetManagement = () => {
   useEffect(() => {
     const loadData = () => {
       setLoading(true);
-      
+
       // Use dummy data directly
       setTrucksData(trucks);
       setDevicesData(devices);
       setFleetGroupsState(fleetGroups);
-      
+
       console.log('✅ Fleet management data loaded from dummy data:', {
         trucks: trucks.length,
         devices: devices.length,
-        fleetGroups: fleetGroups.length
+        fleetGroups: fleetGroups.length,
       });
-      
+
       setLoading(false);
     };
 
@@ -38,11 +38,11 @@ const FleetManagement = () => {
   }, []);
 
   const getTruckDevices = (truckId) => {
-    return devicesData.filter(device => device.truck_id === truckId);
+    return devicesData.filter((device) => device.truck_id === truckId);
   };
 
   const getFleetGroupName = (groupId) => {
-    const group = fleetGroupsState.find(g => g.id === groupId);
+    const group = fleetGroupsState.find((g) => g.id === groupId);
     return group ? group.name : 'Unknown';
   };
 
@@ -64,20 +64,21 @@ const FleetManagement = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const filteredTrucks = trucksData.filter(truck => {
-    const matchesSearch = truck.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         truck.plate_number?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTrucks = trucksData.filter((truck) => {
+    const matchesSearch =
+      truck.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      truck.plate_number?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || truck.status === statusFilter;
     const matchesGroup = groupFilter === 'all' || truck.fleet_group_id === groupFilter;
-    
+
     return matchesSearch && matchesStatus && matchesGroup;
   });
 
   const stats = {
     total: trucksData.length,
-    active: trucksData.filter(t => t.status === 'active').length,
-    maintenance: trucksData.filter(t => t.status === 'maintenance').length,
-    inactive: trucksData.filter(t => t.status === 'inactive').length
+    active: trucksData.filter((t) => t.status === 'active').length,
+    maintenance: trucksData.filter((t) => t.status === 'maintenance').length,
+    inactive: trucksData.filter((t) => t.status === 'inactive').length,
   };
 
   if (loading) {
@@ -187,8 +188,10 @@ const FleetManagement = () => {
                     className="bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="all">All Groups</option>
-                    {fleetGroupsState.map(group => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
+                    {fleetGroupsState.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -201,7 +204,7 @@ const FleetManagement = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
               {filteredTrucks.map((truck) => {
                 const deviceCount = getTruckDevices(truck.id).length;
-              
+
                 return (
                   <div
                     key={truck.id}
@@ -217,7 +220,9 @@ const FleetManagement = () => {
                         <h3 className="text-lg font-semibold text-gray-900">{truck.name}</h3>
                         <p className="text-sm text-gray-600">{truck.plate_number}</p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}
+                      >
                         {truck.status}
                       </span>
                     </div>
@@ -229,7 +234,9 @@ const FleetManagement = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Group:</span>
-                        <span className="font-medium">{getFleetGroupName(truck.fleet_group_id)}</span>
+                        <span className="font-medium">
+                          {getFleetGroupName(truck.fleet_group_id)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">IoT Devices:</span>
@@ -273,7 +280,9 @@ const FleetManagement = () => {
                         <div className="space-y-3">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Status:</span>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedTruck.status)}`}
+                            >
                               {selectedTruck.status}
                             </span>
                           </div>
@@ -283,7 +292,9 @@ const FleetManagement = () => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Fleet Group:</span>
-                            <span className="font-medium">{getFleetGroupName(selectedTruck.fleet_group_id)}</span>
+                            <span className="font-medium">
+                              {getFleetGroupName(selectedTruck.fleet_group_id)}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Year:</span>
@@ -296,7 +307,9 @@ const FleetManagement = () => {
                           {/* Tire Configuration with Icons */}
                           <div>
                             <div className="text-gray-600 mb-1">Tire Configuration:</div>
-                            <div className="text-sm text-gray-900 mb-2">{selectedTruck.tire_config} ({selectedTruck.tire_count} tires)</div>
+                            <div className="text-sm text-gray-900 mb-2">
+                              {selectedTruck.tire_config} ({selectedTruck.tire_count} tires)
+                            </div>
                             <div className="inline-flex items-center gap-2 bg-gray-50 rounded-lg p-2">
                               {/* Simple front view layout: render tire_count as icons in rows */}
                               {(() => {
@@ -309,13 +322,19 @@ const FleetManagement = () => {
                                     {/* Front row */}
                                     <div className="flex items-center justify-between gap-1">
                                       {row.map((_, i) => (
-                                        <WheelFrontIcon key={`front-${i}`} className="w-6 h-6 text-gray-700" />
+                                        <WheelFrontIcon
+                                          key={`front-${i}`}
+                                          className="w-6 h-6 text-gray-700"
+                                        />
                                       ))}
                                     </div>
                                     {/* Rear row */}
                                     <div className="flex items-center justify-between gap-1">
                                       {row.map((_, i) => (
-                                        <WheelFrontIcon key={`rear-${i}`} className="w-6 h-6 text-gray-700" />
+                                        <WheelFrontIcon
+                                          key={`rear-${i}`}
+                                          className="w-6 h-6 text-gray-700"
+                                        />
                                       ))}
                                     </div>
                                   </div>
@@ -337,13 +356,17 @@ const FleetManagement = () => {
                                 <div className="flex-1">
                                   <p className="font-medium text-gray-900">{device.sn}</p>
                                   <p className="text-sm text-gray-600">SIM: {device.sim_number}</p>
-                                  <p className="text-sm text-gray-600">Installed: {formatDate(device.installed_at)}</p>
+                                  <p className="text-sm text-gray-600">
+                                    Installed: {formatDate(device.installed_at)}
+                                  </p>
                                 </div>
                               </div>
                             </div>
                           ))}
                           {getTruckDevices(selectedTruck.id).length === 0 && (
-                            <p className="text-gray-600 text-center py-4">No IoT devices installed</p>
+                            <p className="text-gray-600 text-center py-4">
+                              No IoT devices installed
+                            </p>
                           )}
                         </div>
                       </div>

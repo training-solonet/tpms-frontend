@@ -7,7 +7,10 @@ function Input({ label, ...props }) {
   return (
     <label className="block">
       <span className="block text-sm font-medium text-gray-700">{label}</span>
-      <input {...props} className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`} />
+      <input
+        {...props}
+        className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`}
+      />
     </label>
   );
 }
@@ -24,10 +27,10 @@ export default function DriversList() {
     try {
       setLoading(true);
       const res = await driversAPI.getAll();
-      
+
       // Check if backend returns nested data like trucks
       const driversArray = res.data?.drivers || res.data;
-      
+
       if (res.success && Array.isArray(driversArray) && driversArray.length > 0) {
         setDrivers(driversArray);
         console.log('✅ Using real drivers data:', driversArray.length, 'drivers');
@@ -39,22 +42,22 @@ export default function DriversList() {
             name: 'John Doe',
             badge_id: 'BD001',
             license_number: 'LIC123456',
-            phone: '+62812345678'
+            phone: '+62812345678',
           },
           {
-            id: 'driver-002', 
+            id: 'driver-002',
             name: 'Jane Smith',
             badge_id: 'BD002',
             license_number: 'LIC789012',
-            phone: '+62887654321'
+            phone: '+62887654321',
           },
           {
             id: 'driver-003',
-            name: 'Mike Johnson', 
+            name: 'Mike Johnson',
             badge_id: 'BD003',
             license_number: 'LIC345678',
-            phone: '+62856789012'
-          }
+            phone: '+62856789012',
+          },
         ];
         setDrivers(dummyDrivers);
         console.log('🔄 Backend drivers unavailable (tracking-only project), using dummy data');
@@ -65,10 +68,10 @@ export default function DriversList() {
         {
           id: 'driver-001',
           name: 'John Doe',
-          badge_id: 'BD001', 
+          badge_id: 'BD001',
           license_number: 'LIC123456',
-          phone: '+62812345678'
-        }
+          phone: '+62812345678',
+        },
       ];
       setDrivers(dummyDrivers);
       console.log('🔄 Error loading drivers, using dummy data:', e.message);
@@ -77,16 +80,20 @@ export default function DriversList() {
     }
   }, []);
 
-  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase();
-    return drivers.filter(v => {
-      return !q ||
+    return drivers.filter((v) => {
+      return (
+        !q ||
         (v.name || '').toLowerCase().includes(q) ||
         (v.license_number || '').toLowerCase().includes(q) ||
         (v.phone || '').toLowerCase().includes(q) ||
-        (v.badge_id || '').toLowerCase().includes(q);
+        (v.badge_id || '').toLowerCase().includes(q)
+      );
     });
   }, [drivers, query]);
 
@@ -113,18 +120,37 @@ export default function DriversList() {
               <h1 className="text-2xl font-semibold text-gray-900">Drivers</h1>
               <p className="text-sm text-gray-500">Manajemen data driver (CRUD)</p>
             </div>
-            <a href="/drivers/new" className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">Add Driver</a>
+            <a
+              href="/drivers/new"
+              className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700"
+            >
+              Add Driver
+            </a>
           </div>
 
           <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input label="Search (name/license/phone/badge)" value={query} onChange={e => setQuery(e.target.value)} />
+            <Input
+              label="Search (name/license/phone/badge)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
             <label className="block">
               <span className="block text-sm font-medium text-gray-700">Page size</span>
-              <select value={pageSize} onChange={e => setPageSize(Number(e.target.value))} className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                {[10,25,50,100].map(s => <option key={s} value={s}>{s}</option>)}
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              >
+                {[10, 25, 50, 100].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </label>
-            <div className="md:col-span-2 flex items-end text-sm text-gray-600">Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}</div>
+            <div className="md:col-span-2 flex items-end text-sm text-gray-600">
+              Showing {start + 1}-{Math.min(end, filtered.length)} of {filtered.length}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl shadow">
@@ -142,21 +168,41 @@ export default function DriversList() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
-                      <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>Loading...</td></tr>
-                    ) : pageData.length === 0 ? (
-                      <tr><td className="px-3 py-6 text-gray-500" colSpan={5}>No data</td></tr>
-                    ) : pageData.map(v => (
-                      <tr key={v.id}>
-                        <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
-                        <td className="px-3 py-2">{v.badge_id || '-'}</td>
-                        <td className="px-3 py-2">{v.license_number || '-'}</td>
-                        <td className="px-3 py-2">{v.phone || '-'}</td>
-                        <td className="px-3 py-2 text-right">
-                          <a href={`/drivers/${v.id}`} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2">Edit</a>
-                          <button onClick={() => onDelete(v.id)} className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600">Delete</button>
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                          Loading...
                         </td>
                       </tr>
-                    ))}
+                    ) : pageData.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                          No data
+                        </td>
+                      </tr>
+                    ) : (
+                      pageData.map((v) => (
+                        <tr key={v.id}>
+                          <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
+                          <td className="px-3 py-2">{v.badge_id || '-'}</td>
+                          <td className="px-3 py-2">{v.license_number || '-'}</td>
+                          <td className="px-3 py-2">{v.phone || '-'}</td>
+                          <td className="px-3 py-2 text-right">
+                            <a
+                              href={`/drivers/${v.id}`}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2"
+                            >
+                              Edit
+                            </a>
+                            <button
+                              onClick={() => onDelete(v.id)}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -164,10 +210,24 @@ export default function DriversList() {
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-gray-600">Page {currentPage} / {totalPages}</div>
+            <div className="text-sm text-gray-600">
+              Page {currentPage} / {totalPages}
+            </div>
             <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
-              <button className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
+              <button
+                className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </button>
+              <button
+                className="px-3 py-1.5 rounded-md border text-sm disabled:opacity-50"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>

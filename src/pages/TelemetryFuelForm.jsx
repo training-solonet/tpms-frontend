@@ -42,7 +42,12 @@ export default function TelemetryFuelForm() {
       try {
         setLoading(true);
         // Use dummy fuel data directly
-        setRows(fuelLevelEvents.map(f => ({ ...f, truck_name: trucks.find(t => t.id === f.truck_id)?.name || 'Unknown' })));
+        setRows(
+          fuelLevelEvents.map((f) => ({
+            ...f,
+            truck_name: trucks.find((t) => t.id === f.truck_id)?.name || 'Unknown',
+          }))
+        );
         console.log('✅ Using dummy fuel data for TelemetryFuelForm');
       } catch (e) {
         if (mounted) {
@@ -143,20 +148,34 @@ export default function TelemetryFuelForm() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
-                      <tr><td className="px-3 py-6 text-gray-500" colSpan={4}>Loading...</td></tr>
-                    ) : pageData.length === 0 ? (
-                      <tr><td className="px-3 py-6 text-gray-500" colSpan={4}>No data</td></tr>
-                    ) : pageData.map(r => (
-                      <tr key={r.id}>
-                        <td className="px-3 py-2">
-                          <div className="font-medium text-gray-900">{r.truckName}</div>
-                          <div className="text-xs text-gray-500">{r.truck_id} • {r.plate}</div>
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={4}>
+                          Loading...
                         </td>
-                        <td className="px-3 py-2 w-40">{Number(r.fuel_percent).toFixed(1)}%</td>
-                        <td className="px-3 py-2 w-64">{r.changed_at ? new Date(r.changed_at).toLocaleString() : '-'}</td>
-                        <td className="px-3 py-2 w-56">{r.source || '-'}</td>
                       </tr>
-                    ))}
+                    ) : pageData.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={4}>
+                          No data
+                        </td>
+                      </tr>
+                    ) : (
+                      pageData.map((r) => (
+                        <tr key={r.id}>
+                          <td className="px-3 py-2">
+                            <div className="font-medium text-gray-900">{r.truckName}</div>
+                            <div className="text-xs text-gray-500">
+                              {r.truck_id} • {r.plate}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 w-40">{Number(r.fuel_percent).toFixed(1)}%</td>
+                          <td className="px-3 py-2 w-64">
+                            {r.changed_at ? new Date(r.changed_at).toLocaleString() : '-'}
+                          </td>
+                          <td className="px-3 py-2 w-56">{r.source || '-'}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

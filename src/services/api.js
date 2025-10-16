@@ -3,11 +3,14 @@
 
 // API Configuration (read from .env via Vite)
 export const API_CONFIG = {
-  BASE_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '',
-  WS_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) || '',
+  BASE_URL:
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
+    '',
+  WS_URL:
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) || '',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 2,
-  RETRY_DELAY: 2000
+  RETRY_DELAY: 2000,
 };
 // Vendors (master data) API - CRUD
 export const vendorsAPI = {
@@ -37,9 +40,9 @@ export const vendorsAPI = {
 
   remove: async (id) => {
     return await apiRequest(`/api/vendors/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
-  }
+  },
 };
 
 // Drivers (master data) API - CRUD
@@ -57,22 +60,22 @@ export const driversAPI = {
   create: async (payload) => {
     return await apiRequest(`/api/drivers`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   update: async (id, payload) => {
     return await apiRequest(`/api/drivers/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   remove: async (id) => {
     return await apiRequest(`/api/drivers/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
-  }
+  },
 };
 
 // Connection status
@@ -91,17 +94,17 @@ const checkBackendConnection = async () => {
     console.log('🔌 Checking backend connection to:', API_CONFIG.BASE_URL);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
+
     // Try different endpoints in order of preference (avoiding problematic trucks endpoint)
     const endpoints = [
       '/api/vendors?limit=1', // Working endpoint - try first
       '/api/devices?limit=1', // Alternative endpoint
-      '/api/dashboard/stats'  // Fallback endpoint
+      '/api/dashboard/stats', // Fallback endpoint
     ];
-    
+
     let response;
     let lastError;
-    
+
     for (const endpoint of endpoints) {
       try {
         const token = getAuthToken();
@@ -111,10 +114,10 @@ const checkBackendConnection = async () => {
           mode: 'cors',
           headers: {
             'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
-          }
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
         });
-        
+
         if (response.ok || response.status === 401) {
           // 401 means server is responding, just needs auth
           clearTimeout(timeoutId);
@@ -128,17 +131,18 @@ const checkBackendConnection = async () => {
         console.log(`⚠️ Endpoint ${endpoint} failed, trying next...`);
       }
     }
-    
+
     clearTimeout(timeoutId);
     isOnline = false;
     connectionAttempts++;
-    console.error(`❌ All backend endpoints failed. Last response status: ${response?.status || 'No response'}`);
+    console.error(
+      `❌ All backend endpoints failed. Last response status: ${response?.status || 'No response'}`
+    );
     return false;
-    
   } catch (error) {
     isOnline = false;
     connectionAttempts++;
-    
+
     let errorMessage = error.message;
     if (error.name === 'AbortError') {
       errorMessage = `Connection timeout after 15s`;
@@ -149,10 +153,11 @@ const checkBackendConnection = async () => {
     } else {
       console.warn(`❌ Backend connection failed (attempt ${connectionAttempts}):`, error.message);
     }
-    
+
     return false;
   }
-};API_CONFIG
+};
+API_CONFIG;
 
 // Generic API request
 const getAuthHeaders = () => {
@@ -240,7 +245,7 @@ const apiRequest = async (endpoint, options = {}) => {
       success: false,
       data: null,
       online: false,
-      error: errorMessage
+      error: errorMessage,
     };
   }
 };
@@ -249,23 +254,18 @@ const apiRequest = async (endpoint, options = {}) => {
 export const authAPI = {
   login: async (credentials) => {
     // Try multiple possible login endpoints
-    const loginEndpoints = [
-      '/api/auth/login',
-      '/api/login', 
-      '/api/user/login',
-      '/api/users/login'
-    ];
-    
+    const loginEndpoints = ['/api/auth/login', '/api/login', '/api/user/login', '/api/users/login'];
+
     let response;
     let lastError;
-    
+
     for (const endpoint of loginEndpoints) {
       try {
         response = await apiRequest(endpoint, {
           method: 'POST',
-          body: JSON.stringify(credentials)
+          body: JSON.stringify(credentials),
         });
-        
+
         if (response.success) {
           console.log(`✅ Login successful via ${endpoint}`);
           break;
@@ -279,38 +279,39 @@ export const authAPI = {
         console.log(`⚠️ Login endpoint ${endpoint} failed, trying next...`);
       }
     }
-    
+
     // If all endpoints failed, try offline mode
     if (!response || !response.success) {
       console.log('🔄 All login endpoints failed, attempting offline mode...');
-      
+
       // Simple offline authentication for demo
       if (credentials.username === 'admin' && credentials.password === 'admin123') {
         const offlineUser = {
           id: 'offline-user',
           username: 'admin',
           name: 'Administrator',
-          role: 'admin'
+          role: 'admin',
         };
-        
+
         const offlineToken = 'offline-demo-token-' + Date.now();
         localStorage.setItem('authToken', offlineToken);
         localStorage.setItem('user', JSON.stringify(offlineUser));
-        
+
         return {
           success: true,
           data: {
             user: offlineUser,
-            token: offlineToken
+            token: offlineToken,
           },
           online: false,
-          message: 'Logged in (Offline Mode)'
+          message: 'Logged in (Offline Mode)',
         };
       } else {
         return {
           success: false,
-          message: 'Invalid credentials. Backend unavailable - use demo credentials (admin/admin123)',
-          online: false
+          message:
+            'Invalid credentials. Backend unavailable - use demo credentials (admin/admin123)',
+          online: false,
         };
       }
     }
@@ -407,13 +408,13 @@ export const trucksAPI = {
     let page = 1;
     let hasMore = true;
     const limit = 200; // Maximum allowed per request
-    
+
     while (hasMore) {
       try {
         const result = await trucksAPI.getAll({ ...params, page, limit });
         if (result.success && result.data?.trucks) {
           allTrucks.push(...result.data.trucks);
-          
+
           // Check if there are more pages
           const pagination = result.data.pagination;
           if (pagination && page < pagination.total_pages) {
@@ -429,7 +430,7 @@ export const trucksAPI = {
         hasMore = false;
       }
     }
-    
+
     return {
       success: true,
       data: {
@@ -438,16 +439,16 @@ export const trucksAPI = {
           total: allTrucks.length,
           total_pages: Math.ceil(allTrucks.length / limit),
           current_page: 1,
-          per_page: allTrucks.length
-        }
-      }
+          per_page: allTrucks.length,
+        },
+      },
     };
   },
 
   getAll: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = `/api/trucks${queryString ? `?${queryString}` : ''}`;
-    
+
     // If backoff is active, skip primary endpoint immediately
     const now = Date.now();
     if (now < trucksPrimaryBackoffUntil) {
@@ -465,21 +466,19 @@ export const trucksAPI = {
           // If explicit HTTP 500 detected, enable backoff
           if (typeof result.error === 'string' && result.error.includes('HTTP 500')) {
             trucksPrimaryBackoffUntil = Date.now() + TRUCKS_BACKOFF_MS;
-            console.warn(`🚫 /api/trucks returned 500. Enabling circuit breaker for ${TRUCKS_BACKOFF_MS / 60000}m.`);
+            console.warn(
+              `🚫 /api/trucks returned 500. Enabling circuit breaker for ${TRUCKS_BACKOFF_MS / 60000}m.`
+            );
           }
         }
       } catch (error) {
         console.log(`⚠️ Primary trucks endpoint failed: ${error.message}`);
       }
     }
-    
+
     // Try alternative endpoints for trucks data
-    const alternatives = [
-      '/api/vehicles',
-      '/api/fleet/trucks',
-      '/api/fleet/vehicles'
-    ];
-    
+    const alternatives = ['/api/vehicles', '/api/fleet/trucks', '/api/fleet/vehicles'];
+
     for (const altEndpoint of alternatives) {
       try {
         console.log(`🔄 Trying alternative trucks endpoint: ${altEndpoint}`);
@@ -492,14 +491,14 @@ export const trucksAPI = {
         console.log(`⚠️ Alternative endpoint ${altEndpoint} failed: ${error.message}`);
       }
     }
-    
+
     // If all endpoints fail, return offline fallback
     console.log('🔄 All trucks endpoints failed, using offline mode');
     return {
       success: false,
       data: [],
       error: 'Trucks data unavailable - backend server error (HTTP 500)',
-      offline: true
+      offline: true,
     };
   },
 
@@ -510,7 +509,7 @@ export const trucksAPI = {
   create: async (payload) => {
     return await apiRequest(`/api/trucks`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
@@ -524,13 +523,13 @@ export const trucksAPI = {
   updateStatus: async (id, status) => {
     return await apiRequest(`/api/trucks/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status }),
     });
   },
 
   remove: async (id) => {
     return await apiRequest(`/api/trucks/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
   },
 
@@ -542,9 +541,9 @@ export const trucksAPI = {
       // Fallback variants to support future backend shapes
       `/api/trucks/${id}/sensors?type=tire_pressure`,
       `/api/trucks/${id}/telemetry/tires`,
-      `/api/trucks/${id}/tires`
+      `/api/trucks/${id}/tires`,
     ];
-    
+
     let lastError;
     for (const endpoint of endpoints) {
       try {
@@ -558,14 +557,14 @@ export const trucksAPI = {
         console.log(`⚠️ Tire endpoint ${endpoint} failed, trying next...`);
       }
     }
-    
+
     // If all endpoints fail, return dummy data structure
     console.log('🔄 All tire endpoints failed, using fallback data');
     return {
       success: false,
       data: [],
       error: 'Tire pressure data unavailable - using offline mode',
-      offline: true
+      offline: true,
     };
   },
 
@@ -662,7 +661,7 @@ export const trucksAPI = {
     }
 
     return result;
-  }
+  },
 };
 
 // Devices API
@@ -680,22 +679,22 @@ export const devicesAPI = {
   create: async (payload) => {
     return await apiRequest(`/api/devices`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   update: async (id, payload) => {
     return await apiRequest(`/api/devices/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   remove: async (id) => {
     return await apiRequest(`/api/devices/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
-  }
+  },
 };
 
 // Sensors API
@@ -713,22 +712,22 @@ export const sensorsAPI = {
   create: async (payload) => {
     return await apiRequest(`/api/devices/sensors`, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   update: async (id, payload) => {
     return await apiRequest(`/api/devices/sensors/${encodeURIComponent(id)}`, {
       method: 'PUT',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
   },
 
   remove: async (id) => {
     return await apiRequest(`/api/devices/sensors/${encodeURIComponent(id)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
-  }
+  },
 };
 
 // Dashboard API

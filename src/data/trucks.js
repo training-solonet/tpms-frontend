@@ -16,11 +16,11 @@ const baseTrucks = [
     name: 'Truck Alpha',
     model: 'Hino 500 Series',
     year: 2020,
-    tire_config: "6x4",
+    tire_config: '6x4',
     tire_count: 6,
-    driver_id: "dr001-e29b-41d4-a716-446655440001",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440001", // Mining Fleet Alpha
-    created_at: "2023-01-15T08:00:00Z",
+    driver_id: 'dr001-e29b-41d4-a716-446655440001',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440001', // Mining Fleet Alpha
+    created_at: '2023-01-15T08:00:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -31,11 +31,11 @@ const baseTrucks = [
     name: 'Truck Beta',
     model: 'Mitsubishi Fuso',
     year: 2019,
-    tire_config: "6x4",
+    tire_config: '6x4',
     tire_count: 6,
-    driver_id: "dr002-e29b-41d4-a716-446655440002",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440001", // Mining Fleet Alpha
-    created_at: "2023-01-20T09:15:00Z",
+    driver_id: 'dr002-e29b-41d4-a716-446655440002',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440001', // Mining Fleet Alpha
+    created_at: '2023-01-20T09:15:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -46,11 +46,11 @@ const baseTrucks = [
     name: 'Truck Gamma',
     model: 'Volvo FMX',
     year: 2021,
-    tire_config: "8x4",
+    tire_config: '8x4',
     tire_count: 8,
-    driver_id: "dr003-e29b-41d4-a716-446655440003",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440002", // Mining Fleet Beta
-    created_at: "2023-02-01T07:30:00Z",
+    driver_id: 'dr003-e29b-41d4-a716-446655440003',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440002', // Mining Fleet Beta
+    created_at: '2023-02-01T07:30:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -61,11 +61,11 @@ const baseTrucks = [
     name: 'Truck Delta',
     model: 'Scania R-Series',
     year: 2020,
-    tire_config: "6x4",
+    tire_config: '6x4',
     tire_count: 6,
-    driver_id: "dr004-e29b-41d4-a716-446655440004",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440002", // Mining Fleet Beta
-    created_at: "2023-02-10T10:45:00Z",
+    driver_id: 'dr004-e29b-41d4-a716-446655440004',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440002', // Mining Fleet Beta
+    created_at: '2023-02-10T10:45:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -76,11 +76,11 @@ const baseTrucks = [
     name: 'Truck Epsilon',
     model: 'Mercedes-Benz Actros',
     year: 2022,
-    tire_config: "8x4",
+    tire_config: '8x4',
     tire_count: 8,
-    driver_id: "dr005-e29b-41d4-a716-446655440005",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440003", // Transport Fleet
-    created_at: "2023-02-15T11:20:00Z",
+    driver_id: 'dr005-e29b-41d4-a716-446655440005',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440003', // Transport Fleet
+    created_at: '2023-02-15T11:20:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -91,11 +91,11 @@ const baseTrucks = [
     name: 'Truck Zeta',
     model: 'Caterpillar 797F',
     year: 2021,
-    tire_config: "4x2",
+    tire_config: '4x2',
     tire_count: 4,
-    driver_id: "dr006-e29b-41d4-a716-446655440006",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440001", // Mining Fleet Alpha
-    created_at: "2023-03-01T06:00:00Z",
+    driver_id: 'dr006-e29b-41d4-a716-446655440006',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440001', // Mining Fleet Alpha
+    created_at: '2023-03-01T06:00:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -106,11 +106,11 @@ const baseTrucks = [
     name: 'Truck Eta',
     model: 'Komatsu 930E',
     year: 2020,
-    tire_config: "4x2",
+    tire_config: '4x2',
     tire_count: 4,
-    driver_id: "dr007-e29b-41d4-a716-446655440007",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440002", // Mining Fleet Beta
-    created_at: "2023-03-05T08:15:00Z",
+    driver_id: 'dr007-e29b-41d4-a716-446655440007',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440002', // Mining Fleet Beta
+    created_at: '2023-03-05T08:15:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -121,11 +121,11 @@ const baseTrucks = [
     name: 'Truck Theta',
     model: 'Liebherr T 284',
     year: 2019,
-    tire_config: "4x2",
+    tire_config: '4x2',
     tire_count: 4,
-    driver_id: "dr008-e29b-41d4-a716-446655440008",
-    fleet_group_id: "f1e8d400-e29b-41d4-a716-446655440004", // Support Fleet
-    created_at: "2023-03-10T09:45:00Z",
+    driver_id: 'dr008-e29b-41d4-a716-446655440008',
+    fleet_group_id: 'f1e8d400-e29b-41d4-a716-446655440004', // Support Fleet
+    created_at: '2023-03-10T09:45:00Z',
     created_by: null,
     updated_by: null,
   },
@@ -140,20 +140,20 @@ const models = [
   'Mercedes-Benz Actros',
   'Caterpillar 797F',
   'Komatsu 930E',
-  'Liebherr T 284'
+  'Liebherr T 284',
 ];
 
 const tireConfigs = [
   { cfg: '4x2', count: 4 },
   { cfg: '6x4', count: 6 },
-  { cfg: '8x4', count: 8 }
+  { cfg: '8x4', count: 8 },
 ];
 
 const fleetGroups = [
   'f1e8d400-e29b-41d4-a716-446655440001',
   'f1e8d400-e29b-41d4-a716-446655440002',
   'f1e8d400-e29b-41d4-a716-446655440003',
-  'f1e8d400-e29b-41d4-a716-446655440004'
+  'f1e8d400-e29b-41d4-a716-446655440004',
 ];
 
 // Generate additional 992 trucks to reach exactly 1000 total (8 base + 992 generated)
@@ -175,7 +175,7 @@ const generatedTrucks = Array.from({ length: 992 }).map((_, idx) => {
     tire_count: cfg.count,
     driver_id: null,
     fleet_group_id: group,
-    created_at: new Date(2023, (idx % 12), 10 + (idx % 15)).toISOString(),
+    created_at: new Date(2023, idx % 12, 10 + (idx % 15)).toISOString(),
     created_by: null,
     updated_by: null,
   };

@@ -216,7 +216,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         window.addEventListener('hashchange', onHash);
         return () => window.removeEventListener('hashchange', onHash);
       }
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }, [forceViewMode]);
 
   useEffect(() => {
@@ -230,7 +232,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
           window.history.replaceState(null, '', url);
         }
       }
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }, [viewMode, forceViewMode]);
 
   // Enforce external forceViewMode prop (in case it changes)
@@ -516,21 +520,29 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
       const primaryId = numericId || truckId;
       // First attempt with primaryId
       let response = await trucksAPI.getLocationHistory(primaryId, params);
-      
-      const toPoints = (records) => (records || [])
-        .filter(record => {
-          try {
-            const t = new Date(
-              record.timestamp || record.recorded_at || record.created_at || record.time || record.gps_time || null
-            );
-            if (!isNaN(t)) {
-              return t >= start && t <= end;
+
+      const toPoints = (records) =>
+        (records || [])
+          .filter((record) => {
+            try {
+              const t = new Date(
+                record.timestamp ||
+                  record.recorded_at ||
+                  record.created_at ||
+                  record.time ||
+                  record.gps_time ||
+                  null
+              );
+              if (!isNaN(t)) {
+                return t >= start && t <= end;
+              }
+            } catch {
+              /* empty */
             }
-          } catch { /* empty */ }
-          return true;
-        })
-        .map(record => [parseFloat(record.latitude), parseFloat(record.longitude)])
-        .filter(pt => !isNaN(pt[0]) && !isNaN(pt[1]) && pt[0] !== 0 && pt[1] !== 0);
+            return true;
+          })
+          .map((record) => [parseFloat(record.latitude), parseFloat(record.longitude)])
+          .filter((pt) => !isNaN(pt[0]) && !isNaN(pt[1]) && pt[0] !== 0 && pt[1] !== 0);
 
       if (response.success && response.data) {
         // Convert database records to route points (filter by day window if timestamp present)
@@ -792,9 +804,21 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     if (viewMode !== 'history') {
       // remove if exists
       if (manualRouteRef.current) {
-        try { map.removeLayer(manualRouteRef.current.line); } catch (e) { /* empty */ }
-        try { map.removeLayer(manualRouteRef.current.start); } catch (e) { /* empty */ }
-        try { map.removeLayer(manualRouteRef.current.end); } catch (e) { /* empty */ }
+        try {
+          map.removeLayer(manualRouteRef.current.line);
+        } catch (e) {
+          /* empty */
+        }
+        try {
+          map.removeLayer(manualRouteRef.current.start);
+        } catch (e) {
+          /* empty */
+        }
+        try {
+          map.removeLayer(manualRouteRef.current.end);
+        } catch (e) {
+          /* empty */
+        }
         manualRouteRef.current = null;
       }
       return;
@@ -808,9 +832,21 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
 
         // Remove previous manual route if exists
         if (manualRouteRef.current) {
-          try { map.removeLayer(manualRouteRef.current.line); } catch (e) { /* empty */ }
-          try { map.removeLayer(manualRouteRef.current.start); } catch (e) { /* empty */ }
-          try { map.removeLayer(manualRouteRef.current.end); } catch (e) { /* empty */ }
+          try {
+            map.removeLayer(manualRouteRef.current.line);
+          } catch (e) {
+            /* empty */
+          }
+          try {
+            map.removeLayer(manualRouteRef.current.start);
+          } catch (e) {
+            /* empty */
+          }
+          try {
+            map.removeLayer(manualRouteRef.current.end);
+          } catch (e) {
+            /* empty */
+          }
           manualRouteRef.current = null;
         }
 
@@ -877,7 +913,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
 
         try {
           map.fitBounds(line.getBounds(), { padding: [40, 40] });
-        } catch (e) { /* empty */ }
+        } catch (e) {
+          /* empty */
+        }
       }
     } catch (err) {
       console.warn('Failed to render manual route from markdown:', err);
@@ -889,7 +927,11 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     if (!map) return;
     // Delay to allow CSS transition to complete before recalculating map size
     const t = setTimeout(() => {
-      try { map.invalidateSize({ animate: false }); } catch (e) { /* empty */ }
+      try {
+        map.invalidateSize({ animate: false });
+      } catch (e) {
+        /* empty */
+      }
     }, 250);
     return () => clearTimeout(t);
   }, [map, sidebarVisible]);
@@ -898,7 +940,11 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
   useEffect(() => {
     if (!map) return;
     const onResize = () => {
-      try { map.invalidateSize({ animate: false }); } catch (e) { /* empty */ }
+      try {
+        map.invalidateSize({ animate: false });
+      } catch (e) {
+        /* empty */
+      }
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -1059,10 +1105,14 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     return () => {
       try {
         if (wsRef.current) wsRef.current.disconnect();
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
       try {
         if (map) map.remove();
-      } catch { /* empty */ }
+      } catch {
+        /* empty */
+      }
     };
   }, []);
 
@@ -1162,8 +1212,10 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         try {
           const el = marker.getElement?.();
           if (el) el.style.visibility = 'visible';
-        } catch { /* empty */ }
-        
+        } catch {
+          /* empty */
+        }
+
         // Enhanced popup (live: add tire info; history: keep concise)
         const basePopup = `
           <div class="p-4 min-w-72 max-w-80">
@@ -1234,13 +1286,19 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                   marker.openPopup();
                 }
               }
-            } catch { /* empty */ }
+            } catch {
+              /* empty */
+            }
 
             // Live mode: show this vehicle's recent route on demand
             try {
               // Clear previous live route if exists
               if (liveRouteLineRef.current && map) {
-                try { map.removeLayer(liveRouteLineRef.current); } catch { /* empty */ }
+                try {
+                  map.removeLayer(liveRouteLineRef.current);
+                } catch {
+                  /* empty */
+                }
                 liveRouteLineRef.current = null;
               }
               // Ensure Leaflet reference in this scope
@@ -1271,7 +1329,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                     console.log('🧩 Using dummy/manual route fallback for live click');
                     routeHistory = coords;
                   }
-                } catch { /* empty */ }
+                } catch {
+                  /* empty */
+                }
               }
               if (Array.isArray(routeHistory) && routeHistory.length > 1) {
                 const routeColor = '#2563eb'; // blue-600
@@ -1289,8 +1349,18 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                   const startPt = routeHistory[0];
                   const endPt = routeHistory[routeHistory.length - 1];
                   // Clean previous markers
-                  if (liveRouteMarkersRef.current.start) try { map.removeLayer(liveRouteMarkersRef.current.start); } catch { /* empty */ }
-                  if (liveRouteMarkersRef.current.end) try { map.removeLayer(liveRouteMarkersRef.current.end); } catch { /* empty */ }
+                  if (liveRouteMarkersRef.current.start)
+                    try {
+                      map.removeLayer(liveRouteMarkersRef.current.start);
+                    } catch {
+                      /* empty */
+                    }
+                  if (liveRouteMarkersRef.current.end)
+                    try {
+                      map.removeLayer(liveRouteMarkersRef.current.end);
+                    } catch {
+                      /* empty */
+                    }
                   const startIcon = L.divIcon({
                     html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
                     className: 'live-route-start',
@@ -1299,20 +1369,46 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                   });
                   const endIcon = L.divIcon({
                     html: `<div style=\\"position:relative;\\"><div style=\\"background:${routeColor};color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;min-width:20px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);\\">END</div><div style=\\"width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${routeColor};margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));\\"></div></div>`,
-                    className: 'live-route-end', iconSize: [26,26], iconAnchor: [13,26]
+                    className: 'live-route-end',
+                    iconSize: [26, 26],
+                    iconAnchor: [13, 26],
                   });
-                  liveRouteMarkersRef.current.start = L.marker(startPt, { icon: startIcon, pane: 'routesPane' }).addTo(map);
-                  liveRouteMarkersRef.current.end = L.marker(endPt, { icon: endIcon, pane: 'routesPane' }).addTo(map);
-                } catch { /* empty */ }
+                  liveRouteMarkersRef.current.start = L.marker(startPt, {
+                    icon: startIcon,
+                    pane: 'routesPane',
+                  }).addTo(map);
+                  liveRouteMarkersRef.current.end = L.marker(endPt, {
+                    icon: endIcon,
+                    pane: 'routesPane',
+                  }).addTo(map);
+                } catch {
+                  /* empty */
+                }
                 try {
                   map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
-                } catch { /* empty */ }
+                } catch {
+                  /* empty */
+                }
               } else {
                 // No route available – show a tiny one-time notice near the marker
                 try {
-                  marker.bindTooltip('No route data for current shift', { direction: 'top', opacity: 0.8, offset: [0, -20] }).openTooltip();
-                  setTimeout(() => { try { marker.closeTooltip(); } catch { /* empty */ } }, 1800);
-                } catch { /* empty */ }
+                  marker
+                    .bindTooltip('No route data for current shift', {
+                      direction: 'top',
+                      opacity: 0.8,
+                      offset: [0, -20],
+                    })
+                    .openTooltip();
+                  setTimeout(() => {
+                    try {
+                      marker.closeTooltip();
+                    } catch {
+                      /* empty */
+                    }
+                  }, 1800);
+                } catch {
+                  /* empty */
+                }
               }
             } catch (e) {
               console.warn('Failed to show live on-demand route:', e);
@@ -1610,7 +1706,11 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         pane: 'markersPane',
       }).addTo(map);
     } else {
-      try { playbackMarkerRef.current.setLatLng(latlng); } catch { /* empty */ }
+      try {
+        playbackMarkerRef.current.setLatLng(latlng);
+      } catch {
+        /* empty */
+      }
     }
   };
 
@@ -1672,7 +1772,11 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     return () => {
       if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
       if (playbackMarkerRef.current && map) {
-        try { map.removeLayer(playbackMarkerRef.current); } catch { /* empty */ }
+        try {
+          map.removeLayer(playbackMarkerRef.current);
+        } catch {
+          /* empty */
+        }
         playbackMarkerRef.current = null;
       }
     };
@@ -1917,7 +2021,7 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
           </div>
 
           {/* Fleet Status Legend hidden per advisor feedback */}
-    
+
           {/* eslint-disable-next-line no-constant-binary-expression */}
           {false && (
             <div
