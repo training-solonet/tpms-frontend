@@ -84,6 +84,15 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
     return false;
   };
 
+  const isActiveHref = (href) => {
+    try {
+      const [pathOnly] = href.split('?');
+      return location.pathname === pathOnly || location.pathname.startsWith(pathOnly + '/');
+    } catch {
+      return location.pathname === href;
+    }
+  };
+
   const toggleExpanded = (itemName) => {
     setExpandedItems((prev) => ({
       ...prev,
@@ -171,7 +180,13 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                               <li key={subItem.name}>
                                 <Link
                                   to={subItem.href}
-                                  className="block rounded-md py-2 pl-9 pr-2 text-sm leading-6 text-indigo-200 hover:text-white hover:bg-white/10 cursor-pointer relative z-[5001]"
+                                  className={classNames(
+                                    isActiveHref(subItem.href)
+                                      ? 'bg-white/20 text-white shadow-inner border border-white/20'
+                                      : 'text-indigo-200 hover:text-white hover:bg-white/10',
+                                    'block rounded-md py-2 pl-9 pr-2 text-sm leading-6 cursor-pointer relative z-[5001]'
+                                  )}
+                                  aria-current={isActiveHref(subItem.href) ? 'page' : undefined}
                                 >
                                   {subItem.name}
                                 </Link>
