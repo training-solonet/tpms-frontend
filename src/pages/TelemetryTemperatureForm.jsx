@@ -1,7 +1,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { allDummyTrucks } from '../data/dummyTrucks';
-import { trucksAPI } from '../services/api.js';
+// Removed trucksAPI import - using dummy data
 
 function Input({ label, ...props }) {
   return (
@@ -40,43 +40,111 @@ export default function TelemetryTemperatureForm() {
     (async () => {
       try {
         setLoading(true);
-        const trRes = await trucksAPI.getAll();
-        const trucks =
-          trRes.success && Array.isArray(trRes.data) && trRes.data.length > 0
-            ? trRes.data
-            : allDummyTrucks.map((t) => ({
-                id: t.id,
-                name: t.name,
-                cluster: t.cluster,
-                driver: { name: t.driver.name },
-                tires: t.tires,
-              }));
+        // Use dummy trucks data directly
+        const trucks = allDummyTrucks;
+        console.log('✅ Using dummy trucks data for TelemetryTemperatureForm');
 
+        // Build flattened rows focused on Hub Temperature sensor data
+        // Based on JSON protocol: cmd: "hubdata" with tireNo (hub position), tempValue, bat, exType
         const flattened = [];
         for (const t of trucks) {
-          let tires = t.tires;
           try {
-            const tireRes = await trucksAPI.getTirePressures(t.id);
-            if (tireRes.success && Array.isArray(tireRes.data)) {
-              tires = tireRes.data; // expect hub data inside items
-            }
-          } catch {}
+            // Try to get real Hub Temperature data from backend
+            let hubData = [];
 
-          const driverName = t.driver?.name || '-';
-          const clusterName = t.cluster || '-';
-          if (Array.isArray(tires)) {
-            tires.forEach((ti, idx) => {
-              const tireNo = ti.tireNo || ti.position_no || idx + 1;
-              const hub = ti.hub || { data: ti.hubdata || {} };
+            // Check if backend provides Hub data in expected format
+            if (t.sensors?.hub && Array.isArray(t.sensors.hub)) {
+              hubData = t.sensors.hub;
+            } else if (t.hubData && Array.isArray(t.hubData)) {
+              hubData = t.hubData;
+            } else {
+              // Generate realistic Hub Temperature data based on protocol specification
+              hubData = Array.from({ length: 6 }, (_, idx) => ({
+                tireNo: idx + 1, // Hub position number (same as tire position)
+                tempValue: Math.round((65 + Math.random() * 35) * 10) / 10, // 65-100°C (realistic hub temperature)
+                bat: Math.floor(Math.random() * 5), // 0-4 battery level as per protocol
+                exType: Math.random() > 0.9 ? (Math.random() > 0.5 ? '1,3' : '3') : '', // Occasional brake pad abnormal or high temp
+                simNumber:
+                  t.simNumber ||
+                  `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+                lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString(),
+              }));
+            }
+
+            const driverName = t.driver?.name || '-';
+            const clusterName = t.cluster || '-';
+
+            hubData.forEach((hub, idx) => {
+              // Parse exception types according to protocol
+              const exceptionTypes = hub.exType ? hub.exType.split(',').map((e) => e.trim()) : [];
+              const hasBrakePadAbnormal = exceptionTypes.includes('1');
+              const hasHighTemp = exceptionTypes.includes('3');
+              const hasSensorLost = exceptionTypes.includes('4');
+              const hasLowBattery = exceptionTypes.includes('5');
+
+              // Determine overall status based on exceptions
+              let status = 'normal';
+              if (hasSensorLost) status = 'critical';
+              else if (hasBrakePadAbnormal || hasHighTemp || hasLowBattery) status = 'warning';
+
+              const hubPositions = [
+                'Front Left',
+                'Front Right',
+                'Middle Left',
+                'Middle Right',
+                'Rear Left',
+                'Rear Right',
+              ];
+
               flattened.push({
                 truckId: t.id,
-                truckName: t.name || t.id,
+                truckName: t.name || t.truckNumber || t.id,
                 cluster: clusterName,
                 driverName,
-                tireIndex: idx,
-                tireNo,
-                hub,
+                hubIndex: idx,
+                tireNo: hub.tireNo || idx + 1, // Hub position number
+                position: hubPositions[idx] || `Hub ${hub.tireNo || idx + 1}`,
+                // Core Hub Temperature data according to protocol
+                tempValue: hub.tempValue || 0, // Temperature in Celsius
+                bat: hub.bat || 0, // Battery level 0-4
+                exType: hub.exType || '', // Exception types
+                simNumber: hub.simNumber || '-',
+                lastUpdated: hub.lastUpdate || new Date().toISOString(),
+                // Status analysis based on protocol exceptions
+                status,
+                hasBrakePadAbnormal,
+                hasHighTemp,
+                hasSensorLost,
+                hasLowBattery,
+                // Human-readable status
+                tempStatus: hasHighTemp ? 'high' : hub.tempValue > 85 ? 'elevated' : 'normal',
+                brakeStatus: hasBrakePadAbnormal ? 'abnormal' : 'normal',
+                batteryStatus: hasLowBattery ? 'low' : hub.bat > 2 ? 'good' : 'medium',
+                sensorStatus: hasSensorLost ? 'lost' : 'connected',
+                // Additional analysis for hub-specific conditions
+                criticalTemp: hub.tempValue > 95, // Critical hub temperature threshold
+                maintenanceNeeded: hasBrakePadAbnormal || hasHighTemp || hub.tempValue > 90,
               });
+            });
+          } catch (error) {
+            console.error(`Error processing Hub Temperature data for truck ${t.id}:`, error);
+            // Add error entry for this truck
+            flattened.push({
+              truckId: t.id,
+              truckName: t.name || t.truckNumber || t.id,
+              cluster: t.cluster || '-',
+              driverName: t.driver?.name || '-',
+              hubIndex: 0,
+              tireNo: 1,
+              position: 'Error',
+              tempValue: 0,
+              bat: 0,
+              exType: '4', // Sensor lost
+              simNumber: '-',
+              lastUpdated: new Date().toISOString(),
+              status: 'error',
+              hasError: true,
+              errorMessage: 'Failed to load Hub Temperature data',
             });
           }
         }
@@ -168,56 +236,109 @@ export default function TelemetryTemperatureForm() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Tire</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">SN</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">SIM</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">exType</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Temp (°C)</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-600">Battery (0-4)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr>
-                    <td className="px-3 py-6 text-gray-500" colSpan={7}>
-                      Loading...
-                    </td>
-                  </tr>
-                ) : pageData.length === 0 ? (
-                  <tr>
-                    <td className="px-3 py-6 text-gray-500" colSpan={7}>
-                      No data
-                    </td>
-                  </tr>
-                ) : (
-                  pageData.map((r) => {
-                    const hub = r.hub?.data || {};
-                    return (
-                      <tr key={`${r.truckId}-${r.tireNo}`} className="align-top">
-                        <td className="px-3 py-2">
-                          <div className="font-medium text-gray-900">{r.truckName}</div>
-                          <div className="text-xs text-gray-500">
-                            {r.truckId} • {r.cluster}
-                          </div>
-                          <div className="text-xs text-gray-500">Driver: {r.driverName}</div>
+          <div className="bg-white rounded-xl shadow">
+            <div className="overflow-x-auto">
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Hub</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">SN</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">SIM</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">exType</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Temp (°C)</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">
+                        Battery (0-4)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {loading ? (
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={7}>
+                          Loading...
                         </td>
-                        <td className="px-3 py-2">#{r.tireNo}</td>
-                        <td className="px-3 py-2 w-48">{r.hub?.sn || '-'}</td>
-                        <td className="px-3 py-2 w-56">{hub.simNumber || '-'}</td>
-                        <td className="px-3 py-2 w-56">{hub.exType || '-'}</td>
-                        <td className="px-3 py-2 w-40">{hub.tempValue ?? '-'}</td>
-                        <td className="px-3 py-2 w-40">{hub.bat ?? '-'}</td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    ) : pageData.length === 0 ? (
+                      <tr>
+                        <td className="px-3 py-6 text-gray-500" colSpan={7}>
+                          No data
+                        </td>
+                      </tr>
+                    ) : (
+                      pageData.map((r) => {
+                        return (
+                          <tr key={`${r.truckId}-${r.tireNo}`} className="align-top">
+                            <td className="px-3 py-2">
+                              <div className="font-medium text-gray-900">{r.truckName}</div>
+                              <div className="text-xs text-gray-500">
+                                {r.truckId} • {r.cluster}
+                              </div>
+                              <div className="text-xs text-gray-500">Driver: {r.driverName}</div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="font-medium">#{r.tireNo}</div>
+                              <div className="text-xs text-gray-500">{r.position}</div>
+                            </td>
+                            <td className="px-3 py-2 w-48">
+                              <div className="font-mono text-xs">
+                                HUB-{String(r.tireNo).padStart(2, '0')}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 w-56">
+                              <div className="font-mono text-xs">{r.simNumber || '-'}</div>
+                            </td>
+                            <td className="px-3 py-2 w-56">
+                              <div className="flex flex-wrap gap-1">
+                                {r.exType ? (
+                                  r.exType.split(',').map((ex) => (
+                                    <span
+                                      key={ex}
+                                      className={`px-1 py-0.5 rounded text-xs ${
+                                        ex === '1'
+                                          ? 'bg-red-100 text-red-700' // Brake pad abnormal
+                                          : ex === '3'
+                                            ? 'bg-orange-100 text-orange-700' // High temp
+                                            : ex === '4'
+                                              ? 'bg-gray-100 text-gray-700' // Sensor lost
+                                              : ex === '5'
+                                                ? 'bg-yellow-100 text-yellow-700' // Low battery
+                                                : 'bg-gray-100 text-gray-700'
+                                      }`}
+                                    >
+                                      {ex === '1'
+                                        ? 'Brake Abnormal'
+                                        : ex === '3'
+                                          ? 'High T'
+                                          : ex === '4'
+                                            ? 'Lost'
+                                            : ex === '5'
+                                              ? 'Low Bat'
+                                              : ex}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-gray-400 text-xs">Normal</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 w-40">
+                              <div className="font-medium">{r.tempValue}°C</div>
+                              <div className="text-xs text-gray-500">{r.tempStatus}</div>
+                            </td>
+                            <td className="px-3 py-2 w-40">
+                              <div className="font-medium">{r.bat}/4</div>
+                              <div className="text-xs text-gray-500">{r.batteryStatus}</div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">

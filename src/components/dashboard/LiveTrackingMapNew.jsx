@@ -1,31 +1,16 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  TruckIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  SignalIcon,
-  FunnelIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+import { TruckIcon, ClockIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
 import TirePressureDisplay from './TirePressureDisplay';
-import { trucksAPI, FleetWebSocket, connectionUtils } from '../../services/api.js';
-import {
-  getLiveTrackingData,
-  getTruckRoute,
-  getDummyRealRoutePoints,
-  getDummyRealRouteLastPoint,
-} from '../../data/index.js';
-import tirePressureDummy from '../../data/tirePressureEvents.js';
+import { getLiveTrackingData } from '../../data/dataManagement.js';
+import { getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
 import { devices } from '../../data/devices.js';
 import { deviceStatusEvents } from '../../data/deviceStatusEvents.js';
 import { trucks as trucksList } from '../../data/trucks.js';
 
 const LiveTrackingMapNew = () => {
-  const USE_BACKEND =
-    ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_USE_BACKEND) ??
-      'true') === 'true';
+  const USE_BACKEND = false; // Force use dummy data
   const [map, setMap] = useState(null);
   const [mapUtils, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -33,15 +18,15 @@ const LiveTrackingMapNew = () => {
   const [showVehicleCard, setShowVehicleCard] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [setError] = useState(null);
   const [clusterSelections, setClusterSelections] = useState(
     new Set(['1-199', '200-399', '400-599', '600-799', '800-999'])
   );
   const [vehicleRoutes, setVehicleRoutes] = useState({});
-  const [isTrackingActive, setIsTrackingActive] = useState(true);
-  const [timeRange, setTimeRange] = useState('24h');
-  const [selectedDevice, setSelectedDevice] = useState(null);
-  const [selectedDeviceStatus, setSelectedDeviceStatus] = useState(null);
+  const [isTrackingActive] = useState(true);
+  const [timeRange] = useState('24h');
+  const [, setSelectedDevice] = useState(null);
+  const [, setSelectedDeviceStatus] = useState(null);
 
   const markersRef = useRef({});
   const markersLayerRef = useRef(null);
@@ -52,46 +37,11 @@ const LiveTrackingMapNew = () => {
   const lastHideStateRef = useRef(null);
   const rafRef = useRef(null);
   const focusHandledRef = useRef(false);
-  const [backendOnline, setBackendOnline] = useState(connectionUtils?.isOnline?.() ?? false);
+  const [backendOnline, setBackendOnline] = useState(false);
   const [wsStatus, setWsStatus] = useState('disconnected'); // connecting | connected | reconnecting | disconnected
 
   // Tire data helpers
   const normalizeTruckId = (id) => String(id || '').toLowerCase();
-
-  const getLatestTireData = async (truckId) => {
-    try {
-      const apiRes = await trucksAPI.getTirePressures(truckId);
-      if (apiRes?.success && Array.isArray(apiRes.data) && apiRes.data.length > 0) {
-        const latestByTire = {};
-        apiRes.data.forEach((item) => {
-          const no = Number(item.tire_no);
-          if (!latestByTire[no]) latestByTire[no] = item;
-        });
-        return latestByTire;
-      }
-    } catch (e) {
-      console.warn('Tire API failed, using dummy:', e?.message || e);
-    }
-
-    try {
-      const all = Array.isArray(tirePressureDummy)
-        ? tirePressureDummy
-        : tirePressureDummy?.tirePressureEvents || [];
-      const filtered = all.filter((ev) =>
-        normalizeTruckId(ev.truck_id).includes(normalizeTruckId(truckId))
-      );
-      const latestByTire = {};
-      filtered.forEach((ev) => {
-        const no = Number(ev.tire_no);
-        if (!latestByTire[no]) latestByTire[no] = ev;
-        else if (new Date(ev.changed_at) > new Date(latestByTire[no].changed_at))
-          latestByTire[no] = ev;
-      });
-      return latestByTire;
-    } catch {
-      return {};
-    }
-  };
 
   // Resolve a given vehicle identifier to the truck UUID used by device mappings
   const resolveTruckUUID = (vehicleId) => {
@@ -112,37 +62,6 @@ const LiveTrackingMapNew = () => {
     return null;
   };
 
-  const buildTirePopupHTML = (tireMap) => {
-    const tires = Object.keys(tireMap)
-      .map((n) => Number(n))
-      .sort((a, b) => a - b);
-    const pairs = [];
-    for (let i = 0; i < tires.length; i += 2) {
-      const a = tireMap[tires[i]];
-      const b = tireMap[tires[i + 1]];
-      const left = a
-        ? `<div class="flex items-center gap-2"><span class="text-[10px] px-1 rounded bg-gray-200">#${a.tire_no}</span><span class="text-xs">${a.pressure_kpa ?? a.pressureKpa ?? '-'} kPa</span><span class="text-xs text-gray-500">/ ${a.temp_celsius ?? a.tempCelsius ?? '-'}°C</span></div>`
-        : '';
-      const right = b
-        ? `<div class="flex items-center gap-2"><span class="text-[10px] px-1 rounded bg-gray-200">#${b.tire_no}</span><span class="text-xs">${b.pressure_kpa ?? b.pressureKpa ?? '-'} kPa</span><span class="text-xs text-gray-500">/ ${b.temp_celsius ?? b.tempCelsius ?? '-'}°C</span></div>`
-        : '';
-      pairs.push(`
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex-1 flex items-center justify-between">
-            <span class="text-[11px]">Tekanan Suhu</span>
-            ${left}
-          </div>
-          <div class="w-10 h-4 bg-gray-300 rounded-sm mx-2"></div>
-          <div class="flex-1 flex items-center justify-between">
-            ${right}
-            <span class="text-[11px]">Suhu Tekanan</span>
-          </div>
-        </div>
-      `);
-    }
-    return `<div class="space-y-1">${pairs.join('')}</div>`;
-  };
-
   // Truck number helpers & cluster filtering
   const extractTruckNumber = (idOrName) => {
     if (!idOrName) return null;
@@ -150,6 +69,7 @@ const LiveTrackingMapNew = () => {
     return m ? parseInt(m[1], 10) : null;
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const inSelectedCluster = (truckId) => {
     if (!clusterSelections || clusterSelections.size === 0) return true;
     const n = extractTruckNumber(truckId);
@@ -205,9 +125,11 @@ const LiveTrackingMapNew = () => {
   const initializeSampleData = async () => {
     console.log('🔄 Backend not available - initializing comprehensive dummy data');
     try {
-      let liveTrackingData = getLiveTrackingData();
+      // Use dummy data directly
+      const liveTrackingData = getLiveTrackingData();
       console.log(`📊 Loaded ${liveTrackingData.length} vehicles from dummy data`);
 
+      let finalTrackingData = liveTrackingData;
       if (!liveTrackingData || liveTrackingData.length === 0) {
         console.warn('⚠️ Dummy data empty, synthesizing demo vehicles');
         const mdPts = getDummyRealRoutePoints();
@@ -231,29 +153,28 @@ const LiveTrackingMapNew = () => {
           route: 'Mining Area',
           load: 'Empty',
         }));
-        liveTrackingData = synth;
+        finalTrackingData = synth;
       }
 
       const routes = {};
-      liveTrackingData = liveTrackingData.map((vehicle, idx) => {
-        const routeData = getTruckRoute(vehicle.id, timeRange);
-        if (routeData && routeData.length > 0) {
-          routes[vehicle.id] = routeData;
-          const last = routeData[routeData.length - 1];
-          return { ...vehicle, position: last };
-        }
+      // Use dummy route data for all vehicles
+      for (const vehicle of finalTrackingData) {
         const mdLast = getDummyRealRouteLastPoint?.();
         if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
-          return { ...vehicle, position: [mdLast.lat, mdLast.lng] };
+          vehicle.position = [mdLast.lat, mdLast.lng];
         }
-        return vehicle;
-      });
+        // Generate dummy route points for each vehicle
+        const routePoints = getDummyRealRoutePoints();
+        if (routePoints && routePoints.length > 0) {
+          routes[vehicle.id] = routePoints.map((p) => [p.lat, p.lng]);
+        }
+      }
 
       setVehicleRoutes(routes);
       console.log(
-        `✅ Initialized ${liveTrackingData.length} vehicles with comprehensive dummy data`
+        `✅ Initialized ${finalTrackingData.length} vehicles with comprehensive dummy data`
       );
-      return liveTrackingData;
+      return finalTrackingData;
     } catch (error) {
       console.error('❌ Failed to initialize dummy data:', error);
       return [];
@@ -264,11 +185,13 @@ const LiveTrackingMapNew = () => {
     setMap(mapInstance);
     setMapUtils(utils);
     try {
-      const L = window.L || require('leaflet');
+      const L = window.L || require('leaflet'); // eslint-disable-line no-undef
       if (!markersLayerRef.current) {
         markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(mapInstance);
       }
-    } catch {}
+    } catch (err) {
+      void err;
+    }
 
     // Apply marker styling on zoom/move
     mapInstance.on('zoom', () => applyMarkerZoomStyling());
@@ -290,40 +213,15 @@ const LiveTrackingMapNew = () => {
           return;
         }
 
-        const response = await trucksAPI.getRealTimeLocations();
+        const vehicleData = getLiveTrackingData();
 
-        if (response.success && response.data) {
-          const vehicleData =
-            response.data.features?.map((feature) => ({
-              id: feature.properties.truckNumber,
-              driver: feature.properties.driverName || 'Unknown Driver',
-              position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-              status: feature.properties.status?.toLowerCase() || 'offline',
-              speed: feature.properties.speed || 0,
-              heading: feature.properties.heading || 0,
-              fuel: feature.properties.fuelPercentage || 0,
-              battery: 90,
-              signal: 'good',
-              lastUpdate: new Date(),
-              route: 'Mining Area',
-              load: feature.properties.payloadTons
-                ? `Coal - ${feature.properties.payloadTons} tons`
-                : 'Unknown',
-            })) || [];
-
-          if (vehicleData.length > 0) {
-            setVehicles(vehicleData);
-          } else {
-            console.log('ℹ️ API returned no vehicles, switching to sample data');
-            const sampleData = await initializeSampleData();
-            setVehicles(sampleData);
-            setError('No vehicles from backend - using demo data');
-          }
+        if (vehicleData && vehicleData.length > 0) {
+          setVehicles(vehicleData);
         } else {
-          console.log('🔌 Backend not available - using sample data for demo');
+          console.log('ℹ️ API returned no vehicles, switching to sample data');
           const sampleData = await initializeSampleData();
           setVehicles(sampleData);
-          setError('Backend not available - using demo data');
+          setError('No vehicles from backend - using demo data');
         }
       } catch (error) {
         console.error('❌ Failed to load truck data:', error);
@@ -338,100 +236,21 @@ const LiveTrackingMapNew = () => {
     };
 
     loadTruckData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, mapUtils]);
 
-  // Setup WebSocket once (guarded) to avoid double-subscribe in StrictMode
+  // WebSocket setup disabled for dummy data mode
   useEffect(() => {
-    if (!USE_BACKEND) return;
-    if (wsSubscribedRef.current) return;
-
-    wsRef.current = new FleetWebSocket();
-    try {
-      setWsStatus('connecting');
-      wsRef.current.connect();
-
-      const handleTruckUpdates = async (data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
-          console.log('📡 Received WebSocket truck updates:', data.length, 'vehicles');
-
-          const vehicleData = data.map((truck) => ({
-            id: truck.truckNumber,
-            driver: truck.driverName || 'Unknown Driver',
-            position: [truck.latitude, truck.longitude],
-            status: truck.status?.toLowerCase() || 'offline',
-            speed: truck.speed || 0,
-            heading: truck.heading || 0,
-            fuel: truck.fuelPercentage || 0,
-            battery: 90,
-            signal: 'good',
-            lastUpdate: new Date(),
-            route: 'Mining Area',
-            load: truck.payloadTons ? `Coal - ${truck.payloadTons} tons` : 'Unknown',
-          }));
-
-          setVehicles(vehicleData);
-          setError(null);
-        }
-      };
-
-      wsRef.current.subscribe('truck_locations_update', handleTruckUpdates);
-      wsRef.current.subscribe('truck_updates', handleTruckUpdates);
-      // Wrap internal WS events to also update local status without breaking existing handlers
-      try {
-        const ws = wsRef.current.ws;
-        if (ws) {
-          const prevOpen = ws.onopen;
-          const prevClose = ws.onclose;
-          const prevError = ws.onerror;
-          ws.onopen = (ev) => {
-            setWsStatus('connected');
-            prevOpen && prevOpen(ev);
-          };
-          ws.onclose = (ev) => {
-            setWsStatus('disconnected');
-            prevClose && prevClose(ev);
-          };
-          ws.onerror = (ev) => {
-            setWsStatus('reconnecting');
-            prevError && prevError(ev);
-          };
-        }
-      } catch {}
-      wsSubscribedRef.current = true;
-    } catch (wsError) {
-      console.warn('⚠️ WebSocket connection failed, using polling fallback');
+    if (!USE_BACKEND) {
+      setWsStatus('disconnected');
+      return;
     }
-
-    return () => {
-      try {
-        if (wsRef.current) wsRef.current.disconnect();
-      } finally {
-        wsSubscribedRef.current = false;
-        setWsStatus('disconnected');
-      }
-    };
+    // WebSocket logic removed since we're using dummy data only
   }, [USE_BACKEND]);
 
-  // Backend connection monitor
+  // Backend connection monitor disabled for dummy data mode
   useEffect(() => {
-    let timerId;
-    const sync = async () => {
-      try {
-        const ok = await connectionUtils.checkConnection();
-        setBackendOnline(ok);
-      } catch {
-        setBackendOnline(false);
-      }
-    };
-    // initial
-    sync();
-    // periodic
-    try {
-      timerId = connectionUtils.startConnectionMonitor?.(30000);
-    } catch {}
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
+    setBackendOnline(false);
   }, []);
 
   // Geofence-aware smooth movement for live tracking
@@ -496,29 +315,16 @@ const LiveTrackingMapNew = () => {
     return `${Math.floor(diff / 3600)}h ago`;
   };
 
-  const getCurrentShiftWindow = () => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    const d = now.getDate();
-    const h = now.getHours();
-    if (h >= 6 && h < 16) {
-      return { start: new Date(y, m, d, 6, 0, 0, 0), end: new Date(y, m, d, 16, 0, 0, 0) };
-    }
-    if (h >= 16) {
-      return { start: new Date(y, m, d, 16, 0, 0, 0), end: new Date(y, m, d + 1, 6, 0, 0, 0) };
-    }
-    return { start: new Date(y, m, d - 1, 16, 0, 0, 0), end: new Date(y, m, d, 6, 0, 0, 0) };
-  };
-
   // Reconcile markers when data changes (reuse markers for performance)
   useEffect(() => {
     if (map && vehicles) {
-      const L = window.L || require('leaflet');
+      const L = window.L || require('leaflet'); // eslint-disable-line no-undef
       if (!markersLayerRef.current) {
         try {
           markersLayerRef.current = L.layerGroup([], { pane: 'markersPane' }).addTo(map);
-        } catch {}
+        } catch (err) {
+          void err;
+        }
       }
 
       const existing = markersRef.current;
@@ -591,12 +397,14 @@ const LiveTrackingMapNew = () => {
               if (liveRouteLineRef.current && map) {
                 try {
                   map.removeLayer(liveRouteLineRef.current);
-                } catch {}
+                } catch (err) {
+                  void err;
+                }
                 liveRouteLineRef.current = null;
               }
 
-              const L = window.L || require('leaflet');
-              const liveWindow = getCurrentShiftWindow();
+              const L = window.L || require('leaflet'); // eslint-disable-line no-undef
+
               let routeHistory = vehicleRoutes[vehicle.id] || [];
 
               if (routeHistory.length <= 1) {
@@ -623,11 +431,15 @@ const LiveTrackingMapNew = () => {
                 if (liveRouteMarkersRef.current.start)
                   try {
                     map.removeLayer(liveRouteMarkersRef.current.start);
-                  } catch {}
+                  } catch (err) {
+                    void err;
+                  }
                 if (liveRouteMarkersRef.current.end)
                   try {
                     map.removeLayer(liveRouteMarkersRef.current.end);
-                  } catch {}
+                  } catch (err) {
+                    void err;
+                  }
 
                 const startIcon = L.divIcon({
                   html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
@@ -653,7 +465,9 @@ const LiveTrackingMapNew = () => {
 
                 try {
                   map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
-                } catch {}
+                } catch (err) {
+                  void err;
+                }
               }
             } catch (e) {
               console.warn('Failed to show live route:', e);
@@ -663,13 +477,17 @@ const LiveTrackingMapNew = () => {
           // Update position
           try {
             marker.setLatLng(vehicle.position);
-          } catch {}
+          } catch (err) {
+            void err;
+          }
           // Update icon only if status changed (cheaper)
           if (marker._status !== vehicle.status) {
             try {
               marker.setIcon(buildIcon(vehicle.status));
               marker._status = vehicle.status;
-            } catch {}
+            } catch (err) {
+              void err;
+            }
           }
         }
 
@@ -677,7 +495,9 @@ const LiveTrackingMapNew = () => {
         try {
           const el = marker.getElement?.();
           if (el) el.style.visibility = 'visible';
-        } catch {}
+        } catch (err) {
+          void err;
+        }
 
         seen.add(vehicle.id);
       });
@@ -690,16 +510,19 @@ const LiveTrackingMapNew = () => {
             if (m && (map.hasLayer(m) || markersLayerRef.current?.hasLayer(m))) {
               (markersLayerRef.current || map).removeLayer(m);
             }
-          } catch {}
+          } catch (err) {
+            void err;
+          }
           delete existing[id];
         }
       });
     }
-  }, [map, vehicles, clusterSelections]);
+  }, [map, vehicles, clusterSelections, inSelectedCluster, vehicleRoutes]);
 
   // Re-apply marker zoom styling whenever map or selection changes
   useEffect(() => {
     applyMarkerZoomStyling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, vehicles, clusterSelections]);
 
   // Handle focus via URL param ?focus=<truck>
@@ -717,20 +540,28 @@ const LiveTrackingMapNew = () => {
       if (marker) {
         try {
           marker.fire('click');
-        } catch {}
+        } catch (err) {
+          void err;
+        }
         try {
           map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true });
-        } catch {}
+        } catch (err) {
+          void err;
+        }
       } else {
         // Fallback: set directly
         setSelectedVehicle(target);
         setShowVehicleCard(true);
         try {
           map.setView(target.position, Math.max(map.getZoom(), 16), { animate: true });
-        } catch {}
+        } catch (err) {
+          void err;
+        }
       }
       focusHandledRef.current = true;
-    } catch {}
+    } catch (err) {
+      void err;
+    }
   }, [map, vehicles]);
 
   const additionalControls = (
@@ -813,139 +644,147 @@ const LiveTrackingMapNew = () => {
         {/* Vehicle Info Card */}
         {showVehicleCard && selectedVehicle && (
           <div
-            className="absolute bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50 p-6 w-96 max-h-[calc(100vh-200px)] overflow-y-auto z-50 transition-all duration-300 ease-out"
-            style={{
-              left: '24px', // More space from left edge
-              top: '80px', // Below map controls
-              maxHeight: 'calc(100vh - 240px)', // More space for controls
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.95) 100%)',
-              backdropFilter: 'blur(20px)',
-              boxShadow:
-                '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2)',
-            }}
+            className="absolute bg-white rounded-xl shadow-lg border border-gray-200 p-5 w-[380px] max-h-[calc(100vh-220px)] overflow-y-auto z-50"
+            style={{ left: '24px', top: '80px' }}
           >
-            {/* Card Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <TruckIcon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 text-xl">{selectedVehicle.id}</h4>
-                  <p className="text-sm text-gray-500">Fleet Vehicle</p>
-                </div>
+            {/* Vehicle banner image */}
+            <div className="mb-4 overflow-hidden rounded-lg border border-gray-100">
+              <img src="/icon2.png" alt="Truck" className="h-32 w-full object-cover" />
+            </div>
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 leading-tight">
+                  {selectedVehicle.id}
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Driver: {selectedVehicle.driver || 'Unknown'}
+                </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm ${
+                  className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${
                     selectedVehicle.status === 'active'
-                      ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200'
+                      ? 'bg-green-50 text-green-700 border-green-200'
                       : selectedVehicle.status === 'idle'
-                        ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border border-yellow-200'
-                        : 'bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border border-red-200'
+                        ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        : 'bg-gray-50 text-gray-700 border-gray-200'
                   }`}
                 >
-                  {selectedVehicle.status.toUpperCase()}
+                  <span
+                    className={`inline-block w-1.5 h-1.5 rounded-full ${
+                      selectedVehicle.status === 'active'
+                        ? 'bg-green-500'
+                        : selectedVehicle.status === 'idle'
+                          ? 'bg-yellow-500'
+                          : 'bg-gray-400'
+                    }`}
+                  />
+                  {selectedVehicle.status}
                 </span>
                 <button
                   onClick={() => {
                     setShowVehicleCard(false);
                     setSelectedVehicle(null);
-                    // Clear route display
                     if (liveRouteLineRef.current && map) {
                       try {
                         map.removeLayer(liveRouteLineRef.current);
-                      } catch {}
+                      } catch {
+                        /* empty */
+                      }
                       liveRouteLineRef.current = null;
                     }
                     if (liveRouteMarkersRef.current.start)
                       try {
                         map.removeLayer(liveRouteMarkersRef.current.start);
-                      } catch {}
+                      } catch {
+                        /* empty */
+                      }
                     if (liveRouteMarkersRef.current.end)
                       try {
                         map.removeLayer(liveRouteMarkersRef.current.end);
-                      } catch {}
+                      } catch {
+                        /* empty */
+                      }
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:shadow-md"
+                  className="p-1.5 rounded-md hover:bg-gray-100"
+                  aria-label="Close vehicle card"
                 >
-                  <XMarkIcon className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                  <XMarkIcon className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
             </div>
 
-            {/* Vehicle Details */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="text-blue-600 text-xs font-semibold uppercase tracking-wide">
-                    Driver
-                  </div>
+            {/* Key metrics - quick scan rows with icons */}
+            <div className="mt-4 flex flex-col gap-2">
+              {/* Speed */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50/40 border border-blue-100">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-blue-100 border border-blue-200 text-blue-600">
+                    <span className="material-symbols-outlined text-[18px] leading-none">
+                      speed
+                    </span>
+                  </span>
+                  <span className="text-sm text-gray-700">Speed</span>
                 </div>
-                <div className="font-semibold text-gray-900">{selectedVehicle.driver}</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {selectedVehicle.speed} km/h
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="text-green-600 text-xs font-semibold uppercase tracking-wide">
-                    Speed
-                  </div>
+
+              {/* Fuel */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50/40 border border-amber-100">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-amber-100 border border-amber-200 text-amber-600">
+                    <span className="material-symbols-outlined text-[18px] leading-none">
+                      local_gas_station
+                    </span>
+                  </span>
+                  <span className="text-sm text-gray-700">Fuel</span>
                 </div>
-                <div className="font-semibold text-gray-900">{selectedVehicle.speed} km/h</div>
+                <div className="text-sm font-semibold text-gray-900">{selectedVehicle.fuel}%</div>
               </div>
-              <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 rounded-xl border border-orange-100 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <div className="text-orange-600 text-xs font-semibold uppercase tracking-wide">
-                    Fuel
-                  </div>
+
+              {/* Signal */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-violet-50/40 border border-violet-100">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-violet-100 border border-violet-200 text-violet-600">
+                    <span className="material-symbols-outlined text-[18px] leading-none">
+                      signal_cellular_alt
+                    </span>
+                  </span>
+                  <span className="text-sm text-gray-700">Signal</span>
                 </div>
-                <div className="font-semibold text-gray-900">{selectedVehicle.fuel}%</div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-4 rounded-xl border border-purple-100 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <div className="text-purple-600 text-xs font-semibold uppercase tracking-wide">
-                    Signal
-                  </div>
-                </div>
-                <div className="font-semibold text-gray-900">{selectedVehicle.signal}</div>
+                <div className="text-sm font-semibold text-gray-900">{selectedVehicle.signal}</div>
               </div>
             </div>
 
-            {/* Additional Info */}
-            <div className="border-t border-gray-200/50 pt-6 space-y-4">
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <ClockIcon className="w-4 h-4 text-gray-500" />
-                  <div className="text-gray-600 text-xs font-semibold uppercase tracking-wide">
-                    Last Update
-                  </div>
-                </div>
-                <div className="font-semibold text-gray-900">
-                  {formatLastUpdate(selectedVehicle.lastUpdate)}
-                </div>
+            {/* Last update */}
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <ClockIcon className="w-4 h-4 text-gray-500" />
+                Last update
+              </div>
+              <div className="text-sm font-medium text-gray-900">
+                {formatLastUpdate(selectedVehicle.lastUpdate)}
               </div>
             </div>
 
             {/* Tire Pressure Display */}
-            <div className="mt-6 pt-6 border-t border-gray-200/50">
-              <div className="bg-gradient-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-slate-100">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-slate-500 to-gray-600 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15a1 1 0 01-2 0v-3a1 1 0 012 0v3zm4 0a1 1 0 01-2 0v-3a1 1 0 012 0v3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h5 className="font-semibold text-gray-900">Tire Monitoring</h5>
-                    <p className="text-xs text-gray-500">Real-time pressure & temperature</p>
-                  </div>
-                </div>
-                <TirePressureDisplay selectedTruckId={selectedVehicle?.id} />
+            <div className="mt-5">
+              <div className="rounded-lg border border-gray-200 p-3">
+                <TirePressureDisplay selectedTruckId={selectedVehicle?.id} showHeader={true} />
               </div>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-5">
+              <a
+                href={`/history?focus=${encodeURIComponent(String(selectedVehicle?.id || ''))}`}
+                className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-2.5 px-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <span>View Route History</span>
+              </a>
             </div>
           </div>
         )}

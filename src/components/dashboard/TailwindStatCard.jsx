@@ -5,9 +5,9 @@ const TailwindStatCard = ({
   value,
   change,
   changeType = 'positive',
-  icon: Icon,
   color = 'indigo',
   subtitle,
+  icon: Icon,
 }) => {
   const getChangeColor = () => {
     switch (changeType) {
@@ -41,7 +41,7 @@ const TailwindStatCard = ({
     <div className="relative overflow-hidden rounded-lg bg-white px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6">
       <div>
         <div className={`absolute rounded-md p-3 ${getColorClasses()}`}>
-          <Icon className="h-6 w-6" aria-hidden="true" />
+          {Icon ? <Icon className="h-6 w-6" aria-hidden="true" /> : null}
         </div>
         <p className="ml-16 truncate text-sm font-medium text-gray-500">{title}</p>
         <p className="ml-16 text-2xl font-semibold text-gray-900">{value}</p>

@@ -34,6 +34,7 @@ const generateHubTemperatureEvents = () => {
     '550e8400-e29b-41d4-a716-446655440008',
   ];
 
+  // eslint-disable-next-line no-unused-vars
   let eventId = 1;
 
   devices.forEach((deviceId, deviceIndex) => {

@@ -2,7 +2,6 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import HistoryTrackingMap from '../components/dashboard/HistoryTrackingMap';
-import '../styles/tracking.css';
 
 const HistoryTracking = () => {
   return (

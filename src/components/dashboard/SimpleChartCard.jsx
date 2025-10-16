@@ -5,6 +5,7 @@ const SimpleChartCard = ({
   subtitle,
   data,
   type = 'line',
+  // eslint-disable-next-line no-unused-vars
   height = 300,
   color = '#6366f1',
   colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
@@ -31,6 +32,15 @@ const SimpleChartCard = ({
   };
 
   const renderLineChart = () => {
+    // Handle case where data is not an array or is empty
+    if (!Array.isArray(data) || data.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          <span>No data available</span>
+        </div>
+      );
+    }
+
     const maxValue = Math.max(...data.map((d) => d.value));
     const minValue = Math.min(...data.map((d) => d.value));
     const range = maxValue - minValue;
@@ -104,7 +114,6 @@ const SimpleChartCard = ({
         <div className="relative">
           <svg width="160" height="160" className="transform -rotate-90">
             {data.map((item, index) => {
-              const percentage = (item.value / total) * 100;
               const angle = (item.value / total) * 360;
               const startAngle = currentAngle;
               currentAngle += angle;

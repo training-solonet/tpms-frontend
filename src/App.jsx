@@ -23,19 +23,51 @@ import TelemetryTemperatureForm from './pages/TelemetryTemperatureForm.jsx';
 import TelemetryFuelForm from './pages/TelemetryFuelForm.jsx';
 import VendorsList from './pages/VendorsList.jsx';
 import VendorForm from './pages/VendorForm.jsx';
+import DriversList from './pages/DriversList.jsx';
+import DriverForm from './pages/DriverForm.jsx';
 import './App.css';
 
 // Protected/Public Route Components
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return null; // could render a loader here
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
 };
 
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 };
 
 function AppRoutes() {
@@ -191,6 +223,24 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <VendorForm />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Drivers */}
+        <Route
+          path="/drivers"
+          element={
+            <ProtectedRoute>
+              <DriversList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/drivers/:id"
+          element={
+            <ProtectedRoute>
+              <DriverForm />
             </ProtectedRoute>
           }
         />

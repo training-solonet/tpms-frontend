@@ -11,12 +11,6 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto">
           {/* Header with primary CTA */}
           <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Ringkasan cepat + shortcut ke Live Tracking
-              </p>
-            </div>
             <Link
               to="/live-tracking"
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendors } from '../data/index.js';
+import { drivers } from '../data/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -27,38 +27,45 @@ function TextArea({ label, ...props }) {
   );
 }
 
-export default function VendorForm() {
+export default function DriverForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = id === 'new';
   const [form, setForm] = React.useState({
     name: '',
-    code: '',
-    description: '',
-    contact_name: '',
-    contact_phone: '',
-    contact_email: '',
+    badge_id: '',
+    license_number: '',
+    phone: '',
+    address: '',
+    notes: '',
+    status: 'active',
   });
   const [loading, setLoading] = React.useState(!isNew);
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
+    // eslint-disable-next-line no-unused-vars
+    let mounted = true;
     (async () => {
       if (!isNew) {
         setLoading(true);
         // Use dummy data
-        const vendor = vendors.find((v) => v.id === id);
-        if (vendor) {
+        const driver = drivers.find((d) => d.id === id);
+        if (driver) {
           setForm({
-            name: vendor.name || '',
-            contact_name: vendor.contact_name || '',
-            contact_phone: vendor.contact_phone || '',
-            contact_email: vendor.contact_email || '',
+            // eslint-disable-next-line no-constant-binary-expression
+            name: `${driver.first_name} ${driver.last_name}` || '',
+            license_number: driver.license_number || '',
+            phone: driver.phone || '',
+            email: driver.email || '',
           });
         }
         setLoading(false);
       }
     })();
+    return () => {
+      mounted = false;
+    };
   }, [id, isNew]);
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
@@ -68,7 +75,7 @@ export default function VendorForm() {
     // Simulate save operation with dummy data
     setTimeout(() => {
       setSaving(false);
-      navigate('/vendors');
+      navigate('/drivers');
     }, 1000);
   };
 
@@ -78,11 +85,11 @@ export default function VendorForm() {
         <div className="max-w-3xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-gray-900">
-              {isNew ? 'Add Vendor' : 'Edit Vendor'}
+              {isNew ? 'Add Driver' : 'Edit Driver'}
             </h1>
             <div className="flex gap-2">
               <button
-                onClick={() => navigate('/vendors')}
+                onClick={() => navigate('/drivers')}
                 className="px-3 py-2 rounded-md border text-sm"
               >
                 Back
@@ -106,35 +113,48 @@ export default function VendorForm() {
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}
               />
-              <Input
-                label="Code"
-                value={form.code}
-                onChange={(e) => update('code', e.target.value)}
-              />
-              <TextArea
-                label="Description"
-                rows={4}
-                value={form.description}
-                onChange={(e) => update('description', e.target.value)}
-              />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
-                  label="Contact Name"
-                  value={form.contact_name}
-                  onChange={(e) => update('contact_name', e.target.value)}
+                  label="Badge ID"
+                  value={form.badge_id}
+                  onChange={(e) => update('badge_id', e.target.value)}
                 />
                 <Input
-                  label="Contact Phone"
-                  value={form.contact_phone}
-                  onChange={(e) => update('contact_phone', e.target.value)}
+                  label="License Number"
+                  value={form.license_number}
+                  onChange={(e) => update('license_number', e.target.value)}
                 />
                 <Input
-                  label="Contact Email"
-                  value={form.contact_email}
-                  onChange={(e) => update('contact_email', e.target.value)}
+                  label="Phone"
+                  value={form.phone}
+                  onChange={(e) => update('phone', e.target.value)}
                 />
               </div>
+
+              <Input
+                label="Address"
+                value={form.address}
+                onChange={(e) => update('address', e.target.value)}
+              />
+              <TextArea
+                label="Notes"
+                rows={3}
+                value={form.notes}
+                onChange={(e) => update('notes', e.target.value)}
+              />
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700">Status</span>
+                <select
+                  value={form.status}
+                  onChange={(e) => update('status', e.target.value)}
+                  className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </label>
             </div>
           )}
         </div>

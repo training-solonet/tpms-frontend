@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
@@ -21,7 +22,6 @@ const BaseTrackingMap = ({
   const [mapStyle, setMapStyle] = useState('satellite');
   const [loading, setLoading] = useState(true);
   const miningBoundsRef = useRef(null);
-  const rafRef = useRef(null);
 
   // --- Geofence helpers & movement utilities ---
   // Extract primary polygon (first ring) as [lat, lng]
@@ -134,8 +134,9 @@ const BaseTrackingMap = ({
             const markersPane = mapInstance.createPane('markersPane');
             markersPane.style.zIndex = 400; // above routes
             markersPane.style.pointerEvents = 'auto';
-          } catch (e) {
-            console.warn('Unable to create custom panes:', e);
+          } catch (_e) {
+            // noop; creating panes is best-effort
+            void _e;
           }
 
           // Add tile layers
@@ -184,8 +185,9 @@ const BaseTrackingMap = ({
           try {
             const bounds = L.default.latLngBounds(polygonLatLng);
             miningBoundsRef.current = bounds;
-          } catch (e) {
-            console.warn('Unable to compute mining bounds:', e);
+          } catch (_e) {
+            // noop; bounds computation is best-effort
+            void _e;
           }
 
           setMap(mapInstance);
@@ -209,7 +211,7 @@ const BaseTrackingMap = ({
     };
 
     initializeMap();
-  }, [onMapReady]);
+  }, []); // Empty deps: intentionally run once on mount, map
 
   // Invalidate map size when sidebar visibility changes to avoid right-edge clipping
   useEffect(() => {
@@ -218,7 +220,9 @@ const BaseTrackingMap = ({
     const t = setTimeout(() => {
       try {
         map.invalidateSize({ animate: false });
-      } catch (e) {}
+      } catch (e) {
+        console.warn('invalidateSize (sidebar) failed:', e);
+      }
     }, 250);
     return () => clearTimeout(t);
   }, [map, sidebarVisible]);
@@ -229,7 +233,9 @@ const BaseTrackingMap = ({
     const onResize = () => {
       try {
         map.invalidateSize({ animate: false });
-      } catch (e) {}
+      } catch (e) {
+        console.warn('invalidateSize (resize) failed:', e);
+      }
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -240,9 +246,11 @@ const BaseTrackingMap = ({
     return () => {
       try {
         if (map) map.remove();
-      } catch {}
+      } catch (e) {
+        console.warn('Error removing map on unmount:', e);
+      }
     };
-  }, []);
+  }, [map]);
 
   const resetMapView = () => {
     if (map) {

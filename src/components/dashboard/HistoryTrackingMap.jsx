@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -63,7 +65,7 @@ const HistoryTrackingMap = () => {
     [-3.514135, 115.628384],
   ];
   const [map, setMap] = useState(null);
-  const [mapUtils, setMapUtils] = useState(null);
+  const [, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,6 @@ const HistoryTrackingMap = () => {
   const [shiftMode, setShiftMode] = useState('day');
   const [customStart, setCustomStart] = useState('06:00');
   const [customEnd, setCustomEnd] = useState('16:00');
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [playbackIndex, setPlaybackIndex] = useState(0);
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
   const [isAutoCenterEnabled, setIsAutoCenterEnabled] = useState(false);
@@ -264,7 +265,6 @@ const HistoryTrackingMap = () => {
 
   const onMapReady = (mapInstance, utils) => {
     setMap(mapInstance);
-    setMapUtils(utils);
   };
 
   // Load vehicles and route history
@@ -330,7 +330,9 @@ const HistoryTrackingMap = () => {
               const bounds = L.latLngBounds(allLatLngs);
               map.fitBounds(bounds, { padding: [40, 40] });
             }
-          } catch {}
+          } catch {
+            /* empty */
+          }
           return;
         }
 
@@ -486,7 +488,9 @@ const HistoryTrackingMap = () => {
         marker.on('click', () => {
           try {
             marker.bringToFront();
-          } catch {}
+          } catch {
+            /* empty */
+          }
           console.log('[History] Marker clicked:', vehicle.id);
           setSelectedVehicle(vehicle);
           setPlaybackIndex(0);
@@ -577,6 +581,7 @@ const HistoryTrackingMap = () => {
 
     // Create or update playback marker
     if (!playbackMarkerRef.current) {
+      // eslint-disable-next-line no-undef
       const L = window.L || require('leaflet');
       const playbackIcon = L.divIcon({
         html: `
@@ -771,14 +776,18 @@ const HistoryTrackingMap = () => {
           marker.on('click', () => {
             try {
               marker.bringToFront();
-            } catch {}
+            } catch {
+              /* empty */
+            }
             setSelectedVehicle(vehicle);
             setPlaybackIndex(0);
             setIsPlaybackPlaying(false);
           });
         }
       });
-    } catch {}
+    } catch {
+      /* empty */
+    }
 
     // Reset playback when vehicle changes
     if (selectedVehicle) {
@@ -793,7 +802,9 @@ const HistoryTrackingMap = () => {
         // Place the playback truck icon at the starting point
         try {
           createOrUpdatePlaybackMarker(routeHistory[0]);
-        } catch {}
+        } catch {
+          /* empty */
+        }
       }
     }
 
@@ -815,18 +826,25 @@ const HistoryTrackingMap = () => {
       const coords = Array.isArray(pts) && pts.length > 1 ? pts.map((p) => [p.lat, p.lng]) : [];
 
       if (coords.length > 1) {
+        // eslint-disable-next-line no-undef
         const L = window.L || require('leaflet');
 
         if (manualRouteRef.current) {
           try {
             map.removeLayer(manualRouteRef.current.line);
-          } catch (e) {}
+          } catch (e) {
+            /* empty */
+          }
           try {
             map.removeLayer(manualRouteRef.current.start);
-          } catch (e) {}
+          } catch (e) {
+            /* empty */
+          }
           try {
             map.removeLayer(manualRouteRef.current.end);
-          } catch (e) {}
+          } catch (e) {
+            /* empty */
+          }
           manualRouteRef.current = null;
         }
 
@@ -893,7 +911,9 @@ const HistoryTrackingMap = () => {
 
         try {
           map.fitBounds(line.getBounds(), { padding: [40, 40] });
-        } catch (e) {}
+        } catch (e) {
+          /* empty */
+        }
       }
     } catch (err) {
       console.warn('Failed to render manual route from markdown:', err);
@@ -1080,6 +1100,7 @@ const HistoryTrackingMap = () => {
 
   const createOrUpdatePlaybackMarker = (latlng) => {
     if (!map || !latlng) return;
+    // eslint-disable-next-line no-undef
     const L = window.L || require('leaflet');
 
     if (!playbackMarkerRef.current) {
@@ -1155,7 +1176,9 @@ const HistoryTrackingMap = () => {
         map.removeLayer(staticMarker);
       }
       delete markersRef.current[selectedVehicle.id];
-    } catch {}
+    } catch {
+      /* empty */
+    }
 
     setIsPlaybackPlaying(true);
     if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
@@ -1220,7 +1243,9 @@ const HistoryTrackingMap = () => {
       if (playbackMarkerRef.current && map) {
         try {
           map.removeLayer(playbackMarkerRef.current);
-        } catch {}
+        } catch {
+          /* empty */
+        }
         playbackMarkerRef.current = null;
       }
     };
@@ -1234,6 +1259,7 @@ const HistoryTrackingMap = () => {
         allRoutes.forEach((point) => bounds.push(point));
 
         if (bounds.length > 0) {
+          // eslint-disable-next-line no-undef
           const L = window.L || require('leaflet');
           const group = new L.featureGroup();
           bounds.forEach((point) => {

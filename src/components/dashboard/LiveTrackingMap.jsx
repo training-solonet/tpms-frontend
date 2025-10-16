@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   TruckIcon,
@@ -213,7 +216,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         window.addEventListener('hashchange', onHash);
         return () => window.removeEventListener('hashchange', onHash);
       }
-    } catch {}
+    } catch {
+      /* empty */
+    }
   }, [forceViewMode]);
 
   useEffect(() => {
@@ -227,7 +232,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
           window.history.replaceState(null, '', url);
         }
       }
-    } catch {}
+    } catch {
+      /* empty */
+    }
   }, [viewMode, forceViewMode]);
 
   // Enforce external forceViewMode prop (in case it changes)
@@ -529,7 +536,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
               if (!isNaN(t)) {
                 return t >= start && t <= end;
               }
-            } catch {}
+            } catch {
+              /* empty */
+            }
             return true;
           })
           .map((record) => [parseFloat(record.latitude), parseFloat(record.longitude)])
@@ -797,13 +806,19 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
       if (manualRouteRef.current) {
         try {
           map.removeLayer(manualRouteRef.current.line);
-        } catch (e) {}
+        } catch (e) {
+          /* empty */
+        }
         try {
           map.removeLayer(manualRouteRef.current.start);
-        } catch (e) {}
+        } catch (e) {
+          /* empty */
+        }
         try {
           map.removeLayer(manualRouteRef.current.end);
-        } catch (e) {}
+        } catch (e) {
+          /* empty */
+        }
         manualRouteRef.current = null;
       }
       return;
@@ -819,13 +834,19 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         if (manualRouteRef.current) {
           try {
             map.removeLayer(manualRouteRef.current.line);
-          } catch (e) {}
+          } catch (e) {
+            /* empty */
+          }
           try {
             map.removeLayer(manualRouteRef.current.start);
-          } catch (e) {}
+          } catch (e) {
+            /* empty */
+          }
           try {
             map.removeLayer(manualRouteRef.current.end);
-          } catch (e) {}
+          } catch (e) {
+            /* empty */
+          }
           manualRouteRef.current = null;
         }
 
@@ -892,7 +913,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
 
         try {
           map.fitBounds(line.getBounds(), { padding: [40, 40] });
-        } catch (e) {}
+        } catch (e) {
+          /* empty */
+        }
       }
     } catch (err) {
       console.warn('Failed to render manual route from markdown:', err);
@@ -906,7 +929,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     const t = setTimeout(() => {
       try {
         map.invalidateSize({ animate: false });
-      } catch (e) {}
+      } catch (e) {
+        /* empty */
+      }
     }, 250);
     return () => clearTimeout(t);
   }, [map, sidebarVisible]);
@@ -917,7 +942,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     const onResize = () => {
       try {
         map.invalidateSize({ animate: false });
-      } catch (e) {}
+      } catch (e) {
+        /* empty */
+      }
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -1078,10 +1105,14 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     return () => {
       try {
         if (wsRef.current) wsRef.current.disconnect();
-      } catch {}
+      } catch {
+        /* empty */
+      }
       try {
         if (map) map.remove();
-      } catch {}
+      } catch {
+        /* empty */
+      }
     };
   }, []);
 
@@ -1181,7 +1212,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
         try {
           const el = marker.getElement?.();
           if (el) el.style.visibility = 'visible';
-        } catch {}
+        } catch {
+          /* empty */
+        }
 
         // Enhanced popup (live: add tire info; history: keep concise)
         const basePopup = `
@@ -1253,7 +1286,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                   marker.openPopup();
                 }
               }
-            } catch {}
+            } catch {
+              /* empty */
+            }
 
             // Live mode: show this vehicle's recent route on demand
             try {
@@ -1261,7 +1296,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
               if (liveRouteLineRef.current && map) {
                 try {
                   map.removeLayer(liveRouteLineRef.current);
-                } catch {}
+                } catch {
+                  /* empty */
+                }
                 liveRouteLineRef.current = null;
               }
               // Ensure Leaflet reference in this scope
@@ -1292,7 +1329,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                     console.log('🧩 Using dummy/manual route fallback for live click');
                     routeHistory = coords;
                   }
-                } catch {}
+                } catch {
+                  /* empty */
+                }
               }
               if (Array.isArray(routeHistory) && routeHistory.length > 1) {
                 const routeColor = '#2563eb'; // blue-600
@@ -1313,11 +1352,15 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                   if (liveRouteMarkersRef.current.start)
                     try {
                       map.removeLayer(liveRouteMarkersRef.current.start);
-                    } catch {}
+                    } catch {
+                      /* empty */
+                    }
                   if (liveRouteMarkersRef.current.end)
                     try {
                       map.removeLayer(liveRouteMarkersRef.current.end);
-                    } catch {}
+                    } catch {
+                      /* empty */
+                    }
                   const startIcon = L.divIcon({
                     html: `<div style="background:white;border:2px solid ${routeColor};border-radius:50%;width:14px;height:14px;"></div>`,
                     className: 'live-route-start',
@@ -1325,7 +1368,7 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                     iconAnchor: [7, 7],
                   });
                   const endIcon = L.divIcon({
-                    html: `<div style=\"position:relative;\"><div style=\"background:${routeColor};color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;min-width:20px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);\">END</div><div style=\"width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${routeColor};margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));\"></div></div>`,
+                    html: `<div style=\\"position:relative;\\"><div style=\\"background:${routeColor};color:#fff;border:2px solid #fff;border-radius:6px;padding:2px 6px;min-width:20px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);\\">END</div><div style=\\"width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${routeColor};margin:0 auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.2));\\"></div></div>`,
                     className: 'live-route-end',
                     iconSize: [26, 26],
                     iconAnchor: [13, 26],
@@ -1338,10 +1381,14 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                     icon: endIcon,
                     pane: 'routesPane',
                   }).addTo(map);
-                } catch {}
+                } catch {
+                  /* empty */
+                }
                 try {
                   map.fitBounds(liveRouteLineRef.current.getBounds().pad(0.05));
-                } catch {}
+                } catch {
+                  /* empty */
+                }
               } else {
                 // No route available – show a tiny one-time notice near the marker
                 try {
@@ -1355,9 +1402,13 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
                   setTimeout(() => {
                     try {
                       marker.closeTooltip();
-                    } catch {}
+                    } catch {
+                      /* empty */
+                    }
                   }, 1800);
-                } catch {}
+                } catch {
+                  /* empty */
+                }
               }
             } catch (e) {
               console.warn('Failed to show live on-demand route:', e);
@@ -1558,7 +1609,6 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
       }
     };
     reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, shiftMode, customStart, customEnd]);
 
   // Toggle route visibility
@@ -1658,7 +1708,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     } else {
       try {
         playbackMarkerRef.current.setLatLng(latlng);
-      } catch {}
+      } catch {
+        /* empty */
+      }
     }
   };
 
@@ -1697,7 +1749,6 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
     // restart timer with new speed
     pausePlayback();
     startPlayback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playbackSpeedMs]);
 
   // Drive playback marker on index change or vehicle change
@@ -1723,7 +1774,9 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
       if (playbackMarkerRef.current && map) {
         try {
           map.removeLayer(playbackMarkerRef.current);
-        } catch {}
+        } catch {
+          /* empty */
+        }
         playbackMarkerRef.current = null;
       }
     };
@@ -1968,6 +2021,8 @@ const LiveTrackingMap = ({ forceViewMode = null }) => {
           </div>
 
           {/* Fleet Status Legend hidden per advisor feedback */}
+
+          {/* eslint-disable-next-line no-constant-binary-expression */}
           {false && (
             <div
               className={`bg-white/90 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-300 ${

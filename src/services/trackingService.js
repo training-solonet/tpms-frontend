@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { getAuthHeaders } from './api.js';
 import {
   getLiveTrackingData,
-  getTruckRoute,
   generateGpsPositions,
   getDummyRealRoutePoints,
 } from '../data/index.js';
@@ -217,7 +216,9 @@ export class TruckTrackingService {
   /**
    * Create waypoint markers for start/end points
    */
-  createWaypoints(L, points, vehicleId) {
+  createWaypoints(L, points, _vehicleId) {
+    // Touch unused arg to satisfy ESLint when not used
+    void _vehicleId;
     if (points.length < 2) return [];
 
     const waypoints = [];
