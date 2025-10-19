@@ -1,9 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
-import { allDummyTrucks } from '../data/dummyTrucks';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendors as vendorsData, trucks } from '../data/index.js';
+import { trucksAPI, vendorsAPI } from '../services/api.js';
 
 function Input({ label, ...props }) {
   return (
@@ -35,48 +34,51 @@ export default function TruckForm() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [vendors, setVendors] = React.useState([]);
+  const [trucks, setTrucks] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [vendorsRes, trucksRes] = await Promise.all([
+          vendorsAPI.getAll().catch(() => ({ data: [] })),
+          trucksAPI.getAll({ limit: 500 }),
+        ]);
+        setVendors(Array.isArray(vendorsRes?.data?.vendors || vendorsRes?.data) ? (vendorsRes.data.vendors || vendorsRes.data) : []);
+        setTrucks(Array.isArray(trucksRes?.data?.trucks || trucksRes?.data) ? (trucksRes.data.trucks || trucksRes.data) : []);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        setVendors([]);
+        setTrucks([]);
+      }
+      setLoading(false);
+    };
+    loadData();
+  }, []);
 
   const initialTruck = React.useMemo(() => {
     if (location.state?.truck) return location.state.truck;
-    return allDummyTrucks.find((t) => t.id === id) || allDummyTrucks[0];
-  }, [id, location.state]);
+    return trucks.find((t) => t.id === id) || trucks[0] || {};
+  }, [id, location.state, trucks]);
 
   const clusters = React.useMemo(
-    () => Array.from(new Set(allDummyTrucks.map((t) => t.cluster))),
-    []
+    () => Array.from(new Set(trucks.map((t) => t.cluster || 'Default'))),
+    [trucks]
   );
 
   const [truck, setTruck] = React.useState(initialTruck);
+  const [selectedVendorId, setSelectedVendorId] = React.useState('');
 
   const updateTruck = (path, value) => {
     setTruck((prev) => {
       const clone = structuredClone(prev);
-      // simple path update like ['driver','name']
       let obj = clone;
       for (let i = 0; i < path.length - 1; i++) obj = obj[path[i]];
       obj[path[path.length - 1]] = value;
       return clone;
     });
   };
-
-  // Load vendors for assignment (CRUD master data)
-  const [vendors, setVendors] = React.useState([]);
-  const [selectedVendorId, setSelectedVendorId] = React.useState('');
-
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        // Use dummy vendors data from import
-        if (mounted) setVendors(vendorsData);
-      } catch {
-        /* empty */
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   React.useEffect(() => {
     // initialize from existing truck vendor if present

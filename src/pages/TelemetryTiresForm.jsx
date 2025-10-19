@@ -1,7 +1,6 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { allDummyTrucks } from '../data/dummyTrucks';
-// Removed trucksAPI import - using dummy data
+import { trucksAPI } from '../services/api.js';
 
 function Input({ label, ...props }) {
   return (
@@ -30,19 +29,26 @@ function Select({ label, children, ...props }) {
 }
 
 export default function TelemetryTiresForm() {
-  // Attempt to load from backend; fallback to dummy flattened rows
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [clusters, setClusters] = React.useState([]);
 
   React.useEffect(() => {
     let mounted = true;
-    (async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        // Use dummy trucks data directly
-        const trucks = allDummyTrucks;
-        console.log('✅ Using dummy trucks data for TelemetryTiresForm');
+        // Load trucks from backend
+        const res = await trucksAPI.getAll({ limit: 500 });
+        const trucks = res?.data?.trucks || res?.data || [];
+        
+        if (!Array.isArray(trucks) || trucks.length === 0) {
+          console.warn('No trucks data from backend');
+          if (mounted) setRows([]);
+          return;
+        }
+        
+        console.log('✅ Using backend trucks data for TelemetryTiresForm');
 
         // Build flattened rows focused on TPMS tire pressure sensor data
         // Based on JSON protocol: cmd: "tpdata" with tireNo, tiprValue, tempValue, bat, exType
@@ -147,10 +153,14 @@ export default function TelemetryTiresForm() {
           const cls = Array.from(new Set(trucks.map((tt) => tt.cluster).filter(Boolean)));
           setClusters(cls);
         }
+      } catch (error) {
+        console.error('Failed to load tire data:', error);
+        if (mounted) setRows([]);
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
+    };
+    loadData();
     return () => {
       mounted = false;
     };

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendors } from '../data/index.js';
+import { vendorsAPI } from '../services/api.js';
 
 function Input({ label, ...props }) {
   return (
@@ -42,23 +42,29 @@ export default function VendorForm() {
   const [loading, setLoading] = React.useState(!isNew);
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
-    (async () => {
-      if (!isNew) {
-        setLoading(true);
-        // Use dummy data
-        const vendor = vendors.find((v) => v.id === id);
+  useEffect(() => {
+    if (isNew) return;
+    const loadVendor = async () => {
+      setLoading(true);
+      try {
+        const res = await vendorsAPI.getById(id);
+        const vendor = res?.data;
         if (vendor) {
           setForm({
             name: vendor.name || '',
+            code: vendor.code || '',
+            description: vendor.description || '',
             contact_name: vendor.contact_name || '',
             contact_phone: vendor.contact_phone || '',
             contact_email: vendor.contact_email || '',
           });
         }
-        setLoading(false);
+      } catch (error) {
+        console.error('Failed to load vendor:', error);
       }
-    })();
+      setLoading(false);
+    };
+    loadVendor();
   }, [id, isNew]);
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));

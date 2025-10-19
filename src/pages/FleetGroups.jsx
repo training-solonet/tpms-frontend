@@ -10,33 +10,56 @@ import {
   UsersIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
-import { fleetGroups, trucks, getLatestTruckStatus } from '../data/index.js';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import TruckImage from '../components/common/TruckImage.jsx';
-import { vendorsAPI, trucksAPI } from '../services/api.js';
+import { vendorsAPI, trucksAPI, dashboardAPI } from '../services/api.js';
 
 const FleetGroups = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [backendTrucks, setBackendTrucks] = useState([]);
+  const [fleetGroups, setFleetGroups] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loadingVendors, setLoadingVendors] = useState(true);
   const [loadingTrucks, setLoadingTrucks] = useState(true);
 
-  // Load vendors and trucks on mount so summary is visible immediately
+  // Load data from backend
   React.useEffect(() => {
-    // Use dummy data directly
-    setVendors([]);
-    setBackendTrucks(trucks);
-    setLoadingVendors(false);
-    setLoadingTrucks(false);
-    console.log('✅ Using dummy data for FleetGroups');
+    const loadData = async () => {
+      try {
+        const trucksRes = await trucksAPI.getAll({ limit: 500 });
+        const trucksArr = trucksRes?.data?.trucks || trucksRes?.data || [];
+        setBackendTrucks(Array.isArray(trucksArr) ? trucksArr : []);
+
+        try {
+          const groupsRes = await dashboardAPI.getFleetGroups?.();
+          const groupsArr = groupsRes?.data?.groups || groupsRes?.data || [];
+          setFleetGroups(Array.isArray(groupsArr) ? groupsArr : []);
+        } catch {
+          setFleetGroups([]);
+        }
+
+        try {
+          const vendorsRes = await vendorsAPI.getAll();
+          const vendorsArr = vendorsRes?.data?.vendors || vendorsRes?.data || [];
+          setVendors(Array.isArray(vendorsArr) ? vendorsArr : []);
+        } catch {
+          setVendors([]);
+        }
+      } catch (error) {
+        console.error('Failed to load fleet groups data:', error);
+        setBackendTrucks([]);
+        setFleetGroups([]);
+        setVendors([]);
+      }
+      setLoadingVendors(false);
+      setLoadingTrucks(false);
+    };
+    loadData();
   }, []);
 
   // Get trucks by fleet group
   const getTrucksByGroup = (groupId) => {
-    // Prefer backend trucks when available; fallback to dummy
-    const source = backendTrucks.length > 0 ? backendTrucks : trucks;
-    return source.filter((truck) => truck.fleet_group_id === groupId);
+    return backendTrucks.filter((truck) => truck.fleet_group_id === groupId);
   };
 
   // --- Number range cluster helpers ---
@@ -55,26 +78,21 @@ const FleetGroups = () => {
   ];
 
   const clusterStats = numberRanges.map((r) => {
-    const source = backendTrucks.length > 0 ? backendTrucks : trucks;
-    const inRange = source.filter((t) => {
+    const inRange = backendTrucks.filter((t) => {
       const n = extractTruckNumber(t.id) ?? extractTruckNumber(t.name);
       return n != null && n >= r.lo && n <= r.hi;
     });
     return {
       ...r,
       count: inRange.length,
-      active: inRange.filter((t) => getLatestTruckStatus(t.id)?.status === 'active').length,
+      active: inRange.filter((t) => t.status === 'active').length,
     };
   });
 
   // Get group statistics
   const getGroupStats = (groupId) => {
     const groupTrucks = getTrucksByGroup(groupId);
-    // Active calculation available for dummy data only
-    const activeTrucks = groupTrucks.filter((truck) => {
-      const status = getLatestTruckStatus(truck.id);
-      return status?.status === 'active';
-    }).length;
+    const activeTrucks = groupTrucks.filter((truck) => truck.status === 'active').length;
 
     return {
       total: groupTrucks.length,
@@ -146,8 +164,7 @@ const FleetGroups = () => {
             {fleetGroups.map((group) => {
               const stats = getGroupStats(group.id);
               // Compute compact vendor summary per group (visible on card)
-              const source = backendTrucks.length > 0 ? backendTrucks : trucks;
-              const groupTs = source.filter((t) => t.fleet_group_id === group.id);
+              const groupTs = backendTrucks.filter((t) => t.fleet_group_id === group.id);
               const byId = new Map((vendors || []).map((v) => [v.id, v]));
               const vCount = new Map();
               for (const t of groupTs) {
@@ -295,11 +312,11 @@ const FleetGroups = () => {
               {/* Trucks in Group */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {getTrucksByGroup(selectedGroup.id).map((truck) => {
-                  const status = getLatestTruckStatus(truck.id);
+                  const truckStatus = truck.status || 'unknown';
                   const statusColor =
-                    status?.status === 'active'
+                    truckStatus === 'active'
                       ? 'green'
-                      : status?.status === 'maintenance'
+                      : truckStatus === 'maintenance'
                         ? 'yellow'
                         : 'gray';
 
@@ -336,7 +353,7 @@ const FleetGroups = () => {
                         <div className="flex justify-between">
                           <span>Status:</span>
                           <span className={`font-medium capitalize text-${statusColor}-600`}>
-                            {status?.status || 'Unknown'}
+                            {truckStatus}
                           </span>
                         </div>
                       </div>
@@ -405,10 +422,9 @@ function VendorsSummary({ groupId, loadState }) {
   }, []);
 
   // Compute per-vendor counts in this group
-  const sourceTrucks = backendTrucks.length > 0 ? backendTrucks : trucks;
   const groupTrucks = React.useMemo(
-    () => sourceTrucks.filter((t) => t.fleet_group_id === groupId),
-    [sourceTrucks, groupId]
+    () => backendTrucks.filter((t) => t.fleet_group_id === groupId),
+    [backendTrucks, groupId]
   );
 
   const vendorMap = React.useMemo(() => {
@@ -418,9 +434,7 @@ function VendorsSummary({ groupId, loadState }) {
       if (!map.has(vid)) map.set(vid, { total: 0, active: 0 });
       const entry = map.get(vid);
       entry.total += 1;
-      // Active only determinable from dummy getLatestTruckStatus; for backend we may not have status
-      const status = getLatestTruckStatus(t.id);
-      if (status?.status === 'active') entry.active += 1;
+      if (t.status === 'active') entry.active += 1;
     }
     return map;
   }, [groupTrucks]);

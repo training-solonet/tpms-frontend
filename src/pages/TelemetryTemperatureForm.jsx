@@ -1,7 +1,6 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { allDummyTrucks } from '../data/dummyTrucks';
-// Removed trucksAPI import - using dummy data
+import { trucksAPI } from '../services/api.js';
 
 function Input({ label, ...props }) {
   return (
@@ -40,9 +39,15 @@ export default function TelemetryTemperatureForm() {
     (async () => {
       try {
         setLoading(true);
-        // Use dummy trucks data directly
-        const trucks = allDummyTrucks;
-        console.log('✅ Using dummy trucks data for TelemetryTemperatureForm');
+        // Load trucks from backend
+        const res = await trucksAPI.getAll({ limit: 500 });
+        const trucks = res?.data?.trucks || res?.data || [];
+        if (!Array.isArray(trucks) || trucks.length === 0) {
+          console.warn('No trucks data from backend');
+          if (mounted) setRows([]);
+          return;
+        }
+        console.log('✅ Using backend trucks data for TelemetryTemperatureForm');
 
         // Build flattened rows focused on Hub Temperature sensor data
         // Based on JSON protocol: cmd: "hubdata" with tireNo (hub position), tempValue, bat, exType
@@ -177,7 +182,7 @@ export default function TelemetryTemperatureForm() {
         r.truckName.toLowerCase().includes(q) ||
         String(r.tireNo).includes(q) ||
         r.driverName.toLowerCase().includes(q) ||
-        r.hub.data.simNumber.toLowerCase().includes(q);
+        (r.simNumber || '').toLowerCase().includes(q);
       const matchesCluster = !cluster || r.cluster === cluster;
       return matchesQ && matchesCluster;
     });

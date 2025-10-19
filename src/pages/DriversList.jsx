@@ -31,50 +31,18 @@ export default function DriversList() {
       // Check if backend returns nested data like trucks
       const driversArray = res.data?.drivers || res.data;
 
-      if (res.success && Array.isArray(driversArray) && driversArray.length > 0) {
+      if (res.success && Array.isArray(driversArray)) {
         setDrivers(driversArray);
-        console.log('✅ Using real drivers data:', driversArray.length, 'drivers');
+        console.log('✅ Drivers data loaded:', driversArray.length);
       } else {
-        // Fallback to dummy data since drivers endpoint may not be available (tracking-only project)
-        const dummyDrivers = [
-          {
-            id: 'driver-001',
-            name: 'John Doe',
-            badge_id: 'BD001',
-            license_number: 'LIC123456',
-            phone: '+62812345678',
-          },
-          {
-            id: 'driver-002',
-            name: 'Jane Smith',
-            badge_id: 'BD002',
-            license_number: 'LIC789012',
-            phone: '+62887654321',
-          },
-          {
-            id: 'driver-003',
-            name: 'Mike Johnson',
-            badge_id: 'BD003',
-            license_number: 'LIC345678',
-            phone: '+62856789012',
-          },
-        ];
-        setDrivers(dummyDrivers);
-        console.log('🔄 Backend drivers unavailable (tracking-only project), using dummy data');
+        setDrivers([]);
+        setError(res.error || 'Drivers data unavailable');
+        console.log('⚠️ Drivers endpoint returned no data');
       }
     } catch (e) {
-      // Use dummy data on error
-      const dummyDrivers = [
-        {
-          id: 'driver-001',
-          name: 'John Doe',
-          badge_id: 'BD001',
-          license_number: 'LIC123456',
-          phone: '+62812345678',
-        },
-      ];
-      setDrivers(dummyDrivers);
-      console.log('🔄 Error loading drivers, using dummy data:', e.message);
+      setDrivers([]);
+      setError(e.message || 'Failed to load drivers');
+      console.log('❌ Error loading drivers:', e.message);
     } finally {
       setLoading(false);
     }

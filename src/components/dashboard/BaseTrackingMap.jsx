@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
-import BORNEO_INDOBARA_GEOJSON from '../../data/geofance.js';
+import { miningAreaAPI } from '../../services/api.js';
 
 const BaseTrackingMap = ({
   children,
@@ -22,12 +22,11 @@ const BaseTrackingMap = ({
   const [mapStyle, setMapStyle] = useState('satellite');
   const [loading, setLoading] = useState(true);
   const miningBoundsRef = useRef(null);
+  const initGuardRef = useRef(false);
 
   // --- Geofence helpers & movement utilities ---
-  // Extract primary polygon (first ring) as [lat, lng]
-  const polygonLatLng = (
-    BORNEO_INDOBARA_GEOJSON?.features?.[0]?.geometry?.coordinates?.[0] || []
-  ).map(([lng, lat]) => [lat, lng]);
+  // Will be loaded from backend (GeoJSON)
+  const [polygonLatLng, setPolygonLatLng] = useState([]);
 
   const toRad = (deg) => (deg * Math.PI) / 180;
   const toDeg = (rad) => (rad * 180) / Math.PI;
@@ -87,8 +86,6 @@ const BaseTrackingMap = ({
 
   // Initialize map
   useEffect(() => {
-    // Re-entrancy guard for StrictMode/hot-reload
-    const initGuardRef = { current: false };
     const initializeMap = async () => {
       // Guard against double-invocation in React Strict Mode and hot reloads
       if (
@@ -165,26 +162,46 @@ const BaseTrackingMap = ({
           mapInstance.satelliteLayer = satelliteLayer;
           mapInstance.osmLayer = osmLayer;
 
-          // Add geofence
-          if (BORNEO_INDOBARA_GEOJSON && BORNEO_INDOBARA_GEOJSON.features) {
-            L.default
-              .geoJSON(BORNEO_INDOBARA_GEOJSON, {
-                style: {
-                  color: '#3b82f6',
-                  weight: 3,
-                  opacity: 0.8,
-                  fillColor: '#3b82f6',
-                  fillOpacity: 0.1,
-                  dashArray: '10, 10',
-                },
-              })
-              .addTo(mapInstance);
+          // Fetch and add geofence from backend
+          try {
+            const res = await miningAreaAPI.getBoundaries();
+            const geo = res?.data;
+            if (geo && geo.type) {
+              L.default
+                .geoJSON(geo, {
+                  style: {
+                    color: '#3b82f6',
+                    weight: 3,
+                    opacity: 0.8,
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.1,
+                    dashArray: '10, 10',
+                  },
+                })
+                .addTo(mapInstance);
+
+              // Try to compute primary polygon ring for utilities
+              try {
+                const coords =
+                  geo?.features?.[0]?.geometry?.coordinates?.[0] ||
+                  geo?.geometry?.coordinates?.[0] ||
+                  [];
+                const latlng = (coords || []).map(([lng, lat]) => [lat, lng]);
+                if (latlng.length > 0) setPolygonLatLng(latlng);
+              } catch {
+                /* noop */
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to load mining area boundaries:', e?.message || e);
           }
 
-          // Compute mining area bounds for zoom-based hiding
+          // Compute mining area bounds for zoom-based hiding (after polygon load)
           try {
-            const bounds = L.default.latLngBounds(polygonLatLng);
-            miningBoundsRef.current = bounds;
+            if (polygonLatLng && polygonLatLng.length > 0) {
+              const bounds = L.default.latLngBounds(polygonLatLng);
+              miningBoundsRef.current = bounds;
+            }
           } catch (_e) {
             // noop; bounds computation is best-effort
             void _e;
@@ -241,11 +258,12 @@ const BaseTrackingMap = ({
     return () => window.removeEventListener('resize', onResize);
   }, [map]);
 
-  // Cleanup on unmount: remove map
+  // Cleanup on unmount: remove map and reset guard
   useEffect(() => {
     return () => {
       try {
         if (map) map.remove();
+        initGuardRef.current = false;
       } catch (e) {
         console.warn('Error removing map on unmount:', e);
       }
@@ -292,10 +310,12 @@ const BaseTrackingMap = ({
             sidebarVisible ? 'w-80' : 'w-0 overflow-hidden'
           }`}
         >
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 h-full">
-            {sidebarContent}
+          {/* Scrollable sidebar content area */}
+          <div className="flex-1 overflow-y-auto bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="p-4 border-b border-gray-200">
+              {sidebarContent}
+            </div>
           </div>
-          <div className="flex-1" />
         </div>
       )}
 

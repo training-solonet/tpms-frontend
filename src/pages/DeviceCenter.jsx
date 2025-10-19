@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import { devices, trucks, sensors, lockEvents, getDeviceStatus } from '../data/index.js';
+import { devicesAPI, trucksAPI, sensorsAPI } from '../services/api.js';
 
 function useQuery() {
   const { search } = useLocation();
@@ -15,19 +15,18 @@ const Tabs = [
   { key: 'locks', label: 'Locks' },
 ];
 
-const StatusTab = ({ search, truckFilter }) => {
+const StatusTab = ({ search, truckFilter, devices, trucks }) => {
   const rows = devices.map((d) => {
     const truck = trucks.find((t) => t.id === d.truck_id);
-    const status = getDeviceStatus(d.id);
     return {
       id: d.id,
-      imei: d.imei || d.serial || '-',
+      imei: d.imei || d.serial || d.sn || '-',
       truckName: truck ? `${truck.name} (${truck.plate_number || 'N/A'})` : 'Unassigned',
       truckId: truck?.id || null,
-      battery: status?.battery_level ?? 'N/A',
-      signal: status?.signal_strength ?? 'N/A',
-      locked: status?.lock_state ?? 'unknown',
-      lastSeen: status?.reported_at ? new Date(status.reported_at).toLocaleString() : 'N/A',
+      battery: d.battery_level ?? 'N/A',
+      signal: d.signal_strength ?? 'N/A',
+      locked: d.lock_state ?? 'unknown',
+      lastSeen: d.lastUpdate || d.updated_at ? new Date(d.lastUpdate || d.updated_at).toLocaleString() : 'N/A',
     };
   });
 
@@ -79,7 +78,7 @@ const StatusTab = ({ search, truckFilter }) => {
   );
 };
 
-const SensorsTab = ({ search, truckFilter }) => {
+const SensorsTab = ({ search, truckFilter, sensors, devices, trucks }) => {
   const rows = sensors.map((s) => {
     const device = devices.find((d) => d.id === s.device_id);
     const truck = device ? trucks.find((t) => t.id === device.truck_id) : undefined;
@@ -142,7 +141,7 @@ const SensorsTab = ({ search, truckFilter }) => {
   );
 };
 
-const LocksTab = ({ search, truckFilter, actionFilter }) => {
+const LocksTab = ({ search, truckFilter, actionFilter, lockEvents, devices, trucks }) => {
   const rows = lockEvents
     .slice()
     .sort((a, b) => new Date(b.changed_at) - new Date(a.changed_at))
@@ -220,6 +219,35 @@ const DeviceCenter = () => {
   const [search, setSearch] = React.useState('');
   const [truckFilter, setTruckFilter] = React.useState('');
   const [actionFilter, setActionFilter] = React.useState('');
+  const [devices, setDevices] = React.useState([]);
+  const [trucks, setTrucks] = React.useState([]);
+  const [sensors, setSensors] = React.useState([]);
+  const [lockEvents, setLockEvents] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [devicesRes, trucksRes, sensorsRes] = await Promise.all([
+          devicesAPI.getAll({ limit: 500 }),
+          trucksAPI.getAll({ limit: 500 }),
+          sensorsAPI.getAll({ limit: 1000 }).catch(() => ({ data: [] })),
+        ]);
+        setDevices(Array.isArray(devicesRes?.data?.devices || devicesRes?.data) ? (devicesRes.data.devices || devicesRes.data) : []);
+        setTrucks(Array.isArray(trucksRes?.data?.trucks || trucksRes?.data) ? (trucksRes.data.trucks || trucksRes.data) : []);
+        setSensors(Array.isArray(sensorsRes?.data?.sensors || sensorsRes?.data) ? (sensorsRes.data.sensors || sensorsRes.data) : []);
+        setLockEvents([]);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        setDevices([]);
+        setTrucks([]);
+        setSensors([]);
+        setLockEvents([]);
+      }
+      setLoading(false);
+    };
+    loadData();
+  }, []);
 
   const setTab = (tab) => {
     setActiveTab(tab);
@@ -227,6 +255,17 @@ const DeviceCenter = () => {
     params.set('tab', tab);
     navigate({ search: params.toString() }, { replace: true });
   };
+
+  // Use loading state to show a lightweight placeholder
+  if (loading) {
+    return (
+      <TailwindLayout>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+          <div className="max-w-7xl mx-auto text-sm text-gray-600">Loading devices...</div>
+        </div>
+      </TailwindLayout>
+    );
+  }
 
   return (
     <TailwindLayout>
@@ -300,10 +339,10 @@ const DeviceCenter = () => {
             )}
           </div>
 
-          {activeTab === 'status' && <StatusTab search={search} truckFilter={truckFilter} />}
-          {activeTab === 'sensors' && <SensorsTab search={search} truckFilter={truckFilter} />}
+          {activeTab === 'status' && <StatusTab search={search} truckFilter={truckFilter} devices={devices} trucks={trucks} />}
+          {activeTab === 'sensors' && <SensorsTab search={search} truckFilter={truckFilter} sensors={sensors} devices={devices} trucks={trucks} />}
           {activeTab === 'locks' && (
-            <LocksTab search={search} truckFilter={truckFilter} actionFilter={actionFilter} />
+            <LocksTab search={search} truckFilter={truckFilter} actionFilter={actionFilter} lockEvents={lockEvents} devices={devices} trucks={trucks} />
           )}
         </div>
       </div>

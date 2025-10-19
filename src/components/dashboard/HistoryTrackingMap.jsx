@@ -4,66 +4,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
-import { trucksAPI, alertsAPI } from '../../services/api.js';
+import { trucksAPI, alertsAPI, tpmsAPI } from '../../services/api.js';
 import TirePressureDisplay from './TirePressureDisplay';
-import { trucks as trucksList } from '../../data/trucks.js';
-import { getDummyRealRoutePoints, getDummyRealRoutePoints2 } from '../../data/index.js';
+ 
 
 const HistoryTrackingMap = () => {
-  // Test mode for manual single route playback
-  const USE_TEST_ROUTE = true;
-  const TEST_ROUTE = [
-    [-3.506761, 115.624602],
-    [-3.506831, 115.624709],
-    [-3.506925, 115.624882],
-    [-3.507028, 115.625017],
-    [-3.507139, 115.625174],
-    [-3.507221, 115.625322],
-    [-3.507603, 115.625873],
-    [-3.507746, 115.626132],
-    [-3.507841, 115.62626],
-    [-3.507927, 115.626371],
-    [-3.508066, 115.62649],
-    [-3.508177, 115.626646],
-    [-3.508313, 115.626803],
-    [-3.50842, 115.62693],
-    [-3.508403, 115.626905],
-    [-3.508502, 115.627021],
-    [-3.508645, 115.627177],
-    [-3.508828, 115.627354],
-    [-3.508963, 115.627512],
-    [-3.509174, 115.627706],
-    [-3.509418, 115.627918],
-    [-3.509634, 115.628112],
-    [-3.509931, 115.628342],
-    [-3.510025, 115.628491],
-    [-3.510138, 115.628622],
-    [-3.51026, 115.628766],
-    [-3.510399, 115.628956],
-    [-3.510597, 115.629145],
-    [-3.511003, 115.629446],
-    [-3.511238, 115.629505],
-    [-3.511399, 115.629564],
-    [-3.511613, 115.629623],
-    [-3.511843, 115.629639],
-    [-3.512015, 115.629666],
-    [-3.512154, 115.629715],
-    [-3.512475, 115.629677],
-    [-3.512764, 115.629602],
-    [-3.512903, 115.629564],
-    [-3.51315, 115.629511],
-    [-3.513284, 115.629462],
-    [-3.513235, 115.629296],
-    [-3.513193, 115.629087],
-    [-3.513134, 115.628867],
-    [-3.513128, 115.628685],
-    [-3.513235, 115.628593],
-    [-3.513401, 115.628534],
-    [-3.513562, 115.62847],
-    [-3.513749, 115.628459],
-    [-3.513926, 115.628406],
-    [-3.514135, 115.628384],
-  ];
+  // Test mode disabled; use only backend data
+  const USE_TEST_ROUTE = false;
   const [map, setMap] = useState(null);
   const [, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -110,20 +57,12 @@ const HistoryTrackingMap = () => {
   const playbackMarkerRef = useRef(null);
   const playbackTimerRef = useRef(null);
 
-  // Resolve a given vehicle identifier to the truck UUID used by local trucks list
+  // Resolve vehicle identifier (keep as-is; backend should accept it)
   const resolveTruckUUID = (vehicleId) => {
     if (!vehicleId) return null;
     const idStr = String(vehicleId);
     if (idStr.length === 36 && idStr.includes('-')) return idStr;
-    const numMatch = idStr.match(/(\d{1,4})/);
-    const num = numMatch ? numMatch[1] : null;
-    if (num) {
-      const t = trucksList.find(
-        (tk) => String(tk.name).includes(num) || String(tk.plate_number).includes(num)
-      );
-      if (t) return t.id;
-    }
-    return null;
+    return idStr;
   };
 
   const getDayWindow = (dateStr) => {
@@ -155,7 +94,12 @@ const HistoryTrackingMap = () => {
 
   const extractTruckNumber = (idOrName) => {
     if (!idOrName) return null;
-    const m = String(idOrName).match(/(\d{1,4})/);
+    const str = String(idOrName);
+    // For TPMS serial numbers, use last 3 digits or show as "T1", "T2", etc.
+    if (str.length > 6) {
+      return str.slice(-3); // Last 3 digits for serial numbers
+    }
+    const m = str.match(/(\d{1,4})/);
     return m ? parseInt(m[1], 10) : null;
   };
 
@@ -185,7 +129,12 @@ const HistoryTrackingMap = () => {
 
       const numericId = (String(truckId).match(/\d{1,4}/) || [])[0];
       const primaryId = numericId || truckId;
-      let response = await trucksAPI.getLocationHistory(primaryId, params);
+      // Try TPMS new backend first using SN as identifier
+      let response = await tpmsAPI.getLocationHistory({
+        sn: String(truckId),
+        startTime: params.startTime,
+        endTime: params.endTime,
+      });
 
       const toRecords = (records) =>
         (records || [])
@@ -212,14 +161,29 @@ const HistoryTrackingMap = () => {
       const toPoints = (recs) => (recs || []).map((r) => [r.lat, r.lng]);
 
       if (response.success && response.data) {
-        let enriched = toRecords(response.data);
+        // TPMS format: [{ sn, location: [{ createdAt, lat_lng }] }]
+        let enriched;
+        if (Array.isArray(response.data) && response.data[0]?.location) {
+          const locs = response.data[0].location || [];
+          enriched = (locs || [])
+            .map((loc) => {
+              const parts = String(loc?.lat_lng || '').split(',');
+              const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
+              const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+              const t = loc?.createdAt ? new Date(loc.createdAt) : null;
+              return { lat, lng, t, raw: loc, speed: null };
+            })
+            .filter((r) => !isNaN(r.lat) && !isNaN(r.lng));
+        } else {
+          enriched = toRecords(response.data);
+        }
         let routePoints = toPoints(enriched);
 
         if ((!routePoints || routePoints.length === 0) && primaryId !== truckId) {
-          console.log(`🔁 Retrying history with raw ID: ${truckId}`);
-          response = await trucksAPI.getLocationHistory(truckId, params);
-          if (response.success && response.data) {
-            enriched = toRecords(response.data);
+          console.log(`🔁 Retrying history with legacy backend using: ${truckId}`);
+          const legacy = await trucksAPI.getLocationHistory(truckId, params);
+          if (legacy.success && legacy.data) {
+            enriched = toRecords(legacy.data);
             routePoints = toPoints(enriched);
           }
         }
@@ -273,109 +237,59 @@ const HistoryTrackingMap = () => {
       try {
         setLoading(true);
 
-        if (USE_TEST_ROUTE) {
-          const testVehicle = {
-            id: 'TRUCK-001',
-            driver: 'Demo Driver',
-            position: TEST_ROUTE[0],
-            status: 'active',
-            speed: 20,
-            heading: 0,
-            fuel: 50,
-            battery: 90,
-            signal: 'good',
-            lastUpdate: new Date(),
-            route: 'Test Route',
-            load: 'Empty',
-          };
-          // Load route2.md if available
-          const r2pts = getDummyRealRoutePoints2();
-          const ROUTE2 =
-            Array.isArray(r2pts) && r2pts.length > 1 ? r2pts.map((p) => [p.lat, p.lng]) : [];
-          const vehiclesArr = [testVehicle];
-          const routesData = { [testVehicle.id]: TEST_ROUTE };
-          const routeVisibilityData = { [testVehicle.id]: true };
+        // Test route disabled: use only backend data
 
-          if (ROUTE2.length > 1) {
-            const testVehicle2 = {
-              id: 'TRUCK-002',
-              driver: 'Demo Driver 2',
-              position: ROUTE2[0],
-              status: 'active',
-              speed: 18,
-              heading: 0,
-              fuel: 55,
-              battery: 90,
-              signal: 'good',
-              lastUpdate: new Date(),
-              route: 'Test Route 2',
-              load: 'Empty',
-            };
-            vehiclesArr.push(testVehicle2);
-            routesData[testVehicle2.id] = ROUTE2;
-            routeVisibilityData[testVehicle2.id] = true;
-          }
-
-          setVehicles(vehiclesArr);
-          setVehicleRoutes(routesData);
-          setRouteVisible(routeVisibilityData);
-          setSelectedVehicle(testVehicle);
-          try {
-            const allLatLngs = [];
-            TEST_ROUTE.forEach((p) => allLatLngs.push(L.latLng(p[0], p[1])));
-            if (routesData['TRUCK-002']) {
-              routesData['TRUCK-002'].forEach((p) => allLatLngs.push(L.latLng(p[0], p[1])));
-            }
-            if (allLatLngs.length > 1) {
-              const bounds = L.latLngBounds(allLatLngs);
-              map.fitBounds(bounds, { padding: [40, 40] });
-            }
-          } catch {
-            /* empty */
-          }
-          return;
-        }
-
-        // Load basic vehicle data (can be from API or dummy)
-        const response = await trucksAPI.getRealTimeLocations();
+        // Load basic vehicle data from TPMS (fallback to legacy if needed)
+        const tpms = await tpmsAPI.getRealtimeSnapshot();
         let vehicleData = [];
-
-        if (response.success && response.data) {
-          vehicleData =
-            response.data.features?.map((feature) => ({
-              id: feature.properties.truckNumber,
-              driver: feature.properties.driverName || 'Unknown Driver',
-              position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-              status: feature.properties.status?.toLowerCase() || 'offline',
-              speed: feature.properties.speed || 0,
-              heading: feature.properties.heading || 0,
-              fuel: feature.properties.fuelPercentage || 0,
-              battery: 90,
-              signal: 'good',
-              lastUpdate: new Date(),
-              route: 'Mining Area',
-              load: feature.properties.payloadTons
-                ? `Coal - ${feature.properties.payloadTons} tons`
-                : 'Unknown',
-            })) || [];
-        }
-
-        // If no API data, create dummy vehicles
-        if (vehicleData.length === 0) {
-          vehicleData = Array.from({ length: 5 }).map((_, i) => ({
-            id: `TRUCK-${String(i + 1).padStart(3, '0')}`,
-            driver: `Demo Driver ${i + 1}`,
-            position: [-3.58 + (Math.random() - 0.5) * 0.01, 115.6 + (Math.random() - 0.5) * 0.01],
-            status: ['active', 'idle', 'maintenance'][Math.floor(Math.random() * 3)],
-            speed: Math.floor(Math.random() * 60),
-            heading: Math.floor(Math.random() * 360),
-            fuel: Math.floor(Math.random() * 100),
-            battery: 90,
-            signal: 'good',
-            lastUpdate: new Date(),
-            route: 'Mining Area',
-            load: 'Empty',
-          }));
+        if (tpms && tpms.success && Array.isArray(tpms.data)) {
+          vehicleData = tpms.data
+            .map((d, index) => {
+              const id = d?.sn ? String(d.sn) : null;
+              const latlngStr = d?.location?.lat_lng || '';
+              const parts = String(latlngStr).split(',');
+              const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
+              const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+              if (!id || !isFinite(lat) || !isFinite(lng)) return null;
+              return {
+                id,
+                truckNumber: index + 1, // Use array index + 1 as truck number
+                driver: 'Unknown Driver',
+                position: [lat, lng],
+                status: 'active',
+                speed: 0,
+                heading: 0,
+                fuel: 0,
+                battery: 0,
+                signal: 'unknown',
+                lastUpdate: d?.location?.createdAt ? new Date(d.location.createdAt) : new Date(),
+                route: 'Mining Area',
+                load: 'Unknown',
+                tireData: d?.tire || [], // Include tire pressure data
+              };
+            })
+            .filter(Boolean);
+        } else {
+          const response = await trucksAPI.getRealTimeLocations();
+          if (response.success && response.data) {
+            vehicleData =
+              response.data.features?.map((feature) => ({
+                id: feature.properties.truckNumber,
+                driver: feature.properties.driverName || 'Unknown Driver',
+                position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
+                status: feature.properties.status?.toLowerCase() || 'offline',
+                speed: feature.properties.speed || 0,
+                heading: feature.properties.heading || 0,
+                fuel: feature.properties.fuelPercentage || 0,
+                battery: 90,
+                signal: 'good',
+                lastUpdate: new Date(),
+                route: 'Mining Area',
+                load: feature.properties.payloadTons
+                  ? `Coal - ${feature.properties.payloadTons} tons`
+                  : 'Unknown',
+              })) || [];
+          }
         }
 
         setVehicles(vehicleData);
@@ -385,12 +299,16 @@ const HistoryTrackingMap = () => {
         const routeVisibilityData = {};
 
         for (const vehicle of vehicleData) {
+          console.log(`🔄 Loading route history for vehicle: ${vehicle.id}`);
           const history = await loadRouteHistory(vehicle.id, '24h');
+          console.log(`📍 Route points loaded for ${vehicle.id}:`, history.points.length);
           if (history.points.length > 0) {
             routesData[vehicle.id] = history.points;
             routeVisibilityData[vehicle.id] = true;
             // store meta records for stats
             routeMetaByVehicleRef.current[vehicle.id] = history.records;
+          } else {
+            console.warn(`⚠️ No route points found for vehicle ${vehicle.id}`);
           }
         }
 
@@ -407,6 +325,8 @@ const HistoryTrackingMap = () => {
 
     if (map) {
       loadHistoryData();
+      const interval = setInterval(loadHistoryData, 5 * 60 * 1000);
+      return () => clearInterval(interval);
     }
   }, [map, selectedDate, shiftMode, customStart, customEnd]);
 
@@ -442,7 +362,7 @@ const HistoryTrackingMap = () => {
           return;
         }
 
-        const truckNum = extractTruckNumber(vehicle.id) ?? '';
+        const truckNum = vehicle.truckNumber || extractTruckNumber(vehicle.id) || '';
         const icon = L.divIcon({
           html: `
             <div style="position: relative;">
@@ -478,24 +398,40 @@ const HistoryTrackingMap = () => {
           iconAnchor: [14, 28],
         });
 
-        const marker = L.marker(vehicle.position, {
-          icon,
-          zIndexOffset: 2000,
-          pane: 'markersPane',
-        }).addTo(map);
-        markersRef.current[vehicle.id] = marker;
+        // Check if marker already exists to prevent duplicates
+        let marker = markersRef.current[vehicle.id];
+        if (!marker) {
+          marker = L.marker(vehicle.position, {
+            icon,
+            zIndexOffset: 2000,
+            pane: 'markersPane',
+          }).addTo(map);
+          markersRef.current[vehicle.id] = marker;
 
-        marker.on('click', () => {
-          try {
-            marker.bringToFront();
-          } catch {
-            /* empty */
-          }
-          console.log('[History] Marker clicked:', vehicle.id);
-          setSelectedVehicle(vehicle);
-          setPlaybackIndex(0);
-          setIsPlaybackPlaying(false);
-        });
+          marker.on('click', () => {
+            try {
+              marker.bringToFront();
+            } catch {
+              /* empty */
+            }
+            console.log('[History] Marker clicked:', vehicle.id);
+            
+            // Hide the static marker immediately when selected to prevent duplication
+            try {
+              marker.setOpacity(0);
+            } catch {
+              /* empty */
+            }
+            
+            setSelectedVehicle(vehicle);
+            setPlaybackIndex(0);
+            setIsPlaybackPlaying(false);
+          });
+        } else {
+          // Update existing marker position and icon
+          marker.setLatLng(vehicle.position);
+          marker.setIcon(icon);
+        }
 
         // Add route line if exists and visible
         const routeHistory = vehicleRoutes[vehicle.id] || [];
@@ -567,8 +503,38 @@ const HistoryTrackingMap = () => {
           );
         }
       });
+
+      // Remove markers that are no longer in vehicles data
+      const currentVehicleIds = new Set(vehicles.map(v => v.id));
+      Object.keys(markersRef.current).forEach((id) => {
+        if (!currentVehicleIds.has(id)) {
+          const marker = markersRef.current[id];
+          if (marker && map.hasLayer(marker)) {
+            map.removeLayer(marker);
+          }
+          delete markersRef.current[id];
+        }
+      });
+
+      // Update marker visibility based on selection
+      Object.keys(markersRef.current).forEach((id) => {
+        const marker = markersRef.current[id];
+        if (marker) {
+          try {
+            if (selectedVehicle && selectedVehicle.id === id) {
+              // Hide static marker when selected (playback marker will be shown)
+              marker.setOpacity(0);
+            } else {
+              // Show static marker when not selected
+              marker.setOpacity(1);
+            }
+          } catch {
+            /* empty */
+          }
+        }
+      });
     }
-  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes, clusterSelections]);
+  }, [map, vehicles, routeVisible, routeColors, vehicleRoutes, clusterSelections, selectedVehicle]);
 
   // Update playback marker position
   useEffect(() => {
@@ -732,7 +698,7 @@ const HistoryTrackingMap = () => {
             maintenance: '#ef4444',
             offline: '#6b7280',
           };
-          const truckNum = extractTruckNumber(vehicle.id) ?? '';
+          const truckNum = vehicle.truckNumber || extractTruckNumber(vehicle.id) || '';
           const icon = L.divIcon({
             html: `
               <div style="position: relative;">
@@ -816,108 +782,10 @@ const HistoryTrackingMap = () => {
     };
   }, [map, selectedVehicle, vehicleRoutes]);
 
-  // Render manual route from make_dummy_real_route.md (disabled in test mode)
+  // Manual dummy route rendering removed (backend-only)
   useEffect(() => {
     if (!map) return;
-    if (USE_TEST_ROUTE) return;
-
-    try {
-      const pts = getDummyRealRoutePoints();
-      const coords = Array.isArray(pts) && pts.length > 1 ? pts.map((p) => [p.lat, p.lng]) : [];
-
-      if (coords.length > 1) {
-        // eslint-disable-next-line no-undef
-        const L = window.L || require('leaflet');
-
-        if (manualRouteRef.current) {
-          try {
-            map.removeLayer(manualRouteRef.current.line);
-          } catch (e) {
-            /* empty */
-          }
-          try {
-            map.removeLayer(manualRouteRef.current.start);
-          } catch (e) {
-            /* empty */
-          }
-          try {
-            map.removeLayer(manualRouteRef.current.end);
-          } catch (e) {
-            /* empty */
-          }
-          manualRouteRef.current = null;
-        }
-
-        const color = '#2563eb';
-        const line = L.polyline(coords, {
-          color,
-          weight: 4,
-          opacity: 0.95,
-          lineJoin: 'round',
-          lineCap: 'round',
-          pane: 'routesPane',
-        }).addTo(map);
-
-        const startIcon = L.divIcon({
-          html: `<div style="background:white;border:2px solid ${color};border-radius:50%;width:14px;height:14px;"></div>`,
-          className: 'manual-route-start',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
-        });
-
-        const endIcon = L.divIcon({
-          html: `
-            <div style="position: relative;">
-              <div style="
-                background: ${color};
-                color: #ffffff;
-                border: 2px solid #ffffff;
-                border-radius: 6px;
-                padding: 2px 6px;
-                min-width: 26px;
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                font-size: 11px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-              ">
-                END
-              </div>
-              <div style="
-                width: 0; height: 0;
-                border-left: 6px solid transparent;
-                border-right: 6px solid transparent;
-                border-top: 8px solid ${color};
-                margin: 0 auto;
-                filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
-              "></div>
-            </div>
-          `,
-          className: 'manual-route-end',
-          iconSize: [28, 28],
-          iconAnchor: [14, 28],
-        });
-
-        const start = L.marker(coords[0], { icon: startIcon, pane: 'routesPane' })
-          .addTo(map)
-          .bindTooltip('Start', { direction: 'top' });
-        const end = L.marker(coords[coords.length - 1], { icon: endIcon, pane: 'routesPane' })
-          .addTo(map)
-          .bindTooltip('End', { direction: 'top' });
-
-        manualRouteRef.current = { line, start, end };
-
-        try {
-          map.fitBounds(line.getBounds(), { padding: [40, 40] });
-        } catch (e) {
-          /* empty */
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to render manual route from markdown:', err);
-    }
+    // no-op
   }, [map]);
 
   const sidebarContent = (
@@ -1003,7 +871,7 @@ const HistoryTrackingMap = () => {
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-gray-700">Ringkasan Perjalanan</span>
           {selectedVehicle && (
-            <span className="text-[10px] text-gray-500">{selectedVehicle.id}</span>
+            <span className="text-[10px] text-gray-500">Truck {selectedVehicle.truckNumber || extractTruckNumber(selectedVehicle.id) || selectedVehicle.id}</span>
           )}
         </div>
         {selectedVehicle && journeyStats ? (
@@ -1057,6 +925,7 @@ const HistoryTrackingMap = () => {
       <div className="mt-3">
         <TirePressureDisplay
           selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id}
+          tireData={selectedVehicle?.tireData}
         />
       </div>
     </>
@@ -1104,7 +973,7 @@ const HistoryTrackingMap = () => {
     const L = window.L || require('leaflet');
 
     if (!playbackMarkerRef.current) {
-      const truckNum = extractTruckNumber(selectedVehicle?.id) ?? '';
+      const truckNum = selectedVehicle?.truckNumber || extractTruckNumber(selectedVehicle?.id) || '';
       const colors = {
         active: '#10b981',
         idle: '#f59e0b',

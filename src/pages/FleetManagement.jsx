@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage';
-import { trucks, devices, fleetGroups } from '../data/index.js';
+import { trucksAPI, devicesAPI, dashboardAPI } from '../services/api.js';
 import WheelFrontIcon from '../components/icons/WheelFrontIcon.jsx';
 
 const FleetManagement = () => {
@@ -16,25 +16,36 @@ const FleetManagement = () => {
   const [selectedTruck, setSelectedTruck] = useState(null);
 
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
       setLoading(true);
+      try {
+        // Load trucks from backend
+        const trucksRes = await trucksAPI.getAll({ limit: 500 });
+        const trucksArr = trucksRes?.data?.trucks || trucksRes?.data || [];
+        setTrucksData(Array.isArray(trucksArr) ? trucksArr : []);
 
-      // Use dummy data directly
-      setTrucksData(trucks);
-      setDevicesData(devices);
-      setFleetGroupsState(fleetGroups);
+        // Load devices from backend
+        const devicesRes = await devicesAPI.getAll({ limit: 500 });
+        const devicesArr = devicesRes?.data?.devices || devicesRes?.data || [];
+        setDevicesData(Array.isArray(devicesArr) ? devicesArr : []);
 
-      console.log('✅ Fleet management data loaded from dummy data:', {
-        trucks: trucks.length,
-        devices: devices.length,
-        fleetGroups: fleetGroups.length,
-      });
-
+        // Load fleet groups (if backend provides)
+        try {
+          const groupsRes = await dashboardAPI.getFleetGroups?.();
+          const groupsArr = groupsRes?.data?.groups || groupsRes?.data || [];
+          setFleetGroupsState(Array.isArray(groupsArr) ? groupsArr : []);
+        } catch {
+          setFleetGroupsState([]);
+        }
+      } catch (error) {
+        console.error('Failed to load fleet management data:', error);
+        setTrucksData([]);
+        setDevicesData([]);
+        setFleetGroupsState([]);
+      }
       setLoading(false);
     };
-
-    // Simulate loading time
-    setTimeout(loadData, 300);
+    loadData();
   }, []);
 
   const getTruckDevices = (truckId) => {

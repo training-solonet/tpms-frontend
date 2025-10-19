@@ -9,7 +9,6 @@ import FleetManagement from './pages/FleetManagement';
 import FleetGroups from './pages/FleetGroups.jsx';
 import DeviceCenter from './pages/DeviceCenter.jsx';
 import VehicleDeviceStatus from './pages/VehicleDeviceStatus.jsx';
-import TelemetryDashboard from './pages/TelemetryDashboard.jsx';
 import LiveTracking from './pages/LiveTracking';
 import HistoryTracking from './pages/HistoryTracking.jsx';
 import Analytics from './pages/Analytics';
