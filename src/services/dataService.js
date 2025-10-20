@@ -1,5 +1,5 @@
 // Data service to replace dummy data with real API calls
-import { trucksAPI, vendorsAPI, driversAPI, devicesAPI, sensorsAPI, dashboardAPI } from './api.js';
+import { trucksAPI, vendorsAPI, driversAPI, devicesAPI, sensorsAPI, dashboardAPI } from './api/index.js';
 
 // Fleet data service - replaces dummy data functions
 export class DataService {
