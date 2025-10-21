@@ -1,4 +1,4 @@
-import React, {useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import { vendorsApi } from '../services/api2/index.js';
@@ -74,16 +74,16 @@ export default function VendorForm() {
   const onSave = async () => {
     try {
       setSaving(true);
-      
+
       // Validation
       if (!form.name || !form.code) {
         alert('Name and Code are required fields!');
         setSaving(false);
         return;
       }
-      
+
       console.log('💾 Saving vendor data to Backend 2...', form);
-      
+
       const vendorData = {
         name: form.name,
         code: form.code,

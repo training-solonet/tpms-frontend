@@ -40,19 +40,19 @@ export default function TelemetryTiresForm() {
       try {
         setLoading(true);
         console.log('📡 Loading tire pressure data from Backend 2...');
-        
+
         // Load trucks from Backend 2
         const res = await trucksApi.getAll();
         console.log('✅ Trucks response for tires:', res);
-        
+
         const trucks = res?.data?.trucks || res?.data || [];
-        
+
         if (!Array.isArray(trucks) || trucks.length === 0) {
           console.warn('No trucks data from Backend 2');
           if (mounted) setRows([]);
           return;
         }
-        
+
         console.log(`✅ Using ${trucks.length} trucks from Backend 2 for TelemetryTiresForm`);
 
         // Build flattened rows focused on TPMS tire pressure sensor data
@@ -386,4 +386,3 @@ export default function TelemetryTiresForm() {
     </TailwindLayout>
   );
 }
-

@@ -6,7 +6,6 @@ import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import BaseTrackingMap from './BaseTrackingMap';
 import { trucksAPI, alertsAPI, tpmsAPI } from '../../services/api.js';
 import TirePressureDisplay from './TirePressureDisplay';
- 
 
 const HistoryTrackingMap = () => {
   // Test mode disabled; use only backend data
@@ -415,14 +414,14 @@ const HistoryTrackingMap = () => {
               /* empty */
             }
             console.log('[History] Marker clicked:', vehicle.id);
-            
+
             // Hide the static marker immediately when selected to prevent duplication
             try {
               marker.setOpacity(0);
             } catch {
               /* empty */
             }
-            
+
             setSelectedVehicle(vehicle);
             setPlaybackIndex(0);
             setIsPlaybackPlaying(false);
@@ -505,7 +504,7 @@ const HistoryTrackingMap = () => {
       });
 
       // Remove markers that are no longer in vehicles data
-      const currentVehicleIds = new Set(vehicles.map(v => v.id));
+      const currentVehicleIds = new Set(vehicles.map((v) => v.id));
       Object.keys(markersRef.current).forEach((id) => {
         if (!currentVehicleIds.has(id)) {
           const marker = markersRef.current[id];
@@ -871,7 +870,12 @@ const HistoryTrackingMap = () => {
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-medium text-gray-700">Ringkasan Perjalanan</span>
           {selectedVehicle && (
-            <span className="text-[10px] text-gray-500">Truck {selectedVehicle.truckNumber || extractTruckNumber(selectedVehicle.id) || selectedVehicle.id}</span>
+            <span className="text-[10px] text-gray-500">
+              Truck{' '}
+              {selectedVehicle.truckNumber ||
+                extractTruckNumber(selectedVehicle.id) ||
+                selectedVehicle.id}
+            </span>
           )}
         </div>
         {selectedVehicle && journeyStats ? (
@@ -973,7 +977,8 @@ const HistoryTrackingMap = () => {
     const L = window.L || require('leaflet');
 
     if (!playbackMarkerRef.current) {
-      const truckNum = selectedVehicle?.truckNumber || extractTruckNumber(selectedVehicle?.id) || '';
+      const truckNum =
+        selectedVehicle?.truckNumber || extractTruckNumber(selectedVehicle?.id) || '';
       const colors = {
         active: '#10b981',
         idle: '#f59e0b',

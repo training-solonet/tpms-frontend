@@ -27,7 +27,10 @@ const StatusTab = ({ search, truckFilter, devices, trucks, onEdit, onDelete }) =
       battery: d.battery_level ?? 'N/A',
       signal: d.signal_strength ?? 'N/A',
       locked: d.lock_state ?? 'unknown',
-      lastSeen: d.lastUpdate || d.updated_at ? new Date(d.lastUpdate || d.updated_at).toLocaleString() : 'N/A',
+      lastSeen:
+        d.lastUpdate || d.updated_at
+          ? new Date(d.lastUpdate || d.updated_at).toLocaleString()
+          : 'N/A',
     };
   });
 
@@ -63,7 +66,7 @@ const StatusTab = ({ search, truckFilter, devices, trucks, onEdit, onDelete }) =
             </thead>
             <tbody className="divide-y divide-indigo-100/60">
               {filtered.map((r) => {
-                const device = devices.find(d => d.id === r.id);
+                const device = devices.find((d) => d.id === r.id);
                 return (
                   <tr key={r.id} className="text-gray-900">
                     <td className="py-2 pr-4 font-mono">{r.imei}</td>
@@ -251,7 +254,7 @@ const DeviceCenter = () => {
   const loadData = async () => {
     try {
       console.log('📡 Loading devices data from Backend 2...');
-      
+
       const [devicesRes, trucksRes, sensorsRes] = await Promise.all([
         devicesApi.getAll(),
         trucksApi.getAll(),
@@ -260,15 +263,15 @@ const DeviceCenter = () => {
           return { data: { sensors: [] } };
         }),
       ]);
-      
+
       console.log('✅ Devices response:', devicesRes);
       console.log('✅ Trucks response:', trucksRes);
       console.log('✅ Sensors response:', sensorsRes);
-      
+
       const devicesArray = devicesRes?.data?.devices || [];
       const trucksArray = trucksRes?.data?.trucks || [];
       const sensorsArray = sensorsRes?.data?.sensors || sensorsRes?.data || [];
-      
+
       setDevices(Array.isArray(devicesArray) ? devicesArray : []);
       setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
       setSensors(Array.isArray(sensorsArray) ? sensorsArray : []);
@@ -401,10 +404,34 @@ const DeviceCenter = () => {
             )}
           </div>
 
-          {activeTab === 'status' && <StatusTab search={search} truckFilter={truckFilter} devices={devices} trucks={trucks} onEdit={handleEditDevice} onDelete={handleDeleteDevice} />}
-          {activeTab === 'sensors' && <SensorsTab search={search} truckFilter={truckFilter} sensors={sensors} devices={devices} trucks={trucks} />}
+          {activeTab === 'status' && (
+            <StatusTab
+              search={search}
+              truckFilter={truckFilter}
+              devices={devices}
+              trucks={trucks}
+              onEdit={handleEditDevice}
+              onDelete={handleDeleteDevice}
+            />
+          )}
+          {activeTab === 'sensors' && (
+            <SensorsTab
+              search={search}
+              truckFilter={truckFilter}
+              sensors={sensors}
+              devices={devices}
+              trucks={trucks}
+            />
+          )}
           {activeTab === 'locks' && (
-            <LocksTab search={search} truckFilter={truckFilter} actionFilter={actionFilter} lockEvents={lockEvents} devices={devices} trucks={trucks} />
+            <LocksTab
+              search={search}
+              truckFilter={truckFilter}
+              actionFilter={actionFilter}
+              lockEvents={lockEvents}
+              devices={devices}
+              trucks={trucks}
+            />
           )}
         </div>
       </div>
@@ -413,4 +440,3 @@ const DeviceCenter = () => {
 };
 
 export default DeviceCenter;
-

@@ -20,15 +20,22 @@ export const API_CONFIG = {
 // TPMS (Tire Pressure Monitoring System) Configuration
 export const TPMS_CONFIG = {
   REALTIME_ENDPOINT:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_TPMS_REALTIME_ENDPOINT) || '',
+    (typeof import.meta !== 'undefined' &&
+      import.meta.env &&
+      import.meta.env.VITE_API_TPMS_REALTIME_ENDPOINT) ||
+    '',
   LOCATION_ENDPOINT:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_TPMS_LOCATION_ENDPOINT) || '',
+    (typeof import.meta !== 'undefined' &&
+      import.meta.env &&
+      import.meta.env.VITE_API_TPMS_LOCATION_ENDPOINT) ||
+    '',
   API_KEY:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_API_KEY) || '',
-  SN:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_SN) || '',
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_API_KEY) ||
+    '',
+  SN: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_SN) || '',
   WS_URL:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_WS_URL) || '',
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_WS_URL) ||
+    '',
   TIMEOUT: 30000,
 };
 

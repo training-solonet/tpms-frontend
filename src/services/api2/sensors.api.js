@@ -63,10 +63,10 @@ export const sensorsApi = {
    */
   getLastData: async (params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.device_sn) queryParams.append('device_sn', params.device_sn);
     if (params.limit) queryParams.append('limit', params.limit);
-    
+
     const response = await api2Instance.get(`/sensors/last?${queryParams.toString()}`);
     return response;
   },

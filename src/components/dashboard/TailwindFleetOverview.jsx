@@ -37,7 +37,7 @@ const TailwindFleetOverview = () => {
         try {
           const statsRes = await dashboardApi.getStats();
           console.log('📊 Dashboard stats from Backend 2:', statsRes);
-          
+
           if (statsRes?.data) {
             const s = statsRes.data;
             totalTrucks = Number(s.totalTrucks || 0);
@@ -53,7 +53,7 @@ const TailwindFleetOverview = () => {
             const listRes = await trucksApi.getAll({ limit: 200 });
             const trucks = listRes?.data?.trucks || [];
             const stats = listRes?.data?.stats || {};
-            
+
             totalTrucks = stats.total_trucks || trucks.length || 0;
             activeTrucks = stats.active || 0;
             maintenanceTrucks = stats.maintenance || 0;
@@ -106,14 +106,17 @@ const TailwindFleetOverview = () => {
           { name: 'Active', value: activeTrucks },
           { name: 'Maintenance', value: maintenanceTrucks },
           { name: 'Inactive', value: inactiveTrucks },
-          { name: 'Idle', value: Math.max(totalTrucks - activeTrucks - maintenanceTrucks - inactiveTrucks, 0) },
+          {
+            name: 'Idle',
+            value: Math.max(totalTrucks - activeTrucks - maintenanceTrucks - inactiveTrucks, 0),
+          },
         ]);
 
         // Alerts list from Backend 2
         try {
           const alertsRes = await alertsApi.getAll({ limit: 4, resolved: false });
           console.log('🚨 Alerts from Backend 2:', alertsRes);
-          
+
           const alertsArray = alertsRes?.data?.alerts || alertsRes?.data || [];
           setRecentAlerts(
             alertsArray.slice(0, 4).map((alert) => ({
@@ -134,7 +137,7 @@ const TailwindFleetOverview = () => {
         try {
           const listRes = await trucksApi.getAll({ limit: 4, status: 'active' });
           const trucks = listRes?.data?.trucks || [];
-          
+
           setTopVehicles(
             trucks.slice(0, 4).map((t) => ({
               id: String(t.truckNumber || t.plateNumber || t.id || 'TRUCK'),
@@ -170,17 +173,17 @@ const TailwindFleetOverview = () => {
 
     // Refresh every 30 seconds
     const interval = setInterval(loadDashboardData, 30000);
-    
+
     // Connect WebSocket for real-time updates
     fleetWebSocket.connect();
     fleetWebSocket.subscribe('dashboard');
-    
+
     // Listen for dashboard updates
     const handleDashboardUpdate = (data) => {
       console.log('📡 Real-time dashboard update:', data);
       loadDashboardData();
     };
-    
+
     fleetWebSocket.on('dashboardUpdate', handleDashboardUpdate);
 
     return () => {
@@ -189,7 +192,7 @@ const TailwindFleetOverview = () => {
       fleetWebSocket.unsubscribe('dashboard');
     };
   }, []);
-  
+
   // Helper function to get severity level
   const getSeverityLevel = (severity) => {
     if (typeof severity === 'number') {

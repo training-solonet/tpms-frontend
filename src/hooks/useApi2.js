@@ -61,7 +61,7 @@ export const useTruck = (truckId) => {
 
   const fetchTruck = useCallback(async () => {
     if (!truckId) return;
-    
+
     setLoading(true);
     setError(null);
     try {

@@ -20,7 +20,9 @@ const buildTpmsUrl = (baseUrl, extraParams = {}) => {
     if (/^https?:\/\//i.test(baseUrl) || /^wss?:\/\//i.test(baseUrl)) {
       urlObj = new URL(baseUrl);
     } else {
-      const origin = (typeof window !== 'undefined' && window.location && window.location.origin) || 'http://localhost';
+      const origin =
+        (typeof window !== 'undefined' && window.location && window.location.origin) ||
+        'http://localhost';
       urlObj = new URL(baseUrl, origin);
     }
     const params = new URLSearchParams(urlObj.search);
@@ -45,7 +47,8 @@ const fetchTpms = async (fullUrl) => {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), TPMS_CONFIG.TIMEOUT);
   try {
-    const isSameOrigin = typeof window !== 'undefined' && fullUrl.startsWith(window.location.origin + '/');
+    const isSameOrigin =
+      typeof window !== 'undefined' && fullUrl.startsWith(window.location.origin + '/');
     const res = await fetch(fullUrl, {
       method: 'GET',
       mode: 'cors',

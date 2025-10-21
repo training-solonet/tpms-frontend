@@ -16,7 +16,7 @@ export const useAuth = () => {
       // Check Backend 2 first
       const token = authApi2.getToken();
       const currentUser = authApi2.getCurrentUser();
-      
+
       if (token && currentUser) {
         setIsAuthenticated(true);
         setUser(currentUser);
@@ -78,11 +78,11 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error('❌ Login error:', error);
-      
+
       // Try fallback to old backend for tracking if Backend 2 fails
       try {
         const result = await authAPI.login(credentials);
-        
+
         if (result.success) {
           setIsAuthenticated(true);
           setUser(result.data.user);
@@ -113,10 +113,10 @@ export const useAuth = () => {
   const logout = async () => {
     // Logout from Backend 2
     await authApi2.logout();
-    
+
     // Logout from old backend as well
     authAPI.logout();
-    
+
     setIsAuthenticated(false);
     setUser(null);
   };

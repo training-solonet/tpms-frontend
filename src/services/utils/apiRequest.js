@@ -49,7 +49,8 @@ export const apiRequest = async (endpoint, options = {}) => {
   // If method is not GET and Content-Type not provided, set JSON explicitly
   const method = (defaultOptions.method || 'GET').toUpperCase();
   if (method !== 'GET') {
-    defaultOptions.headers['Content-Type'] = defaultOptions.headers['Content-Type'] || 'application/json';
+    defaultOptions.headers['Content-Type'] =
+      defaultOptions.headers['Content-Type'] || 'application/json';
   }
 
   try {

@@ -14,16 +14,19 @@ export const devicesApi = {
   getAll: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params.page) queryParams.append('page', params.page);
       if (params.type) queryParams.append('type', params.type);
-      
+
       const queryString = queryParams.toString();
       const url = queryString ? `/devices?${queryString}` : '/devices';
-      
+
       console.log('📱 Fetching devices from:', url);
       const response = await api2Instance.get(url);
-      console.log('✅ Devices data loaded:', response?.data?.length || response?.length || 'unknown count');
+      console.log(
+        '✅ Devices data loaded:',
+        response?.data?.length || response?.length || 'unknown count'
+      );
       return response;
     } catch (error) {
       console.error('❌ Failed to load devices:', error.message);
@@ -80,15 +83,18 @@ export const devicesApi = {
   getAllSensors: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params.page) queryParams.append('page', params.page);
-      
+
       const queryString = queryParams.toString();
       const url = queryString ? `/devices/sensors/all?${queryString}` : '/devices/sensors/all';
-      
+
       console.log('📡 Fetching sensors from:', url);
       const response = await api2Instance.get(url);
-      console.log('✅ Sensors data loaded:', response?.data?.length || response?.length || 'unknown count');
+      console.log(
+        '✅ Sensors data loaded:',
+        response?.data?.length || response?.length || 'unknown count'
+      );
       return response;
     } catch (error) {
       console.error('❌ Failed to load sensors:', error.message);

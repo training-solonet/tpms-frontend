@@ -60,7 +60,9 @@ class FleetWebSocket {
         // Attempt reconnection
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++;
-          console.log(`Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+          console.log(
+            `Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
+          );
           setTimeout(() => this.connect(), this.reconnectDelay);
         }
       };

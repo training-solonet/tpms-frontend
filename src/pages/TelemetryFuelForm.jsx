@@ -42,12 +42,12 @@ export default function TelemetryFuelForm() {
       try {
         setLoading(true);
         console.log('📡 Loading fuel data from Backend 2...');
-        
+
         const res = await trucksApi.getAll();
         console.log('✅ Trucks response for fuel:', res);
-        
+
         const trucks = res?.data?.trucks || res?.data || [];
-        
+
         if (!Array.isArray(trucks) || trucks.length === 0) {
           if (mounted) {
             setRows([]);
@@ -66,7 +66,7 @@ export default function TelemetryFuelForm() {
           changed_at: t.updatedAt || t.updated_at || t.lastUpdate || new Date().toISOString(),
           source: 'Backend 2',
         }));
-        
+
         console.log(`✅ Loaded ${fuelRows.length} fuel records from Backend 2`);
         if (mounted) {
           setRows(fuelRows);
@@ -230,4 +230,3 @@ export default function TelemetryFuelForm() {
     </TailwindLayout>
   );
 }
-

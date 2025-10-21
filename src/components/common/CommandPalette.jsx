@@ -43,9 +43,7 @@ const CommandPalette = ({ open, setOpen }) => {
         const res = await trucksAPI.getRealTimeLocations();
         if (res?.success && Array.isArray(res.data?.features)) {
           vehicles = res.data.features.map((f) => ({
-            id: String(
-              f?.properties?.truckNumber || f?.properties?.id || f?.id || ''
-            ),
+            id: String(f?.properties?.truckNumber || f?.properties?.id || f?.id || ''),
             name: f?.properties?.truckName || f?.properties?.plateNumber || '',
             status: String(f?.properties?.status || 'offline').toLowerCase(),
           }));
@@ -80,11 +78,17 @@ const CommandPalette = ({ open, setOpen }) => {
         if (dRes?.success) {
           const arr = dRes.data?.devices || dRes.data || [];
           dMatches = (Array.isArray(arr) ? arr : [])
-            .filter((d) => `${d.sn || d.serial || ''} ${d.sim_number || d.sim || ''}`
-              .toLowerCase()
-              .includes(term))
+            .filter((d) =>
+              `${d.sn || d.serial || ''} ${d.sim_number || d.sim || ''}`
+                .toLowerCase()
+                .includes(term)
+            )
             .slice(0, 8)
-            .map((d) => ({ id: d.id, sn: d.sn || d.serial || '', sim_number: d.sim_number || d.sim || '' }));
+            .map((d) => ({
+              id: d.id,
+              sn: d.sn || d.serial || '',
+              sim_number: d.sim_number || d.sim || '',
+            }));
         }
       } catch {
         // ignore

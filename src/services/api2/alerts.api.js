@@ -13,12 +13,12 @@ export const alertsApi = {
    */
   getAll: async (params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.severity) queryParams.append('severity', params.severity);
     if (params.resolved !== undefined) queryParams.append('resolved', params.resolved);
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.page) queryParams.append('page', params.page);
-    
+
     const response = await api2Instance.get(`/dashboard/alerts?${queryParams.toString()}`);
     return response;
   },
@@ -31,13 +31,11 @@ export const alertsApi = {
    */
   getByTruck: async (truckId, params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.resolved !== undefined) queryParams.append('resolved', params.resolved);
     if (params.limit) queryParams.append('limit', params.limit);
-    
-    const response = await api2Instance.get(
-      `/trucks/${truckId}/alerts?${queryParams.toString()}`
-    );
+
+    const response = await api2Instance.get(`/trucks/${truckId}/alerts?${queryParams.toString()}`);
     return response;
   },
 

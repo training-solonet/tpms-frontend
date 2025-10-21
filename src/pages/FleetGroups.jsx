@@ -495,5 +495,3 @@ function VendorsSummary({ groupId, loadState }) {
 }
 
 export default FleetGroups;
-
-

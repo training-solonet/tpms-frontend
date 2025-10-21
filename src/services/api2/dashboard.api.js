@@ -31,13 +31,11 @@ export const dashboardApi = {
    */
   getAlertSummary: async (params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.severity) queryParams.append('severity', params.severity);
     if (params.limit) queryParams.append('limit', params.limit);
-    
-    const response = await api2Instance.get(
-      `/dashboard/alerts?${queryParams.toString()}`
-    );
+
+    const response = await api2Instance.get(`/dashboard/alerts?${queryParams.toString()}`);
     return response;
   },
 

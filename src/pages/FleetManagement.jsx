@@ -21,7 +21,7 @@ const FleetManagement = () => {
       setLoading(true);
       try {
         console.log('📡 Loading fleet management data from Backend 2...');
-        
+
         // Load trucks from Backend 2
         const trucksRes = await trucksApi.getAll();
         console.log('✅ Trucks response:', trucksRes);
@@ -400,4 +400,3 @@ const FleetManagement = () => {
 };
 
 export default FleetManagement;
-

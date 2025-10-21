@@ -14,15 +14,18 @@ export const driversApi = {
   getAll: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params.page) queryParams.append('page', params.page);
-      
+
       const queryString = queryParams.toString();
       const url = queryString ? `/drivers?${queryString}` : '/drivers';
-      
+
       console.log('👤 Fetching drivers from:', url);
       const response = await api2Instance.get(url);
-      console.log('✅ Drivers data loaded:', response?.data?.length || response?.length || 'unknown count');
+      console.log(
+        '✅ Drivers data loaded:',
+        response?.data?.length || response?.length || 'unknown count'
+      );
       return response;
     } catch (error) {
       console.error('❌ Failed to load drivers:', error.message);

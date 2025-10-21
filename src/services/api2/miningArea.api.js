@@ -60,11 +60,11 @@ export const miningAreaApi = {
    */
   getNearbyTrucks: async (params) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.latitude) queryParams.append('latitude', params.latitude);
     if (params.longitude) queryParams.append('longitude', params.longitude);
     if (params.radius) queryParams.append('radius', params.radius);
-    
+
     const response = await api2Instance.get(`/mining-area/nearby?${queryParams.toString()}`);
     return response;
   },
@@ -86,7 +86,10 @@ export const miningAreaApi = {
    * @returns {Promise}
    */
   update: async (zoneName, zoneData) => {
-    const response = await api2Instance.put(`/mining-area/${encodeURIComponent(zoneName)}`, zoneData);
+    const response = await api2Instance.put(
+      `/mining-area/${encodeURIComponent(zoneName)}`,
+      zoneData
+    );
     return response;
   },
 

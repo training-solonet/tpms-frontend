@@ -28,7 +28,7 @@ export default function DriversList() {
     try {
       setLoading(true);
       console.log('📡 Loading drivers from Backend 2...');
-      
+
       const res = await driversApi.getAll();
       console.log('✅ Drivers response:', res);
 

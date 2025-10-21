@@ -13,13 +13,13 @@ export const authApi = {
    */
   login: async (credentials) => {
     const response = await api2Instance.post('/auth/login', credentials);
-    
+
     // Store token and user data
     if (response.data?.token) {
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
-    
+
     return response;
   },
 
@@ -46,11 +46,11 @@ export const authApi = {
    */
   refreshToken: async (refreshToken) => {
     const response = await api2Instance.post('/auth/refresh', { refreshToken });
-    
+
     if (response.data?.token) {
       localStorage.setItem('authToken', response.data.token);
     }
-    
+
     return response;
   },
 

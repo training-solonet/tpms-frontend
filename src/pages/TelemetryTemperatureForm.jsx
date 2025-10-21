@@ -41,11 +41,11 @@ export default function TelemetryTemperatureForm() {
       try {
         setLoading(true);
         console.log('📡 Loading temperature data from Backend 2...');
-        
+
         // Load trucks from Backend 2
         const res = await trucksApi.getAll();
         console.log('✅ Trucks response for temperature:', res);
-        
+
         const trucks = res?.data?.trucks || res?.data || [];
         if (!Array.isArray(trucks) || trucks.length === 0) {
           console.warn('No trucks data from Backend 2');
@@ -377,4 +377,3 @@ export default function TelemetryTemperatureForm() {
     </TailwindLayout>
   );
 }
-

@@ -98,16 +98,13 @@ const Alerts = () => {
 
   const getSeverityIcon = (severity) => {
     if (typeof severity === 'number') {
-      if (severity >= 4)
-        return <XCircleIcon className="h-6 w-6 text-red-500" />;
-      if (severity >= 2)
-        return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />;
+      if (severity >= 4) return <XCircleIcon className="h-6 w-6 text-red-500" />;
+      if (severity >= 2) return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />;
       return <ClockIcon className="h-6 w-6 text-blue-500" />;
     }
     const sev = String(severity).toLowerCase();
     if (sev === 'high') return <XCircleIcon className="h-6 w-6 text-red-500" />;
-    if (sev === 'medium')
-      return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />;
+    if (sev === 'medium') return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />;
     return <ClockIcon className="h-6 w-6 text-blue-500" />;
   };
 
@@ -144,7 +141,7 @@ const Alerts = () => {
                 <FunnelIcon className="h-5 w-5 text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
-              
+
               <select
                 value={filterSeverity}
                 onChange={(e) => setFilterSeverity(e.target.value)}
@@ -185,7 +182,11 @@ const Alerts = () => {
                 <div>
                   <p className="text-sm text-gray-500">High Priority</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {alerts.filter((a) => !a.resolved && (a.severity >= 4 || a.severity === 'high')).length}
+                    {
+                      alerts.filter(
+                        (a) => !a.resolved && (a.severity >= 4 || a.severity === 'high')
+                      ).length
+                    }
                   </p>
                 </div>
               </div>
@@ -308,9 +309,7 @@ const Alerts = () => {
                         <td className="px-6 py-4 text-right">
                           {!alert.resolved && (
                             <button
-                              onClick={() =>
-                                handleResolveAlert(alert.truckId, alert.id)
-                              }
+                              onClick={() => handleResolveAlert(alert.truckId, alert.id)}
                               className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                             >
                               Resolve
@@ -328,8 +327,8 @@ const Alerts = () => {
             {totalPages > 1 && (
               <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
                 <div className="text-sm text-gray-700">
-                  Showing {(page - 1) * pageSize + 1} to{' '}
-                  {Math.min(page * pageSize, alerts.length)} of {alerts.length} alerts
+                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, alerts.length)}{' '}
+                  of {alerts.length} alerts
                 </div>
                 <div className="flex gap-2">
                   <button

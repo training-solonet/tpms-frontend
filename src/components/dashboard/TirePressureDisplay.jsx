@@ -3,13 +3,18 @@ import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/ou
 import { trucksAPI } from '../../services/api.js';
 import WheelFrontIcon from '../icons/WheelFrontIcon.jsx';
 
-const TirePressureDisplay = ({ selectedTruckId, tireData: propTireData, className = '', showHeader = true }) => {
+const TirePressureDisplay = ({
+  selectedTruckId,
+  tireData: propTireData,
+  className = '',
+  showHeader = true,
+}) => {
   const [tireData, setTireData] = useState([]);
   const [truckInfo, setTruckInfo] = useState(null);
-  const [viewMode, 
+  const [
+    viewMode,
     // setViewMode
-    ] 
-    = useState('icons'); // 'visual' | 'list' | 'icons'
+  ] = useState('icons'); // 'visual' | 'list' | 'icons'
 
   // Build a per-axle layout that supports dual tires (2 left, 2 right) for rear axles
   // and single tires for the front axle. Also returns the computed total tire count.
@@ -189,12 +194,14 @@ const TirePressureDisplay = ({ selectedTruckId, tireData: propTireData, classNam
       }
 
       // Default minimal truck info; backend-specific enrichment can be added if available
-      setTruckInfo((prev) => prev || { id: selectedTruckId, name: String(selectedTruckId), tire_config: '6x4' });
+      setTruckInfo(
+        (prev) => prev || { id: selectedTruckId, name: String(selectedTruckId), tire_config: '6x4' }
+      );
 
       // Use propTireData if available (from TPMS), otherwise fetch from API
       if (propTireData && Array.isArray(propTireData) && propTireData.length > 0) {
         // Convert TPMS format to expected format
-        const convertedData = propTireData.map(tire => ({
+        const convertedData = propTireData.map((tire) => ({
           tire_no: tire.tireNo,
           tireNo: tire.tireNo,
           pressure_kpa: tire.tiprValue,
@@ -219,7 +226,9 @@ const TirePressureDisplay = ({ selectedTruckId, tireData: propTireData, classNam
               latestByTire[tireNo] = { ...item, changed_at: ts };
             }
           });
-          const tireArray = Object.values(latestByTire).sort((a, b) => (a.tire_no ?? a.tireNo) - (b.tire_no ?? b.tireNo));
+          const tireArray = Object.values(latestByTire).sort(
+            (a, b) => (a.tire_no ?? a.tireNo) - (b.tire_no ?? b.tireNo)
+          );
           setTireData(tireArray);
         } else {
           setTireData([]);

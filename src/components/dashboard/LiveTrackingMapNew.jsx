@@ -58,22 +58,25 @@ const LiveTrackingMapNew = () => {
     return m ? parseInt(m[1], 10) : null;
   };
 
-  const inSelectedCluster = useCallback((truckId) => {
-    if (!clusterSelections || clusterSelections.size === 0) return true;
-    const n = extractTruckNumber(truckId);
-    if (n == null) return false;
-    for (const key of clusterSelections) {
-      const [lo, hi] = key.split('-').map(Number);
-      if (n >= lo && n <= hi) return true;
-    }
-    return false;
-  }, [clusterSelections]);
+  const inSelectedCluster = useCallback(
+    (truckId) => {
+      if (!clusterSelections || clusterSelections.size === 0) return true;
+      const n = extractTruckNumber(truckId);
+      if (n == null) return false;
+      for (const key of clusterSelections) {
+        const [lo, hi] = key.split('-').map(Number);
+        if (n >= lo && n <= hi) return true;
+      }
+      return false;
+    },
+    [clusterSelections]
+  );
 
   // Apply marker scale/visibility based on zoom and viewport
   const applyMarkerZoomStyling = useCallback(() => {
     // Temporarily disabled to prevent glitches - markers will use default size
     if (!map) return;
-    
+
     // Simple visibility check without scaling to prevent position glitches
     Object.values(markersRef.current).forEach((marker) => {
       try {
@@ -103,13 +106,15 @@ const LiveTrackingMapNew = () => {
             const parts = String(latlngStr).split(',');
             const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
             const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
-            
+
             // Validate coordinates are within reasonable bounds
             const isValidLat = isFinite(lat) && lat >= -90 && lat <= 90;
             const isValidLng = isFinite(lng) && lng >= -180 && lng <= 180;
-            
+
             if (!id || !isValidLat || !isValidLng) {
-              console.warn(`⚠️ Invalid coordinates for vehicle ${id}: lat=${lat}, lng=${lng}, raw="${latlngStr}"`);
+              console.warn(
+                `⚠️ Invalid coordinates for vehicle ${id}: lat=${lat}, lng=${lng}, raw="${latlngStr}"`
+              );
               return null;
             }
             console.log(`📍 Vehicle ${id} position: [${lat}, ${lng}]`);
@@ -349,7 +354,7 @@ const LiveTrackingMapNew = () => {
           marker.addTo(map);
           existing[vehicle.id] = marker;
           marker._status = vehicle.status;
-          
+
           // Add click handler only once when creating marker
           marker.on('click', async () => {
             setSelectedVehicle(vehicle);
@@ -457,14 +462,14 @@ const LiveTrackingMapNew = () => {
         } else {
           // Update existing marker position and icon
           console.log(`🔄 Updating marker ${vehicle.id} to position:`, vehicle.position);
-          
+
           // Update position cleanly without timeout to prevent glitches
           try {
             marker.setLatLng(vehicle.position);
           } catch (err) {
             console.warn('Failed to update marker position:', err);
           }
-          
+
           if (marker._status !== vehicle.status) {
             marker.setIcon(buildIcon(vehicle.status));
             marker._status = vehicle.status;
@@ -752,10 +757,10 @@ const LiveTrackingMapNew = () => {
             {/* Tire Pressure Display */}
             <div className="mt-5">
               <div className="rounded-lg border border-gray-200 p-3">
-                <TirePressureDisplay 
-                  selectedTruckId={selectedVehicle?.id} 
+                <TirePressureDisplay
+                  selectedTruckId={selectedVehicle?.id}
                   tireData={selectedVehicle?.tireData}
-                  showHeader={true} 
+                  showHeader={true}
                 />
               </div>
             </div>

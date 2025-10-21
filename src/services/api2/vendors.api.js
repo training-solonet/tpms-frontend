@@ -14,15 +14,18 @@ export const vendorsApi = {
   getAll: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       if (params.page) queryParams.append('page', params.page);
-      
+
       const queryString = queryParams.toString();
       const url = queryString ? `/vendors?${queryString}` : '/vendors';
-      
+
       console.log('🏢 Fetching vendors from:', url);
       const response = await api2Instance.get(url);
-      console.log('✅ Vendors data loaded:', response?.data?.length || response?.length || 'unknown count');
+      console.log(
+        '✅ Vendors data loaded:',
+        response?.data?.length || response?.length || 'unknown count'
+      );
       return response;
     } catch (error) {
       console.error('❌ Failed to load vendors:', error.message);

@@ -28,10 +28,10 @@ export default function VendorsList() {
     try {
       setLoading(true);
       console.log('📡 Loading vendors from Backend 2...');
-      
+
       const res = await vendorsApi.getAll();
       console.log('✅ Vendors response:', res);
-      
+
       const vendorsArray = res.data?.vendors || res.data;
       if (Array.isArray(vendorsArray)) {
         setVendors(vendorsArray);
@@ -74,7 +74,12 @@ export default function VendorsList() {
   React.useEffect(() => setPage(1), [query, pageSize]);
 
   const onDelete = async (id) => {
-    if (!confirm('Delete this vendor? Note: Vendors with associated trucks or drivers cannot be deleted.')) return;
+    if (
+      !confirm(
+        'Delete this vendor? Note: Vendors with associated trucks or drivers cannot be deleted.'
+      )
+    )
+      return;
     try {
       await vendorsApi.delete(id);
       console.log('✅ Vendor deleted successfully');
@@ -84,7 +89,9 @@ export default function VendorsList() {
       console.error('❌ Failed to delete vendor:', error);
       const errorMsg = error.message || 'Unknown error';
       if (errorMsg.includes('associated trucks') || errorMsg.includes('Cannot delete')) {
-        alert('Cannot delete vendor: This vendor has associated trucks or drivers.\n\nPlease reassign or remove them first.');
+        alert(
+          'Cannot delete vendor: This vendor has associated trucks or drivers.\n\nPlease reassign or remove them first.'
+        );
       } else {
         alert('Failed to delete vendor: ' + errorMsg);
       }

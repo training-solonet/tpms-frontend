@@ -78,11 +78,13 @@ src/pages/
 ## 🔌 API Endpoints Implemented
 
 ### Authentication
+
 - `POST /api/auth/login` - Login with JWT
 - `POST /api/auth/logout` - Logout
 - `POST /api/auth/refresh` - Refresh token
 
 ### Dashboard
+
 - `GET /api/dashboard/stats` - Dashboard statistics
 - `GET /api/dashboard/fleet-summary` - Fleet summary
 - `GET /api/dashboard/alerts` - Alert summary
@@ -90,6 +92,7 @@ src/pages/
 - `GET /api/dashboard/maintenance` - Maintenance report
 
 ### Trucks
+
 - `GET /api/trucks` - Get all trucks (with pagination & filters)
 - `GET /api/trucks/:id` - Get specific truck
 - `POST /api/trucks` - Create truck
@@ -102,6 +105,7 @@ src/pages/
 - `GET /api/trucks/realtime/locations` - Real-time GeoJSON locations
 
 ### Drivers
+
 - `GET /api/drivers` - Get all drivers
 - `GET /api/drivers/:id` - Get specific driver
 - `POST /api/drivers` - Create driver
@@ -109,6 +113,7 @@ src/pages/
 - `DELETE /api/drivers/:id` - Delete driver
 
 ### Vendors
+
 - `GET /api/vendors` - Get all vendors
 - `GET /api/vendors/:id` - Get specific vendor
 - `POST /api/vendors` - Create vendor
@@ -116,6 +121,7 @@ src/pages/
 - `DELETE /api/vendors/:id` - Delete vendor
 
 ### Devices
+
 - `GET /api/devices` - Get all devices
 - `GET /api/devices/:id` - Get specific device
 - `POST /api/devices` - Create device
@@ -125,6 +131,7 @@ src/pages/
 - `GET /api/devices/:id/sensors` - Get device sensors
 
 ### Sensors/Telemetry
+
 - `POST /api/sensors/tire-pressure` - Ingest tire pressure data
 - `POST /api/sensors/tire-temperature` - Ingest tire temperature
 - `POST /api/sensors/gps` - Ingest GPS data
@@ -132,11 +139,13 @@ src/pages/
 - `GET /api/sensors/last` - Get last sensor data
 
 ### Alerts
+
 - `GET /api/dashboard/alerts` - Get all alerts
 - `GET /api/trucks/:id/alerts` - Get truck alerts
 - `PUT /api/trucks/:truckId/alerts/:alertId/resolve` - Resolve alert
 
 ### Mining Areas
+
 - `GET /api/mining-area` - Get all mining areas
 - `GET /api/mining-area/:zoneName/trucks` - Get trucks in zone
 - `POST /api/mining-area` - Create mining zone
@@ -146,6 +155,7 @@ src/pages/
 ## 🔄 WebSocket Integration
 
 ### Connection
+
 ```javascript
 import fleetWebSocket from '../services/api2/websocket';
 
@@ -159,11 +169,13 @@ fleetWebSocket.subscribe('truck_updates');
 ```
 
 ### Available Channels
+
 - `dashboard` - Dashboard statistics updates (every 30s)
 - `alerts` - New alerts and alert resolution
 - `truck_updates` / `truck_locations_update` - Real-time truck location updates
 
 ### Event Listeners
+
 ```javascript
 fleetWebSocket.on('dashboardUpdate', (data) => {
   console.log('Dashboard updated:', data);
@@ -187,6 +199,7 @@ fleetWebSocket.on('truckUpdate', (locations) => {
 5. **Logout**: Clears token from `localStorage`
 
 ### Token Management
+
 ```javascript
 import { authApi } from '../services/api2';
 
@@ -203,6 +216,7 @@ const token = authApi.getToken();
 ## 📊 Custom Hooks Usage
 
 ### Dashboard Hook
+
 ```javascript
 import { useDashboard } from '../hooks/useApi2';
 
@@ -210,6 +224,7 @@ const { stats, loading, error, refetch } = useDashboard();
 ```
 
 ### Trucks Hook
+
 ```javascript
 import { useTrucks } from '../hooks/useApi2';
 
@@ -217,29 +232,33 @@ const { trucks, loading, error, refetch, totalPages, stats } = useTrucks({
   page: 1,
   limit: 50,
   status: 'active',
-  search: 'B 7040'
+  search: 'B 7040',
 });
 ```
 
 ### Drivers Hook
+
 ```javascript
 import { useDrivers } from '../hooks/useApi2';
 
 const { drivers, loading, error, refetch, totalPages } = useDrivers({
   page: 1,
-  limit: 25
+  limit: 25,
 });
 ```
 
 ## 🚨 Error Handling
 
 ### Global Error Interceptor
+
 Axios interceptor handles common errors:
+
 - **401 Unauthorized**: Auto-redirect to login
 - **Network errors**: Error message displayed
 - **API errors**: Error message from backend shown
 
 ### Page-level Error Handling
+
 ```javascript
 try {
   const response = await trucksApi.getAll();
@@ -253,6 +272,7 @@ try {
 ## 🔧 Configuration
 
 ### Backend 2 Base URL
+
 ```javascript
 // src/services/api2/config.js
 export const API_BASE_URL = 'http://connectis.my.id:3001/api';
@@ -260,6 +280,7 @@ export const WS_BASE_URL = 'ws://connectis.my.id:3001/ws';
 ```
 
 ### Axios Configuration
+
 - **Timeout**: 30 seconds
 - **Headers**: JSON content-type
 - **Auth**: Bearer token auto-attached
@@ -267,6 +288,7 @@ export const WS_BASE_URL = 'ws://connectis.my.id:3001/ws';
 ## 📝 Response Format
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -284,6 +306,7 @@ export const WS_BASE_URL = 'ws://connectis.my.id:3001/ws';
 ```
 
 ### Error Response
+
 ```json
 {
   "success": false,
@@ -295,6 +318,7 @@ export const WS_BASE_URL = 'ws://connectis.my.id:3001/ws';
 ## 🧪 Testing
 
 ### Test Login
+
 ```bash
 curl -X POST http://connectis.my.id:3001/api/auth/login \
   -H "Content-Type: application/json" \
@@ -302,6 +326,7 @@ curl -X POST http://connectis.my.id:3001/api/auth/login \
 ```
 
 ### Test API with Token
+
 ```bash
 curl http://connectis.my.id:3001/api/trucks \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
@@ -336,16 +361,19 @@ curl http://connectis.my.id:3001/api/trucks \
 ## 🔍 Debugging
 
 ### Check Backend 2 Connection
+
 ```javascript
 import { api2Instance } from '../services/api2';
 
 // Test connection
-api2Instance.get('/trucks')
-  .then(res => console.log('✅ Connected:', res))
-  .catch(err => console.error('❌ Error:', err));
+api2Instance
+  .get('/trucks')
+  .then((res) => console.log('✅ Connected:', res))
+  .catch((err) => console.error('❌ Error:', err));
 ```
 
 ### Check WebSocket Connection
+
 ```javascript
 import fleetWebSocket from '../services/api2/websocket';
 
@@ -353,6 +381,7 @@ console.log('Connected:', fleetWebSocket.isConnected());
 ```
 
 ### Browser Console Logs
+
 - 📡 Loading data from Backend 2
 - ✅ Success responses
 - ❌ Error responses
@@ -369,6 +398,7 @@ console.log('Connected:', fleetWebSocket.isConnected());
 ## 📞 Support
 
 Jika ada masalah atau pertanyaan:
+
 1. Check browser console untuk error logs
 2. Verify Backend 2 is running: `http://connectis.my.id:3001/api`
 3. Check network tab untuk request/response details

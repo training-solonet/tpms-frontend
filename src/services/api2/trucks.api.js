@@ -14,21 +14,25 @@ export const trucksApi = {
   getAll: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
-      
+
       // Be-tpms.connectis.my.id might not support large limit values
       // Try without query params first, or use smaller limit
       if (params.page) queryParams.append('page', params.page);
       if (params.status) queryParams.append('status', params.status);
       if (params.minFuel) queryParams.append('minFuel', params.minFuel);
       if (params.search) queryParams.append('search', params.search);
-      
+
       // Try with query string first
       const queryString = queryParams.toString();
       const url = queryString ? `/trucks?${queryString}` : '/trucks';
-      
+
       console.log('🚛 Fetching trucks from:', url);
       const response = await api2Instance.get(url);
-      console.log('✅ Trucks data loaded:', response?.data?.length || response?.length || 'unknown count', 'trucks');
+      console.log(
+        '✅ Trucks data loaded:',
+        response?.data?.length || response?.length || 'unknown count',
+        'trucks'
+      );
       return response;
     } catch (error) {
       console.error('❌ Failed to load trucks:', error.message);
@@ -64,14 +68,12 @@ export const trucksApi = {
    */
   getLocationHistory: async (truckId, params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.timeRange) queryParams.append('timeRange', params.timeRange);
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.minSpeed !== undefined) queryParams.append('minSpeed', params.minSpeed);
-    
-    const response = await api2Instance.get(
-      `/trucks/${truckId}/history?${queryParams.toString()}`
-    );
+
+    const response = await api2Instance.get(`/trucks/${truckId}/history?${queryParams.toString()}`);
     return response;
   },
 
@@ -83,13 +85,11 @@ export const trucksApi = {
    */
   getAlerts: async (truckId, params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.resolved !== undefined) queryParams.append('resolved', params.resolved);
     if (params.limit) queryParams.append('limit', params.limit);
-    
-    const response = await api2Instance.get(
-      `/trucks/${truckId}/alerts?${queryParams.toString()}`
-    );
+
+    const response = await api2Instance.get(`/trucks/${truckId}/alerts?${queryParams.toString()}`);
     return response;
   },
 
@@ -110,10 +110,10 @@ export const trucksApi = {
    */
   getLocationByPlate: async (plateNumber, params = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.timeRange) queryParams.append('timeRange', params.timeRange);
     if (params.limit) queryParams.append('limit', params.limit);
-    
+
     const response = await api2Instance.get(
       `/location-history/${encodeURIComponent(plateNumber)}?${queryParams.toString()}`
     );

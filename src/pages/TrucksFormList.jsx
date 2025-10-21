@@ -21,7 +21,7 @@ const TrucksFormList = () => {
     const loadData = async () => {
       try {
         console.log('📡 Loading trucks data from Backend 2...');
-        
+
         const [trucksRes, driversRes, vendorsRes] = await Promise.all([
           trucksApi.getAll(),
           driversApi.getAll().catch((err) => {
@@ -33,15 +33,15 @@ const TrucksFormList = () => {
             return { data: { vendors: [] } };
           }),
         ]);
-        
+
         console.log('✅ Trucks response:', trucksRes);
         console.log('✅ Drivers response:', driversRes);
         console.log('✅ Vendors response:', vendorsRes);
-        
+
         const trucksArray = trucksRes?.data?.trucks || [];
         const driversArray = driversRes?.data?.drivers || [];
         const vendorsArray = vendorsRes?.data?.vendors || [];
-        
+
         setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
         setDrivers(Array.isArray(driversArray) ? driversArray : []);
         setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
@@ -65,10 +65,10 @@ const TrucksFormList = () => {
         plate: truck.plateNumber || truck.plate_number,
         name: truck.truckNumber || truck.name,
         cluster: truck.fleetGroupId || truck.fleet_group_id || '-',
-        driver: { 
-          name: driver 
-            ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || '-')
-            : (truck.driverName || '-')
+        driver: {
+          name: driver
+            ? driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || '-'
+            : truck.driverName || '-',
         },
         vendor_id: truck.vendorId || truck.vendor_id || '',
         status: truck.status || 'idle',
@@ -280,4 +280,3 @@ const TrucksFormList = () => {
 };
 
 export default TrucksFormList;
-

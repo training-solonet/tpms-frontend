@@ -1,11 +1,13 @@
 # 🔧 Refactoring Documentation
 
 ## Overview
+
 Proyek ini telah di-refactor untuk meningkatkan struktur kode, maintainability, dan scalability.
 
 ## 📁 Struktur Baru
 
 ### Sebelum Refactoring
+
 ```
 src/
 ├── services/
@@ -17,6 +19,7 @@ src/
 ```
 
 ### Setelah Refactoring
+
 ```
 src/
 ├── services/
@@ -52,21 +55,25 @@ src/
 ## 🎯 Keuntungan Refactoring
 
 ### 1. **Modularitas**
+
 - Setiap API endpoint memiliki file sendiri
 - Lebih mudah untuk menemukan dan memodifikasi kode
 - Mengurangi merge conflicts saat bekerja tim
 
 ### 2. **Maintainability**
+
 - File lebih kecil dan fokus (< 300 lines per file)
 - Easier to test individual modules
 - Clear separation of concerns
 
 ### 3. **Scalability**
+
 - Mudah menambahkan API endpoint baru
 - Struktur yang konsisten
 - Better code organization
 
 ### 4. **Developer Experience**
+
 - Autocomplete yang lebih baik di IDE
 - Faster file navigation
 - Clear module boundaries
@@ -76,11 +83,13 @@ src/
 ### Importing APIs
 
 #### Old Way (Still Works - Backward Compatible)
+
 ```javascript
 import { authAPI, trucksAPI } from '../services/api.js';
 ```
 
 #### New Way (Recommended)
+
 ```javascript
 // Import dari index
 import { authAPI, trucksAPI } from '../services/api';
@@ -93,14 +102,21 @@ import { trucksAPI } from '../services/api/trucks.api.js';
 ### Menggunakan Routes
 
 #### Old Way
+
 ```javascript
 // Di App.jsx - routes tercampur dengan component
-<Route path="/dashboard" element={
-  <ProtectedRoute><Dashboard /></ProtectedRoute>
-} />
+<Route
+  path="/dashboard"
+  element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  }
+/>
 ```
 
 #### New Way
+
 ```javascript
 // Di App.jsx - simplified
 import AppRoutes from './routes';
@@ -123,18 +139,24 @@ function App() {
 ### API Modules
 
 #### **config.js**
+
 Contains all API configuration constants
+
 - `API_CONFIG` - Main API configuration
 - `TPMS_CONFIG` - TPMS system configuration
 
 #### **auth.api.js**
+
 Authentication operations
+
 - `login(credentials)` - User login
 - `logout()` - User logout
 - `getCurrentUser()` - Get current user info
 
 #### **trucks.api.js**
+
 Truck management operations
+
 - `getAll(params)` - Get all trucks
 - `getById(id)` - Get single truck
 - `create(payload)` - Create truck
@@ -145,19 +167,25 @@ Truck management operations
 - `getLocationHistory(id, params)` - Get location history
 
 #### **vendors.api.js**
+
 Vendor management (CRUD operations)
 
 #### **drivers.api.js**
+
 Driver management (CRUD operations)
 
 #### **devices.api.js**
+
 Device management (CRUD operations)
 
 #### **sensors.api.js**
+
 Sensor data operations (CRUD operations)
 
 #### **dashboard.api.js**
+
 Dashboard data and statistics
+
 - `getStats()` - Dashboard statistics
 - `getFleetSummary()` - Fleet summary
 - `getAlerts()` - Alert notifications
@@ -165,18 +193,24 @@ Dashboard data and statistics
 - `getMaintenanceReport()` - Maintenance report
 
 #### **mining-area.api.js**
+
 Mining area boundaries and zones
+
 - `getBoundaries()` - Get area boundaries
 - `getZoneStatistics()` - Zone statistics
 - `getTrucksInZone(zoneName)` - Trucks in zone
 
 #### **alerts.api.js**
+
 Alert notifications
+
 - `getAll(params)` - Get all alerts
 - `resolve(alertId)` - Resolve alert
 
 #### **tpms.api.js**
+
 TPMS (Tire Pressure Monitoring System)
+
 - `getRealtimeWSUrl()` - WebSocket URL
 - `getRealtimeSnapshot()` - Real-time snapshot
 - `getLocationHistory(params)` - Location history
@@ -184,14 +218,18 @@ TPMS (Tire Pressure Monitoring System)
 ### Utility Modules
 
 #### **apiRequest.js**
+
 Generic API request handler with:
+
 - Authentication headers
 - Error handling
 - Timeout management
 - Automatic retry logic
 
 #### **connectionUtils.js**
+
 Connection monitoring utilities:
+
 - `checkBackendConnection()` - Check backend availability
 - `isConnectionOnline()` - Get online status
 - `startConnectionMonitor(interval)` - Start monitoring
@@ -199,7 +237,9 @@ Connection monitoring utilities:
 ### WebSocket
 
 #### **FleetWebSocket.js**
+
 WebSocket connection for real-time updates:
+
 - `connect()` - Connect to WebSocket
 - `subscribe(channel, handler)` - Subscribe to channel
 - `send(message)` - Send message
@@ -208,12 +248,15 @@ WebSocket connection for real-time updates:
 ### Routes
 
 #### **ProtectedRoute.jsx**
+
 Route wrapper that requires authentication
 
 #### **PublicRoute.jsx**
+
 Route wrapper that redirects authenticated users
 
 #### **routes/index.jsx**
+
 Centralized routing configuration
 
 ## 🔄 Backward Compatibility
@@ -246,5 +289,6 @@ Setelah refactoring, pastikan:
 Jika ada masalah atau pertanyaan setelah refactoring, silakan hubungi tim development.
 
 ---
+
 **Last Updated**: October 20, 2025
 **Refactored By**: AI Assistant

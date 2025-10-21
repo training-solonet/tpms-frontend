@@ -2,8 +2,6 @@
 
 ## Frontend Integration Guide## Frontend Integration Guide
 
-
-
 ### 🚀 **Server Information**### 🚀 **Server Information**
 
 - **Base URL**: `http://connectis.my.id:3001/api`- **Base URL**: `http://connectis.my.id:3001/api`
@@ -42,13 +40,13 @@
 
 8. [Vendor Management](#-vendor-management){
 
-9. [Driver Management](#-driver-management)  "username": "admin",
+9. [Driver Management](#-driver-management) "username": "admin",
 
-10. [WebSocket Real-time Integration](#-websocket-real-time-integration)  "password": "admin123"
+10. [WebSocket Real-time Integration](#-websocket-real-time-integration) "password": "admin123"
 
 11. [Error Handling](#-error-handling)}
 
-```
+````
 
 ---
 
@@ -110,7 +108,7 @@
 
 }```
 
-```
+````
 
 ---
 
@@ -118,15 +116,13 @@
 
 **Endpoint**: `POST /api/auth/refresh`## 🚛 **Truck Management**
 
-
-
 **Request Body**:### Get All Trucks
 
 ```json**Endpoint**: `GET /api/trucks`
 
 {
 
-  "refreshToken": "your-refresh-token-here"**Query Parameters**:
+"refreshToken": "your-refresh-token-here"**Query Parameters**:
 
 }- `page` (optional): Page number (default: 1)
 
@@ -137,8 +133,6 @@
 ### Logout- `minFuel` (optional): Minimum fuel percentage
 
 **Endpoint**: `POST /api/auth/logout`- `search` (optional): Search by truck number or plate
-
-
 
 **Usage in Frontend**:### Get Truck Location History
 
@@ -156,13 +150,13 @@ localStorage.setItem('authToken', token);**Query Parameters**:
 
 const headers = {- `minSpeed` (optional): Minimum speed filter (default: 0)
 
-  'Authorization': `Bearer ${token}`,
+'Authorization': `Bearer ${token}`,
 
-  'Content-Type': 'application/json'**Example Request**:
+'Content-Type': 'application/json'**Example Request**:
 
 };```javascript
 
-```// Primary endpoint
+````// Primary endpoint
 
 const response = await fetch('http://connectis.my.id:3001/api/location-history/B%207040%20AD?timeRange=24h&limit=200&minSpeed=0', {
 
@@ -524,29 +518,25 @@ const response = await fetch('http://connectis.my.id:3001/api/trucks?page=1&limi
 
 }}
 
-``````
-
-
+````
 
 ### Update Truck### Update Truck Status
 
 **Endpoint**: `PUT /api/trucks/:id`**Endpoint**: `PUT /api/trucks/:id/status`
 
-
-
 **Request Body**:**Request Body**:
 
-```json```json
+`json`json
 
 {{
 
-  "name": "truck-updated",  "status": "maintenance"
+"name": "truck-updated", "status": "maintenance"
 
-  "status": "maintenance"}
+"status": "maintenance"}
 
 }```
 
-```
+````
 
 **Response**:
 
@@ -688,17 +678,17 @@ map.addSource('trucks', {      '#ef4444'
 
 });});
 
-```
+````
 
 map.addLayer({
 
-  id: 'truck-points',### Get Mining Area Boundaries
+id: 'truck-points',### Get Mining Area Boundaries
 
-  type: 'circle',**Endpoint**: `GET /api/mining-area`
+type: 'circle',**Endpoint**: `GET /api/mining-area`
 
-  source: 'trucks',
+source: 'trucks',
 
-  paint: {**Response**:
+paint: {**Response**:
 
     'circle-radius': 8,```json
 
@@ -714,11 +704,11 @@ map.addLayer({
 
     ]      {
 
-  }        "type": "Feature",
+} "type": "Feature",
 
-});        "properties": {
+}); "properties": {
 
-```          "Name": "PT INDOBARA Main Mining Area",
+`````"Name": "PT INDOBARA Main Mining Area",
 
           "description": "Main extraction zone",
 
@@ -882,7 +872,7 @@ map.addLayer({
 
     "recent": []    this.subscriptions = new Set();
 
-  }    
+  }
 
 }    this.ws.onopen = () => {
 
@@ -892,7 +882,7 @@ map.addLayer({
 
 ### Get Fuel Report    };
 
-**Endpoint**: `GET /api/dashboard/fuel`    
+**Endpoint**: `GET /api/dashboard/fuel`
 
     this.ws.onmessage = (event) => {
 
@@ -902,7 +892,7 @@ map.addLayer({
 
     };
 
----    
+---
 
     this.ws.onclose = () => {
 
@@ -914,7 +904,7 @@ map.addLayer({
 
 **Endpoint**: `POST /api/sensors/tire-pressure`    };
 
-    
+
 
 **Request Body**:    this.ws.onerror = (error) => {
 
@@ -924,7 +914,7 @@ map.addLayer({
 
   "device_sn": "DEVICE-SPIDERMAN-001",  }
 
-  "tire_no": 1,  
+  "tire_no": 1,
 
   "pressure_kpa": 120.5,  send(message) {
 
@@ -936,7 +926,7 @@ map.addLayer({
 
   }
 
-### Ingest Tire Temperature Data  
+### Ingest Tire Temperature Data
 
 **Endpoint**: `POST /api/sensors/tire-temperature`  subscribe(channel) {
 
@@ -954,7 +944,7 @@ map.addLayer({
 
   "temperature_celsius": 68.2  }
 
-}  
+}
 
 ```  handleMessage(message) {
 
@@ -998,7 +988,7 @@ map.addLayer({
 
 ```json- `truck_updates`: Real-time truck location and status updates
 
-{- `alerts`: New alerts and alert status changes  
+{- `alerts`: New alerts and alert status changes
 
   "device_sn": "DEVICE-SPIDERMAN-001",- `dashboard`: Dashboard statistics updates
 
@@ -1046,7 +1036,7 @@ map.addLayer({
 
 **Endpoint**: `GET /api/sensors/last`}
 
-```
+`````
 
 **Query Parameters**:
 
@@ -1058,7 +1048,7 @@ const fleetWS = new FleetWebSocket(authToken);
 
 **Response**:
 
-```json// Subscribe to truck updates
+```````json// Subscribe to truck updates
 
 {fleetWS.subscribe('truck_updates');
 
@@ -1186,11 +1176,11 @@ const fleetWS = new FleetWebSocket(authToken);
 
             [    });
 
-              [115.432199, -3.7172],    
+              [115.432199, -3.7172],
 
               [115.658299, -3.431898],    const data = await response.json();
 
-              [115.432199, -3.7172]    
+              [115.432199, -3.7172]
 
             ]    if (!response.ok) {
 
@@ -1198,7 +1188,7 @@ const fleetWS = new FleetWebSocket(authToken);
 
         }    }
 
-      }    
+      }
 
     ]    return data;
 
@@ -1206,7 +1196,7 @@ const fleetWS = new FleetWebSocket(authToken);
 
   "message": "Retrieved mining areas"    console.error('API Error:', error);
 
-}    
+}
 
 ```    if (error.status === 401) {
 
@@ -1216,7 +1206,7 @@ const fleetWS = new FleetWebSocket(authToken);
 
 **Endpoint**: `GET /api/mining-area/:zoneName/trucks`    }
 
-    
+
 
 **Response**:    throw error;
 
@@ -1300,7 +1290,7 @@ export const useTrucks = (filters = {}) => {
 
   const [error, setError] = useState(null);
 
-**Request Body**:  
+**Request Body**:
 
 ```json  useEffect(() => {
 
@@ -1328,13 +1318,13 @@ export const useTrucks = (filters = {}) => {
 
 **Endpoint**: `PUT /api/mining-area/:zoneName`    };
 
-    
+
 
 ### Delete Mining Zone    fetchTrucks();
 
 **Endpoint**: `DELETE /api/mining-area/:zoneName`  }, [filters]);
 
-  
+
 
 ---  return { trucks, loading, error };
 
@@ -1358,7 +1348,7 @@ import { ref, onMounted } from 'vue';
 
 - `type` (optional): Filter by device type  const loading = ref(true);
 
-  
+
 
 **Response**:  const fetchStats = async () => {
 
@@ -1380,11 +1370,11 @@ import { ref, onMounted } from 'vue';
 
         "type": "GPS",  };
 
-        "sim_number": "628123456789",  
+        "sim_number": "628123456789",
 
         "truck_id": "947f47ed-dae2-44d8-8154-57fc62de52f6",  onMounted(fetchStats);
 
-        "installed_at": "2025-10-20T04:07:42.000Z"  
+        "installed_at": "2025-10-20T04:07:42.000Z"
 
       }  return { stats, loading, fetchStats };
 
@@ -1634,7 +1624,7 @@ import { ref, onMounted } from 'vue';
 
 }## 👨‍💼 **Driver Management**
 
-```
+```````
 
 ### Get All Drivers
 
@@ -1652,11 +1642,9 @@ import { ref, onMounted } from 'vue';
 
 ---- `vendor_id` (optional): Filter by vendor ID
 
+## 👨‍💼 **Driver Management\*\***Response\*\*:
 
-
-## 👨‍💼 **Driver Management****Response**:
-
-```json
+`````json
 
 ### Get All Drivers{
 
@@ -1804,13 +1792,13 @@ import { ref, onMounted } from 'vue';
 
 **Endpoint**: `GET /api/drivers/expiring-licenses`
 
-**Backend Server**: `http://connectis.my.id:3001`  
+**Backend Server**: `http://connectis.my.id:3001`
 
-**Query Parameters**:**API Documentation**: This file  
+**Query Parameters**:**API Documentation**: This file
 
-- `days` (optional): Days ahead to check (default: 30)**WebSocket**: `ws://connectis.my.id:3001/ws`  
+- `days` (optional): Days ahead to check (default: 30)**WebSocket**: `ws://connectis.my.id:3001/ws`
 
-**Test Coverage**: 15/15 endpoints passing ✅  
+**Test Coverage**: 15/15 endpoints passing ✅
 
 ---**Status**: 🟢 Fully Operational - Vendor & Driver management integrated
 
@@ -1824,32 +1812,32 @@ class FleetWebSocket {
     this.ws = new WebSocket('ws://connectis.my.id:3001/ws');
     this.token = token;
     this.subscriptions = new Set();
-    
+
     this.ws.onopen = () => {
       console.log('WebSocket connected');
     };
-    
+
     this.ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
       this.handleMessage(message);
     };
-    
+
     this.ws.onclose = () => {
       console.log('WebSocket disconnected');
       setTimeout(() => this.reconnect(), 5000);
     };
-    
+
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
   }
-  
+
   send(message) {
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
   }
-  
+
   subscribe(channel) {
     this.subscriptions.add(channel);
     this.send({
@@ -1858,7 +1846,7 @@ class FleetWebSocket {
       requestId: `sub-${Date.now()}`
     });
   }
-  
+
   handleMessage(message) {
     switch (message.type) {
       case 'truck_locations_update':
@@ -1876,15 +1864,17 @@ class FleetWebSocket {
     }
   }
 }
-```
+`````
 
 ### Available Channels
+
 - `truck_updates`: Real-time truck location and status updates
-- `alerts`: New alerts and alert status changes  
+- `alerts`: New alerts and alert status changes
 - `dashboard`: Dashboard statistics updates
 - `truck_locations_update`: Alternative channel for location updates
 
 ### Usage Example
+
 ```javascript
 const fleetWS = new FleetWebSocket(authToken);
 
@@ -1897,11 +1887,11 @@ fleetWS.onTruckLocationsUpdate = (data) => {
 // Subscribe to alerts
 fleetWS.subscribe('alerts');
 fleetWS.onAlertUpdate = (alertData) => {
-  alertData.forEach(alert => {
+  alertData.forEach((alert) => {
     showNotification({
       title: `${alert.type} Alert`,
       message: `Truck ${alert.plateNumber}: Severity ${alert.severity}`,
-      timestamp: alert.occurredAt
+      timestamp: alert.occurredAt,
     });
   });
 };
@@ -1918,6 +1908,7 @@ fleetWS.onDashboardUpdate = (stats) => {
 ## 🛠 **Error Handling**
 
 ### Standard Error Response
+
 ```json
 {
   "success": false,
@@ -1927,6 +1918,7 @@ fleetWS.onDashboardUpdate = (stats) => {
 ```
 
 ### Common HTTP Status Codes
+
 - `200`: Success
 - `201`: Created
 - `400`: Bad Request
@@ -1936,32 +1928,33 @@ fleetWS.onDashboardUpdate = (stats) => {
 - `500`: Internal Server Error
 
 ### Frontend Error Handling
+
 ```javascript
 const apiCall = async (endpoint, options = {}) => {
   try {
     const response = await fetch(`http://connectis.my.id:3001/api${endpoint}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${getAuthToken()}`,
+        Authorization: `Bearer ${getAuthToken()}`,
         'Content-Type': 'application/json',
-        ...options.headers
-      }
+        ...options.headers,
+      },
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'API request failed');
     }
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
-    
+
     if (error.status === 401) {
       redirectToLogin();
     }
-    
+
     throw error;
   }
 };
@@ -1972,6 +1965,7 @@ const apiCall = async (endpoint, options = {}) => {
 ## 📱 **Frontend Integration Examples**
 
 ### React Hook for Truck Data
+
 ```javascript
 import { useState, useEffect } from 'react';
 
@@ -1979,7 +1973,7 @@ export const useTrucks = (filters = {}) => {
   const [trucks, setTrucks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     const fetchTrucks = async () => {
       try {
@@ -1993,22 +1987,23 @@ export const useTrucks = (filters = {}) => {
         setLoading(false);
       }
     };
-    
+
     fetchTrucks();
   }, [filters]);
-  
+
   return { trucks, loading, error };
 };
 ```
 
 ### Vue.js Composition API
+
 ```javascript
 import { ref, onMounted } from 'vue';
 
 export function useDashboard() {
   const stats = ref({});
   const loading = ref(true);
-  
+
   const fetchStats = async () => {
     try {
       const response = await apiCall('/dashboard/stats');
@@ -2019,9 +2014,9 @@ export function useDashboard() {
       loading.value = false;
     }
   };
-  
+
   onMounted(fetchStats);
-  
+
   return { stats, loading, fetchStats };
 }
 ```
@@ -2031,15 +2026,18 @@ export function useDashboard() {
 ## 🚀 **Performance Recommendations**
 
 ### Pagination
+
 - Use pagination for large datasets (`page` and `limit` parameters)
 - Default limit is 50, maximum recommended is 100
 
 ### Caching
+
 - Dashboard stats are real-time but can be cached for 30 seconds
 - Truck locations update every second via WebSocket
 - Mining areas are static and can be cached indefinitely
 
 ### WebSocket Optimization
+
 - Subscribe only to needed channels
 - Implement connection pooling for multiple tabs
 - Use heartbeat/ping to maintain connection
@@ -2062,11 +2060,13 @@ export function useDashboard() {
 ## 📝 **API Endpoint Summary**
 
 ### Authentication (3 endpoints)
+
 - `POST /api/auth/login` - Login with username/password
 - `POST /api/auth/refresh` - Refresh JWT token
 - `POST /api/auth/logout` - Logout user
 
 ### Trucks (13 endpoints)
+
 - `GET /api/trucks` - Get all trucks with pagination
 - `GET /api/trucks/:id` - Get specific truck details
 - `GET /api/trucks/:id/tires` - Get truck tire pressures
@@ -2082,6 +2082,7 @@ export function useDashboard() {
 - `DELETE /api/trucks/:id` - Delete truck
 
 ### Dashboard (5 endpoints)
+
 - `GET /api/dashboard/stats` - Get dashboard statistics
 - `GET /api/dashboard/fleet-summary` - Get fleet summary
 - `GET /api/dashboard/alerts` - Get alert summary
@@ -2089,6 +2090,7 @@ export function useDashboard() {
 - `GET /api/dashboard/maintenance` - Get maintenance report
 
 ### Sensors (8 endpoints)
+
 - `POST /api/sensors/tire-pressure` - Ingest tire pressure data
 - `POST /api/sensors/tire-temperature` - Ingest tire temperature data
 - `POST /api/sensors/gps` - Ingest GPS data
@@ -2099,6 +2101,7 @@ export function useDashboard() {
 - `POST /api/sensors/queue/process` - Process queue manually
 
 ### Mining Area (9 endpoints)
+
 - `GET /api/mining-area` - Get all mining areas (GeoJSON)
 - `GET /api/mining-area/:zoneName/trucks` - Get trucks in zone
 - `GET /api/mining-area/statistics` - Get zone statistics
@@ -2110,6 +2113,7 @@ export function useDashboard() {
 - `DELETE /api/mining-area/:zoneName` - Delete mining zone
 
 ### Devices (11 endpoints)
+
 - `GET /api/devices` - Get all devices
 - `GET /api/devices/:deviceId` - Get device by ID
 - `POST /api/devices` - Create device
@@ -2122,6 +2126,7 @@ export function useDashboard() {
 - `DELETE /api/devices/sensors/:sensorId` - Delete sensor
 
 ### Vendors (6 endpoints)
+
 - `GET /api/vendors` - Get all vendors
 - `GET /api/vendors/:vendorId` - Get specific vendor
 - `GET /api/vendors/:vendorId/trucks` - Get vendor trucks
@@ -2130,6 +2135,7 @@ export function useDashboard() {
 - `DELETE /api/vendors/:vendorId` - Delete vendor
 
 ### Drivers (6 endpoints)
+
 - `GET /api/drivers` - Get all drivers
 - `GET /api/drivers/:driverId` - Get specific driver
 - `GET /api/drivers/expiring-licenses` - Get drivers with expiring licenses
@@ -2138,9 +2144,11 @@ export function useDashboard() {
 - `DELETE /api/drivers/:driverId` - Deactivate driver
 
 ### Fleet (1 endpoint)
+
 - `GET /api/fleet/locations` - Get real-time fleet locations (GeoJSON)
 
 ### History/Tracking (2 endpoints)
+
 - `GET /api/location-history/:truckName` - Get truck location history
 - `GET /api/tracking/:truckName` - Get truck tracking history
 

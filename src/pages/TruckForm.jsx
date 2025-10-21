@@ -48,9 +48,17 @@ export default function TruckForm() {
         ]);
         console.log('✅ Vendors response:', vendorsRes);
         console.log('✅ Trucks response:', trucksRes);
-        
-        setVendors(Array.isArray(vendorsRes?.data?.vendors || vendorsRes?.data) ? (vendorsRes.data.vendors || vendorsRes.data) : []);
-        setTrucks(Array.isArray(trucksRes?.data?.trucks || trucksRes?.data) ? (trucksRes.data.trucks || trucksRes.data) : []);
+
+        setVendors(
+          Array.isArray(vendorsRes?.data?.vendors || vendorsRes?.data)
+            ? vendorsRes.data.vendors || vendorsRes.data
+            : []
+        );
+        setTrucks(
+          Array.isArray(trucksRes?.data?.trucks || trucksRes?.data)
+            ? trucksRes.data.trucks || trucksRes.data
+            : []
+        );
       } catch (error) {
         console.error('Failed to load data:', error);
         setVendors([]);
@@ -62,7 +70,8 @@ export default function TruckForm() {
   }, []);
 
   const initialTruck = React.useMemo(() => {
-    if (location.state?.truck) return { ...location.state.truck, tires: location.state.truck.tires || [] };
+    if (location.state?.truck)
+      return { ...location.state.truck, tires: location.state.truck.tires || [] };
     const foundTruck = trucks.find((t) => t.id === id) || trucks[0] || {};
     return { ...foundTruck, tires: foundTruck.tires || [] };
   }, [id, location.state, trucks]);
@@ -95,7 +104,7 @@ export default function TruckForm() {
   const handleSave = async () => {
     try {
       console.log('💾 Saving truck data to Backend 2...', truck);
-      
+
       const truckData = {
         truckNumber: truck.truckNumber || truck.id,
         plateNumber: truck.plateNumber || truck.plate_number,
@@ -219,95 +228,105 @@ export default function TruckForm() {
                   Read-only telemetry (live data from sensors). Editing is disabled.
                 </p>
                 <div className="space-y-4">
-                  {truck.tires && truck.tires.length > 0 ? truck.tires.map((tire, idx) => {
-                    const sensor = tire.sensor || {};
-                    const sensorData = sensor.data || {};
-                    return (
-                    <details key={tire.tireNo || idx} className="group border rounded-lg">
-                      <summary className="cursor-pointer select-none px-4 py-2 flex items-center justify-between">
-                        <span className="font-medium">Tire #{tire.tireNo || idx + 1}</span>
-                        <span className="text-xs text-gray-500">SN {sensor.sn || 'N/A'}</span>
-                      </summary>
-                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="col-span-1 md:col-span-2">
-                          <h3 className="text-sm font-semibold text-gray-800">TPMS (tpdata)</h3>
-                        </div>
-                        <Input label="SN" value={sensor.sn || ''} readOnly />
-                        <Input label="SIM Number" value={sensorData.simNumber || ''} readOnly />
-                        <Select
-                          label="Exception Types (exType)"
-                          value={sensorData.exType || ''}
-                          disabled
-                        >
-                          <option value="">None</option>
-                          <option value="1">1 High Pressure</option>
-                          <option value="2">2 Low Pressure</option>
-                          <option value="3">3 High Temperature</option>
-                          <option value="4">4 Sensor Lost</option>
-                          <option value="5">5 Sensor Battery Low</option>
-                        </Select>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          label="Pressure (kPa) tiprValue"
-                          value={sensorData.tiprValue || ''}
-                          readOnly
-                        />
-                        <Input
-                          type="number"
-                          step="0.1"
-                          label="Temperature (°C) tempValue"
-                          value={sensorData.tempValue || ''}
-                          readOnly
-                        />
-                        <Select
-                          label="Battery Level (bat) 0-4"
-                          value={sensorData.bat || '0'}
-                          disabled
-                        >
-                          {[0, 1, 2, 3, 4].map((v) => (
-                            <option key={v} value={v}>
-                              {v}
-                            </option>
-                          ))}
-                        </Select>
+                  {truck.tires && truck.tires.length > 0 ? (
+                    truck.tires.map((tire, idx) => {
+                      const sensor = tire.sensor || {};
+                      const sensorData = sensor.data || {};
+                      return (
+                        <details key={tire.tireNo || idx} className="group border rounded-lg">
+                          <summary className="cursor-pointer select-none px-4 py-2 flex items-center justify-between">
+                            <span className="font-medium">Tire #{tire.tireNo || idx + 1}</span>
+                            <span className="text-xs text-gray-500">SN {sensor.sn || 'N/A'}</span>
+                          </summary>
+                          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="col-span-1 md:col-span-2">
+                              <h3 className="text-sm font-semibold text-gray-800">TPMS (tpdata)</h3>
+                            </div>
+                            <Input label="SN" value={sensor.sn || ''} readOnly />
+                            <Input label="SIM Number" value={sensorData.simNumber || ''} readOnly />
+                            <Select
+                              label="Exception Types (exType)"
+                              value={sensorData.exType || ''}
+                              disabled
+                            >
+                              <option value="">None</option>
+                              <option value="1">1 High Pressure</option>
+                              <option value="2">2 Low Pressure</option>
+                              <option value="3">3 High Temperature</option>
+                              <option value="4">4 Sensor Lost</option>
+                              <option value="5">5 Sensor Battery Low</option>
+                            </Select>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              label="Pressure (kPa) tiprValue"
+                              value={sensorData.tiprValue || ''}
+                              readOnly
+                            />
+                            <Input
+                              type="number"
+                              step="0.1"
+                              label="Temperature (°C) tempValue"
+                              value={sensorData.tempValue || ''}
+                              readOnly
+                            />
+                            <Select
+                              label="Battery Level (bat) 0-4"
+                              value={sensorData.bat || '0'}
+                              disabled
+                            >
+                              {[0, 1, 2, 3, 4].map((v) => (
+                                <option key={v} value={v}>
+                                  {v}
+                                </option>
+                              ))}
+                            </Select>
 
-                        <div className="col-span-1 md:col-span-2 mt-2">
-                          <h3 className="text-sm font-semibold text-gray-800">
-                            Hub Temperature (hubdata)
-                          </h3>
-                        </div>
-                        <Input label="SN" value={tire.hub?.sn || ''} readOnly />
-                        <Input label="SIM Number" value={tire.hub?.data?.simNumber || ''} readOnly />
-                        <Select
-                          label="Exception Types (exType)"
-                          value={tire.hub?.data?.exType || ''}
-                          disabled
-                        >
-                          <option value="">None</option>
-                          <option value="1">1 Brake Pad Abnormal</option>
-                          <option value="3">3 High Temperature</option>
-                          <option value="4">4 Sensor Lost</option>
-                          <option value="5">5 Sensor Battery Low</option>
-                        </Select>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          label="Temperature (°C) tempValue"
-                          value={tire.hub?.data?.tempValue || ''}
-                          readOnly
-                        />
-                        <Select label="Battery Level (bat) 0-4" value={tire.hub?.data?.bat || '0'} disabled>
-                          {[0, 1, 2, 3, 4].map((v) => (
-                            <option key={v} value={v}>
-                              {v}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                    </details>
-                    );
-                  }) : (
+                            <div className="col-span-1 md:col-span-2 mt-2">
+                              <h3 className="text-sm font-semibold text-gray-800">
+                                Hub Temperature (hubdata)
+                              </h3>
+                            </div>
+                            <Input label="SN" value={tire.hub?.sn || ''} readOnly />
+                            <Input
+                              label="SIM Number"
+                              value={tire.hub?.data?.simNumber || ''}
+                              readOnly
+                            />
+                            <Select
+                              label="Exception Types (exType)"
+                              value={tire.hub?.data?.exType || ''}
+                              disabled
+                            >
+                              <option value="">None</option>
+                              <option value="1">1 Brake Pad Abnormal</option>
+                              <option value="3">3 High Temperature</option>
+                              <option value="4">4 Sensor Lost</option>
+                              <option value="5">5 Sensor Battery Low</option>
+                            </Select>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              label="Temperature (°C) tempValue"
+                              value={tire.hub?.data?.tempValue || ''}
+                              readOnly
+                            />
+                            <Select
+                              label="Battery Level (bat) 0-4"
+                              value={tire.hub?.data?.bat || '0'}
+                              disabled
+                            >
+                              {[0, 1, 2, 3, 4].map((v) => (
+                                <option key={v} value={v}>
+                                  {v}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                        </details>
+                      );
+                    })
+                  ) : (
                     <div className="text-sm text-gray-500 p-4">No tire data available</div>
                   )}
                 </div>
@@ -336,21 +355,33 @@ export default function TruckForm() {
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-4">
-                    <Select label="Host Battery (bat1) 0-4" value={truck.device?.data?.bat1 || '0'} disabled>
+                    <Select
+                      label="Host Battery (bat1) 0-4"
+                      value={truck.device?.data?.bat1 || '0'}
+                      disabled
+                    >
                       {[0, 1, 2, 3, 4].map((v) => (
                         <option key={v} value={v}>
                           {v}
                         </option>
                       ))}
                     </Select>
-                    <Select label="Repeater 1 (bat2) 0-4" value={truck.device?.data?.bat2 || '0'} disabled>
+                    <Select
+                      label="Repeater 1 (bat2) 0-4"
+                      value={truck.device?.data?.bat2 || '0'}
+                      disabled
+                    >
                       {[0, 1, 2, 3, 4].map((v) => (
                         <option key={v} value={v}>
                           {v}
                         </option>
                       ))}
                     </Select>
-                    <Select label="Repeater 2 (bat3) 0-4" value={truck.device?.data?.bat3 || '0'} disabled>
+                    <Select
+                      label="Repeater 2 (bat3) 0-4"
+                      value={truck.device?.data?.bat3 || '0'}
+                      disabled
+                    >
                       {[0, 1, 2, 3, 4].map((v) => (
                         <option key={v} value={v}>
                           {v}
