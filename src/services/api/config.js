@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/services/api/config.js
 
 /**

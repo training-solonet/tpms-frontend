@@ -1,6 +1,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { trucksAPI } from '../services/api.js';
+// Use Backend 2 API
+import { trucksApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -38,17 +39,21 @@ export default function TelemetryTiresForm() {
     const loadData = async () => {
       try {
         setLoading(true);
-        // Load trucks from backend
-        const res = await trucksAPI.getAll({ limit: 500 });
+        console.log('📡 Loading tire pressure data from Backend 2...');
+        
+        // Load trucks from Backend 2
+        const res = await trucksApi.getAll();
+        console.log('✅ Trucks response for tires:', res);
+        
         const trucks = res?.data?.trucks || res?.data || [];
         
         if (!Array.isArray(trucks) || trucks.length === 0) {
-          console.warn('No trucks data from backend');
+          console.warn('No trucks data from Backend 2');
           if (mounted) setRows([]);
           return;
         }
         
-        console.log('✅ Using backend trucks data for TelemetryTiresForm');
+        console.log(`✅ Using ${trucks.length} trucks from Backend 2 for TelemetryTiresForm`);
 
         // Build flattened rows focused on TPMS tire pressure sensor data
         // Based on JSON protocol: cmd: "tpdata" with tireNo, tiprValue, tempValue, bat, exType
@@ -381,3 +386,4 @@ export default function TelemetryTiresForm() {
     </TailwindLayout>
   );
 }
+

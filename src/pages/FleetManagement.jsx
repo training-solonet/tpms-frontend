@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage';
-import { trucksAPI, devicesAPI, dashboardAPI } from '../services/api.js';
+// Use Backend 2 APIs
+import { trucksApi, devicesApi, dashboardApi } from '../services/api2';
 import WheelFrontIcon from '../components/icons/WheelFrontIcon.jsx';
 
 const FleetManagement = () => {
@@ -19,32 +20,37 @@ const FleetManagement = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Load trucks from backend
-        const trucksRes = await trucksAPI.getAll({ limit: 500 });
+        console.log('📡 Loading fleet management data from Backend 2...');
+        
+        // Load trucks from Backend 2
+        const trucksRes = await trucksApi.getAll();
+        console.log('✅ Trucks response:', trucksRes);
         const trucksArr = trucksRes?.data?.trucks || trucksRes?.data || [];
         setTrucksData(Array.isArray(trucksArr) ? trucksArr : []);
 
-        // Load devices from backend
-        const devicesRes = await devicesAPI.getAll({ limit: 500 });
+        // Load devices from Backend 2
+        const devicesRes = await devicesApi.getAll();
+        console.log('✅ Devices response:', devicesRes);
         const devicesArr = devicesRes?.data?.devices || devicesRes?.data || [];
         setDevicesData(Array.isArray(devicesArr) ? devicesArr : []);
 
-        // Load fleet groups (if backend provides)
+        // Load fleet summary from Backend 2
         try {
-          const groupsRes = await dashboardAPI.getFleetGroups?.();
+          const groupsRes = await dashboardApi.getFleetSummary();
+          console.log('✅ Fleet summary response:', groupsRes);
           const groupsArr = groupsRes?.data?.groups || groupsRes?.data || [];
           setFleetGroupsState(Array.isArray(groupsArr) ? groupsArr : []);
-        } catch {
+        } catch (err) {
+          console.warn('⚠️ Fleet summary not available:', err.message);
           setFleetGroupsState([]);
         }
       } catch (error) {
-        console.error('Failed to load fleet management data:', error);
-        setTrucksData([]);
-        setDevicesData([]);
-        setFleetGroupsState([]);
+        console.error('❌ Error loading fleet management data:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     loadData();
   }, []);
 
@@ -394,3 +400,4 @@ const FleetManagement = () => {
 };
 
 export default FleetManagement;
+

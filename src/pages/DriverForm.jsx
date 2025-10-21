@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { driversAPI } from '../services/api.js';
+import { driversApi } from '../services/api2/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -51,7 +51,9 @@ export default function DriverForm() {
     const loadDriver = async () => {
       try {
         setLoading(true);
-        const res = await driversAPI.getById(id);
+        console.log('📡 Loading driver data from Backend 2...');
+        const res = await driversApi.getById(id);
+        console.log('✅ Driver response:', res);
         const driver = res?.data;
         if (driver) {
           setForm({
@@ -65,7 +67,7 @@ export default function DriverForm() {
           });
         }
       } catch (error) {
-        console.error('Failed to load driver:', error);
+        console.error('❌ Failed to load driver:', error);
       }
       setLoading(false);
     };
@@ -75,12 +77,41 @@ export default function DriverForm() {
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
   const onSave = async () => {
-    setSaving(true);
-    // Simulate save operation with dummy data
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      setSaving(true);
+      console.log('💾 Saving driver data to Backend 2...', form);
+      
+      const driverData = {
+        name: form.name,
+        badge_id: form.badge_id,
+        license_number: form.license_number,
+        phone: form.phone,
+        address: form.address,
+        notes: form.notes,
+        status: form.status,
+      };
+
+      let response;
+      if (isEdit) {
+        // UPDATE existing driver
+        console.log('🔄 Updating driver:', id);
+        response = await driversApi.update(id, driverData);
+        console.log('✅ Driver updated successfully:', response);
+      } else {
+        // CREATE new driver
+        console.log('➕ Creating new driver');
+        response = await driversApi.create(driverData);
+        console.log('✅ Driver created successfully:', response);
+      }
+
+      alert('Driver saved successfully!');
       navigate('/drivers');
-    }, 1000);
+    } catch (error) {
+      console.error('❌ Failed to save driver:', error);
+      alert(`Failed to save driver: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

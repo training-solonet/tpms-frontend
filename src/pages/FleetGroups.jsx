@@ -12,7 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import TruckImage from '../components/common/TruckImage.jsx';
-import { vendorsAPI, trucksAPI, dashboardAPI } from '../services/api.js';
+// Use Backend 2 APIs
+import { vendorsApi, trucksApi, dashboardApi } from '../services/api2';
 
 const FleetGroups = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -26,12 +27,12 @@ const FleetGroups = () => {
   React.useEffect(() => {
     const loadData = async () => {
       try {
-        const trucksRes = await trucksAPI.getAll({ limit: 500 });
+        const trucksRes = await trucksApi.getAll();
         const trucksArr = trucksRes?.data?.trucks || trucksRes?.data || [];
         setBackendTrucks(Array.isArray(trucksArr) ? trucksArr : []);
 
         try {
-          const groupsRes = await dashboardAPI.getFleetGroups?.();
+          const groupsRes = await dashboardApi.getFleetGroups?.();
           const groupsArr = groupsRes?.data?.groups || groupsRes?.data || [];
           setFleetGroups(Array.isArray(groupsArr) ? groupsArr : []);
         } catch {
@@ -39,7 +40,7 @@ const FleetGroups = () => {
         }
 
         try {
-          const vendorsRes = await vendorsAPI.getAll();
+          const vendorsRes = await vendorsApi.getAll();
           const vendorsArr = vendorsRes?.data?.vendors || vendorsRes?.data || [];
           setVendors(Array.isArray(vendorsArr) ? vendorsArr : []);
         } catch {
@@ -388,7 +389,7 @@ function VendorsSummary({ groupId, loadState }) {
     (async () => {
       try {
         setLoadingVendors(true);
-        const vRes = await vendorsAPI.getAll();
+        const vRes = await vendorsApi.getAll();
         if (mounted && vRes.success && Array.isArray(vRes.data)) setVendors(vRes.data);
       } finally {
         if (mounted) setLoadingVendors(false);
@@ -398,7 +399,7 @@ function VendorsSummary({ groupId, loadState }) {
     (async () => {
       try {
         setLoadingTrucks(true);
-        const tRes = await trucksAPI.getAll();
+        const tRes = await trucksApi.getAll();
         if (mounted && tRes.success && Array.isArray(tRes.data)) {
           // normalize a bit for local usage
           setBackendTrucks(
@@ -494,3 +495,5 @@ function VendorsSummary({ groupId, loadState }) {
 }
 
 export default FleetGroups;
+
+

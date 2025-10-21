@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendorsAPI } from '../services/api.js';
+// Use Backend 2 API
+import { vendorsApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -26,15 +27,23 @@ export default function VendorsList() {
   const load = React.useCallback(async () => {
     try {
       setLoading(true);
-      const res = await vendorsAPI.getAll();
-      if (res.success && Array.isArray(res.data)) {
-        setVendors(res.data);
+      console.log('📡 Loading vendors from Backend 2...');
+      
+      const res = await vendorsApi.getAll();
+      console.log('✅ Vendors response:', res);
+      
+      const vendorsArray = res.data?.vendors || res.data;
+      if (Array.isArray(vendorsArray)) {
+        setVendors(vendorsArray);
+        console.log(`✅ Loaded ${vendorsArray.length} vendors from Backend 2`);
+        setError('');
       } else {
         setVendors([]);
       }
     } catch (e) {
       setError(e.message || 'Failed to load vendors');
       setVendors([]);
+      console.error('❌ Error loading vendors:', e);
     } finally {
       setLoading(false);
     }
@@ -65,9 +74,21 @@ export default function VendorsList() {
   React.useEffect(() => setPage(1), [query, pageSize]);
 
   const onDelete = async (id) => {
-    if (!confirm('Delete this vendor?')) return;
-    await vendorsAPI.remove(id);
-    await load();
+    if (!confirm('Delete this vendor? Note: Vendors with associated trucks or drivers cannot be deleted.')) return;
+    try {
+      await vendorsApi.delete(id);
+      console.log('✅ Vendor deleted successfully');
+      alert('Vendor deleted successfully!');
+      await load();
+    } catch (error) {
+      console.error('❌ Failed to delete vendor:', error);
+      const errorMsg = error.message || 'Unknown error';
+      if (errorMsg.includes('associated trucks') || errorMsg.includes('Cannot delete')) {
+        alert('Cannot delete vendor: This vendor has associated trucks or drivers.\n\nPlease reassign or remove them first.');
+      } else {
+        alert('Failed to delete vendor: ' + errorMsg);
+      }
+    }
   };
 
   return (

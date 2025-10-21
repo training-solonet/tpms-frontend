@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import TruckImage from '../components/common/TruckImage.jsx';
-import { trucksAPI, driversAPI, vendorsAPI } from '../services/api.js';
+// Use Backend 2 APIs
+import { trucksApi, driversApi, vendorsApi } from '../services/api2';
 
 const TrucksFormList = () => {
   const [trucks, setTrucks] = React.useState([]);
@@ -19,16 +20,33 @@ const TrucksFormList = () => {
   React.useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('📡 Loading trucks data from Backend 2...');
+        
         const [trucksRes, driversRes, vendorsRes] = await Promise.all([
-          trucksAPI.getAll({ limit: 500 }),
-          driversAPI.getAll().catch(() => ({ data: [] })),
-          vendorsAPI.getAll().catch(() => ({ data: [] })),
+          trucksApi.getAll(),
+          driversApi.getAll().catch((err) => {
+            console.warn('Failed to load drivers:', err);
+            return { data: { drivers: [] } };
+          }),
+          vendorsApi.getAll().catch((err) => {
+            console.warn('Failed to load vendors:', err);
+            return { data: { vendors: [] } };
+          }),
         ]);
-        setTrucks(Array.isArray(trucksRes?.data?.trucks || trucksRes?.data) ? (trucksRes.data.trucks || trucksRes.data) : []);
-        setDrivers(Array.isArray(driversRes?.data?.drivers || driversRes?.data) ? (driversRes.data.drivers || driversRes.data) : []);
-        setVendors(Array.isArray(vendorsRes?.data?.vendors || vendorsRes?.data) ? (vendorsRes.data.vendors || vendorsRes.data) : []);
+        
+        console.log('✅ Trucks response:', trucksRes);
+        console.log('✅ Drivers response:', driversRes);
+        console.log('✅ Vendors response:', vendorsRes);
+        
+        const trucksArray = trucksRes?.data?.trucks || [];
+        const driversArray = driversRes?.data?.drivers || [];
+        const vendorsArray = vendorsRes?.data?.vendors || [];
+        
+        setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
+        setDrivers(Array.isArray(driversArray) ? driversArray : []);
+        setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('❌ Failed to load data:', error);
         setTrucks([]);
         setDrivers([]);
         setVendors([]);
@@ -40,19 +58,24 @@ const TrucksFormList = () => {
 
   const allTrucks = React.useMemo(() => {
     return trucks.map((truck) => {
-      const driver = drivers.find((d) => d.id === truck.driver_id);
+      // Backend 2 uses different field names
+      const driver = drivers.find((d) => d.id === truck.driverId);
       return {
         id: truck.id,
-        plate: truck.plate_number,
-        name: truck.name,
-        cluster: truck.fleet_group_id || '-',
-        driver: { name: driver ? `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || '-' : '-' },
-        vendor_id: truck.vendor_id || '',
+        plate: truck.plateNumber || truck.plate_number,
+        name: truck.truckNumber || truck.name,
+        cluster: truck.fleetGroupId || truck.fleet_group_id || '-',
+        driver: { 
+          name: driver 
+            ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || '-')
+            : (truck.driverName || '-')
+        },
+        vendor_id: truck.vendorId || truck.vendor_id || '',
         status: truck.status || 'idle',
-        fuel: truck.fuel_level || 0,
+        fuel: truck.fuelLevel || truck.fuel_level || 0,
         location: { coordinates: [truck.latitude || 0, truck.longitude || 0] },
         speed: truck.speed || 0,
-        lastUpdate: truck.updated_at || new Date().toISOString(),
+        lastUpdate: truck.updatedAt || truck.updated_at || new Date().toISOString(),
         manufacturer: truck.manufacturer || 'Caterpillar',
         model: truck.model || '-',
         year: truck.year || 2020,
@@ -257,3 +280,4 @@ const TrucksFormList = () => {
 };
 
 export default TrucksFormList;
+

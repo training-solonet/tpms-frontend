@@ -1,6 +1,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { trucksAPI } from '../services/api.js';
+// Use Backend 2 API
+import { trucksApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -39,15 +40,19 @@ export default function TelemetryTemperatureForm() {
     (async () => {
       try {
         setLoading(true);
-        // Load trucks from backend
-        const res = await trucksAPI.getAll({ limit: 500 });
+        console.log('📡 Loading temperature data from Backend 2...');
+        
+        // Load trucks from Backend 2
+        const res = await trucksApi.getAll();
+        console.log('✅ Trucks response for temperature:', res);
+        
         const trucks = res?.data?.trucks || res?.data || [];
         if (!Array.isArray(trucks) || trucks.length === 0) {
-          console.warn('No trucks data from backend');
+          console.warn('No trucks data from Backend 2');
           if (mounted) setRows([]);
           return;
         }
-        console.log('✅ Using backend trucks data for TelemetryTemperatureForm');
+        console.log(`✅ Using ${trucks.length} trucks from Backend 2 for TelemetryTemperatureForm`);
 
         // Build flattened rows focused on Hub Temperature sensor data
         // Based on JSON protocol: cmd: "hubdata" with tireNo (hub position), tempValue, bat, exType
@@ -372,3 +377,4 @@ export default function TelemetryTemperatureForm() {
     </TailwindLayout>
   );
 }
+

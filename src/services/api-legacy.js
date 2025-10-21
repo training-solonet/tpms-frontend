@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/services/api.js
 // ⚠️ DEPRECATED: This file is kept for backward compatibility only
 // Please use individual imports from '@/services/api' instead

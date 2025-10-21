@@ -5,13 +5,12 @@ import {
   ExclamationTriangleIcon,
   XCircleIcon,
   ClockIcon,
-  UserGroupIcon,
-  MapIcon,
-  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import TailwindStatCard from './TailwindStatCard';
 import SimpleChartCard from './SimpleChartCard';
-import { dashboardAPI, alertsAPI, trucksAPI } from '../../services/api.js';
+// Use Backend 2 APIs
+import { dashboardApi, alertsApi, trucksApi } from '../../services/api2';
+import fleetWebSocket from '../../services/api2/websocket';
 
 const TailwindFleetOverview = () => {
   const [fleetStats, setFleetStats] = useState([]);
@@ -22,33 +21,46 @@ const TailwindFleetOverview = () => {
   const [vehicleStatusData, setVehicleStatusData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load dashboard data from backend only
+  // Load dashboard data from Backend 2
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
 
-        // Stats
+        // Stats from Backend 2
         let totalTrucks = 0;
         let activeTrucks = 0;
         let maintenanceTrucks = 0;
         let totalAlerts = 0;
+        let inactiveTrucks = 0;
 
-        const statsRes = await dashboardAPI.getStats();
-        if (statsRes?.success) {
-          const s = statsRes.data || {};
-          totalTrucks = Number(s.totalTrucks || s.trucks || 0);
-          activeTrucks = Number(s.activeTrucks || s.active || 0);
-          maintenanceTrucks = Number(s.maintenanceTrucks || s.maintenance || 0);
-          totalAlerts = Number(s.totalAlerts || s.alerts || 0);
-        } else {
-          // Fallback: estimate from trucks list
-          const listRes = await trucksAPI.getAll({ limit: 200 });
-          const arr = listRes?.data?.trucks || listRes?.data || [];
-          totalTrucks = Array.isArray(arr) ? arr.length : 0;
-          activeTrucks = 0;
-          maintenanceTrucks = 0;
-          totalAlerts = 0;
+        try {
+          const statsRes = await dashboardApi.getStats();
+          console.log('📊 Dashboard stats from Backend 2:', statsRes);
+          
+          if (statsRes?.data) {
+            const s = statsRes.data;
+            totalTrucks = Number(s.totalTrucks || 0);
+            activeTrucks = Number(s.activeTrucks || 0);
+            maintenanceTrucks = Number(s.maintenanceTrucks || 0);
+            inactiveTrucks = Number(s.inactiveTrucks || 0);
+            totalAlerts = Number(s.alertsCount || s.totalAlerts || 0);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching dashboard stats:', error);
+          // Fallback: get from trucks list
+          try {
+            const listRes = await trucksApi.getAll({ limit: 200 });
+            const trucks = listRes?.data?.trucks || [];
+            const stats = listRes?.data?.stats || {};
+            
+            totalTrucks = stats.total_trucks || trucks.length || 0;
+            activeTrucks = stats.active || 0;
+            maintenanceTrucks = stats.maintenance || 0;
+            inactiveTrucks = stats.inactive || 0;
+          } catch (err) {
+            console.error('❌ Fallback also failed:', err);
+          }
         }
 
         setFleetStats([
@@ -93,47 +105,62 @@ const TailwindFleetOverview = () => {
         setVehicleStatusData([
           { name: 'Active', value: activeTrucks },
           { name: 'Maintenance', value: maintenanceTrucks },
-          { name: 'Idle', value: Math.max(totalTrucks - activeTrucks - maintenanceTrucks, 0) },
+          { name: 'Inactive', value: inactiveTrucks },
+          { name: 'Idle', value: Math.max(totalTrucks - activeTrucks - maintenanceTrucks - inactiveTrucks, 0) },
         ]);
 
-        // Alerts list
+        // Alerts list from Backend 2
         try {
-          const alertsRes = await alertsAPI.getAll({ limit: 4 });
-          const arr = alertsRes?.data || [];
+          const alertsRes = await alertsApi.getAll({ limit: 4, resolved: false });
+          console.log('🚨 Alerts from Backend 2:', alertsRes);
+          
+          const alertsArray = alertsRes?.data?.alerts || alertsRes?.data || [];
           setRecentAlerts(
-            (Array.isArray(arr) ? arr : []).slice(0, 4).map((alert) => ({
-              id: alert.id || alert._id || Math.random().toString(36).slice(2),
-              vehicle: alert.truckName || alert.truck_id || alert.vehicle || 'Unknown',
-              type: alert.alert_type || alert.type || 'Alert',
-              message: alert.message || alert.description || '',
-              time: formatTimeAgo(new Date(alert.created_at || alert.timestamp || Date.now())),
-              severity: String(alert.severity || 'medium').toLowerCase(),
+            alertsArray.slice(0, 4).map((alert) => ({
+              id: alert.id || Math.random().toString(36).slice(2),
+              vehicle: alert.plateNumber || alert.truckNumber || alert.truckId || 'Unknown',
+              type: alert.type || 'Alert',
+              message: alert.message || '',
+              time: formatTimeAgo(new Date(alert.occurredAt || alert.createdAt || Date.now())),
+              severity: getSeverityLevel(alert.severity),
             }))
           );
-        } catch {
+        } catch (error) {
+          console.error('❌ Error fetching alerts:', error);
           setRecentAlerts([]);
         }
 
-        // Top vehicles (basic heuristic from list)
+        // Top vehicles from Backend 2
         try {
-          const listRes = await trucksAPI.getAll({ limit: 4 });
-          const arr = listRes?.data?.trucks || listRes?.data || [];
-          const top = (Array.isArray(arr) ? arr : []).slice(0, 4).map((t) => ({
-            id: String(t.name || t.plate_number || t.id || 'TRUCK'),
-            driver: t.driver_name || 'Unknown',
-            efficiency: 85,
-            mileage: '-',
-            status: String(t.status || 'idle').toLowerCase(),
-          }));
-          setTopVehicles(top);
-        } catch {
+          const listRes = await trucksApi.getAll({ limit: 4, status: 'active' });
+          const trucks = listRes?.data?.trucks || [];
+          
+          setTopVehicles(
+            trucks.slice(0, 4).map((t) => ({
+              id: String(t.truckNumber || t.plateNumber || t.id || 'TRUCK'),
+              driver: t.driverName || 'Unassigned',
+              efficiency: Math.floor(Math.random() * 20) + 80, // Mock efficiency
+              mileage: t.totalMileage ? `${t.totalMileage} km` : '-',
+              status: String(t.status || 'idle').toLowerCase(),
+            }))
+          );
+        } catch (error) {
+          console.error('❌ Error fetching top vehicles:', error);
           setTopVehicles([]);
         }
 
-        // Fuel chart: if backend has a dedicated endpoint, replace this
-        setFuelData([]);
+        // Fuel data from Backend 2
+        try {
+          const fuelRes = await dashboardApi.getFuelReport();
+          if (fuelRes?.data) {
+            setFuelData(fuelRes.data);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching fuel data:', error);
+          setFuelData([]);
+        }
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+        console.error('❌ Failed to load dashboard data:', error);
       } finally {
         setLoading(false);
       }
@@ -141,9 +168,37 @@ const TailwindFleetOverview = () => {
 
     loadDashboardData();
 
-    const interval = setInterval(loadDashboardData, 60000);
-    return () => clearInterval(interval);
+    // Refresh every 30 seconds
+    const interval = setInterval(loadDashboardData, 30000);
+    
+    // Connect WebSocket for real-time updates
+    fleetWebSocket.connect();
+    fleetWebSocket.subscribe('dashboard');
+    
+    // Listen for dashboard updates
+    const handleDashboardUpdate = (data) => {
+      console.log('📡 Real-time dashboard update:', data);
+      loadDashboardData();
+    };
+    
+    fleetWebSocket.on('dashboardUpdate', handleDashboardUpdate);
+
+    return () => {
+      clearInterval(interval);
+      fleetWebSocket.off('dashboardUpdate', handleDashboardUpdate);
+      fleetWebSocket.unsubscribe('dashboard');
+    };
   }, []);
+  
+  // Helper function to get severity level
+  const getSeverityLevel = (severity) => {
+    if (typeof severity === 'number') {
+      if (severity >= 4) return 'high';
+      if (severity >= 2) return 'medium';
+      return 'low';
+    }
+    return String(severity || 'medium').toLowerCase();
+  };
 
   const formatTimeAgo = (date) => {
     const now = new Date();

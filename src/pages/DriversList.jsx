@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { driversAPI } from '../services/api.js';
+// Use Backend 2 API
+import { driversApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -26,23 +27,27 @@ export default function DriversList() {
   const load = React.useCallback(async () => {
     try {
       setLoading(true);
-      const res = await driversAPI.getAll();
+      console.log('📡 Loading drivers from Backend 2...');
+      
+      const res = await driversApi.getAll();
+      console.log('✅ Drivers response:', res);
 
-      // Check if backend returns nested data like trucks
+      // Backend 2 returns data in res.data.drivers
       const driversArray = res.data?.drivers || res.data;
 
-      if (res.success && Array.isArray(driversArray)) {
+      if (Array.isArray(driversArray)) {
         setDrivers(driversArray);
-        console.log('✅ Drivers data loaded:', driversArray.length);
+        console.log(`✅ Loaded ${driversArray.length} drivers from Backend 2`);
+        setError('');
       } else {
         setDrivers([]);
-        setError(res.error || 'Drivers data unavailable');
+        setError('Drivers data unavailable');
         console.log('⚠️ Drivers endpoint returned no data');
       }
     } catch (e) {
       setDrivers([]);
       setError(e.message || 'Failed to load drivers');
-      console.log('❌ Error loading drivers:', e.message);
+      console.log('❌ Error loading drivers:', e);
     } finally {
       setLoading(false);
     }
@@ -75,8 +80,14 @@ export default function DriversList() {
 
   const onDelete = async (id) => {
     if (!window.confirm('Delete this driver?')) return;
-    await driversAPI.remove(id);
-    await load();
+    try {
+      await driversApi.delete(id);
+      console.log('✅ Driver deleted successfully');
+      await load();
+    } catch (error) {
+      console.error('❌ Failed to delete driver:', error);
+      alert('Failed to delete driver: ' + error.message);
+    }
   };
 
   return (

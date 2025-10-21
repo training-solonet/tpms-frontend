@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { trucksAPI, vendorsAPI } from '../services/api.js';
+import { trucksApi, vendorsApi } from '../services/api2/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -41,10 +41,14 @@ export default function TruckForm() {
   React.useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('📡 Loading truck form data from Backend 2...');
         const [vendorsRes, trucksRes] = await Promise.all([
-          vendorsAPI.getAll().catch(() => ({ data: [] })),
-          trucksAPI.getAll({ limit: 500 }),
+          vendorsApi.getAll().catch(() => ({ data: [] })),
+          trucksApi.getAll(),
         ]);
+        console.log('✅ Vendors response:', vendorsRes);
+        console.log('✅ Trucks response:', trucksRes);
+        
         setVendors(Array.isArray(vendorsRes?.data?.vendors || vendorsRes?.data) ? (vendorsRes.data.vendors || vendorsRes.data) : []);
         setTrucks(Array.isArray(trucksRes?.data?.trucks || trucksRes?.data) ? (trucksRes.data.trucks || trucksRes.data) : []);
       } catch (error) {
@@ -58,8 +62,9 @@ export default function TruckForm() {
   }, []);
 
   const initialTruck = React.useMemo(() => {
-    if (location.state?.truck) return location.state.truck;
-    return trucks.find((t) => t.id === id) || trucks[0] || {};
+    if (location.state?.truck) return { ...location.state.truck, tires: location.state.truck.tires || [] };
+    const foundTruck = trucks.find((t) => t.id === id) || trucks[0] || {};
+    return { ...foundTruck, tires: foundTruck.tires || [] };
   }, [id, location.state, trucks]);
 
   const clusters = React.useMemo(
@@ -89,19 +94,39 @@ export default function TruckForm() {
 
   const handleSave = async () => {
     try {
-      // Persist vendor assignment if available
-      if (selectedVendorId) {
-        // Simulate truck update with dummy data
-        console.log('Updated truck vendor assignment:', {
-          truck_id: truck.id,
-          vendor_id: selectedVendorId,
-        });
+      console.log('💾 Saving truck data to Backend 2...', truck);
+      
+      const truckData = {
+        truckNumber: truck.truckNumber || truck.id,
+        plateNumber: truck.plateNumber || truck.plate_number,
+        model: truck.model || '',
+        year: truck.year || new Date().getFullYear(),
+        capacity: truck.capacity || 0,
+        vendor: selectedVendorId || truck.vendor_id || '',
+        driver: truck.driver || '',
+        status: truck.status || 'active',
+        cluster: truck.cluster || 'Default',
+      };
+
+      let response;
+      if (id && id !== 'new') {
+        // UPDATE existing truck
+        console.log('🔄 Updating truck:', id);
+        response = await trucksApi.update(id, truckData);
+        console.log('✅ Truck updated successfully:', response);
+      } else {
+        // CREATE new truck
+        console.log('➕ Creating new truck');
+        response = await trucksApi.create(truckData);
+        console.log('✅ Truck created successfully:', response);
       }
-    } catch (e) {
-      console.warn('Failed to update truck vendor:', e?.message);
+
+      alert('Truck saved successfully!');
+      navigate('/trucks');
+    } catch (error) {
+      console.error('❌ Failed to save truck:', error);
+      alert(`Failed to save truck: ${error.message || 'Unknown error'}`);
     }
-    alert('Saved');
-    navigate('/trucks');
   };
 
   return (
@@ -194,21 +219,24 @@ export default function TruckForm() {
                   Read-only telemetry (live data from sensors). Editing is disabled.
                 </p>
                 <div className="space-y-4">
-                  {truck.tires.map((tire, idx) => (
-                    <details key={tire.tireNo} className="group border rounded-lg">
+                  {truck.tires && truck.tires.length > 0 ? truck.tires.map((tire, idx) => {
+                    const sensor = tire.sensor || {};
+                    const sensorData = sensor.data || {};
+                    return (
+                    <details key={tire.tireNo || idx} className="group border rounded-lg">
                       <summary className="cursor-pointer select-none px-4 py-2 flex items-center justify-between">
-                        <span className="font-medium">Tire #{tire.tireNo}</span>
-                        <span className="text-xs text-gray-500">SN {tire.sensor.sn}</span>
+                        <span className="font-medium">Tire #{tire.tireNo || idx + 1}</span>
+                        <span className="text-xs text-gray-500">SN {sensor.sn || 'N/A'}</span>
                       </summary>
                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="col-span-1 md:col-span-2">
                           <h3 className="text-sm font-semibold text-gray-800">TPMS (tpdata)</h3>
                         </div>
-                        <Input label="SN" value={tire.sensor.sn} readOnly />
-                        <Input label="SIM Number" value={tire.sensor.data.simNumber} readOnly />
+                        <Input label="SN" value={sensor.sn || ''} readOnly />
+                        <Input label="SIM Number" value={sensorData.simNumber || ''} readOnly />
                         <Select
                           label="Exception Types (exType)"
-                          value={tire.sensor.data.exType}
+                          value={sensorData.exType || ''}
                           disabled
                         >
                           <option value="">None</option>
@@ -222,19 +250,19 @@ export default function TruckForm() {
                           type="number"
                           step="0.1"
                           label="Pressure (kPa) tiprValue"
-                          value={tire.sensor.data.tiprValue}
+                          value={sensorData.tiprValue || ''}
                           readOnly
                         />
                         <Input
                           type="number"
                           step="0.1"
                           label="Temperature (°C) tempValue"
-                          value={tire.sensor.data.tempValue}
+                          value={sensorData.tempValue || ''}
                           readOnly
                         />
                         <Select
                           label="Battery Level (bat) 0-4"
-                          value={tire.sensor.data.bat}
+                          value={sensorData.bat || '0'}
                           disabled
                         >
                           {[0, 1, 2, 3, 4].map((v) => (
@@ -249,11 +277,11 @@ export default function TruckForm() {
                             Hub Temperature (hubdata)
                           </h3>
                         </div>
-                        <Input label="SN" value={tire.hub.sn} readOnly />
-                        <Input label="SIM Number" value={tire.hub.data.simNumber} readOnly />
+                        <Input label="SN" value={tire.hub?.sn || ''} readOnly />
+                        <Input label="SIM Number" value={tire.hub?.data?.simNumber || ''} readOnly />
                         <Select
                           label="Exception Types (exType)"
-                          value={tire.hub.data.exType}
+                          value={tire.hub?.data?.exType || ''}
                           disabled
                         >
                           <option value="">None</option>
@@ -266,10 +294,10 @@ export default function TruckForm() {
                           type="number"
                           step="0.1"
                           label="Temperature (°C) tempValue"
-                          value={tire.hub.data.tempValue}
+                          value={tire.hub?.data?.tempValue || ''}
                           readOnly
                         />
-                        <Select label="Battery Level (bat) 0-4" value={tire.hub.data.bat} disabled>
+                        <Select label="Battery Level (bat) 0-4" value={tire.hub?.data?.bat || '0'} disabled>
                           {[0, 1, 2, 3, 4].map((v) => (
                             <option key={v} value={v}>
                               {v}
@@ -278,7 +306,10 @@ export default function TruckForm() {
                         </Select>
                       </div>
                     </details>
-                  ))}
+                    );
+                  }) : (
+                    <div className="text-sm text-gray-500 p-4">No tire data available</div>
+                  )}
                 </div>
               </section>
             </div>
@@ -287,39 +318,39 @@ export default function TruckForm() {
               <section className="bg-white rounded-xl shadow p-4">
                 <h2 className="font-semibold text-gray-900 mb-4">Device</h2>
                 <div className="grid grid-cols-1 gap-4">
-                  <Input label="SN" value={truck.device.sn} readOnly />
+                  <Input label="SN" value={truck.device?.sn || ''} readOnly />
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       type="number"
                       step="0.000001"
                       label="Longitude"
-                      value={truck.device.data.lng}
+                      value={truck.device?.data?.lng || ''}
                       readOnly
                     />
                     <Input
                       type="number"
                       step="0.000001"
                       label="Latitude"
-                      value={truck.device.data.lat}
+                      value={truck.device?.data?.lat || ''}
                       readOnly
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-4">
-                    <Select label="Host Battery (bat1) 0-4" value={truck.device.data.bat1} disabled>
+                    <Select label="Host Battery (bat1) 0-4" value={truck.device?.data?.bat1 || '0'} disabled>
                       {[0, 1, 2, 3, 4].map((v) => (
                         <option key={v} value={v}>
                           {v}
                         </option>
                       ))}
                     </Select>
-                    <Select label="Repeater 1 (bat2) 0-4" value={truck.device.data.bat2} disabled>
+                    <Select label="Repeater 1 (bat2) 0-4" value={truck.device?.data?.bat2 || '0'} disabled>
                       {[0, 1, 2, 3, 4].map((v) => (
                         <option key={v} value={v}>
                           {v}
                         </option>
                       ))}
                     </Select>
-                    <Select label="Repeater 2 (bat3) 0-4" value={truck.device.data.bat3} disabled>
+                    <Select label="Repeater 2 (bat3) 0-4" value={truck.device?.data?.bat3 || '0'} disabled>
                       {[0, 1, 2, 3, 4].map((v) => (
                         <option key={v} value={v}>
                           {v}

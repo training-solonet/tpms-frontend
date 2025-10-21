@@ -2,7 +2,8 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout';
-import { devicesAPI, trucksAPI, sensorsAPI } from '../services/api.js';
+// Use Backend 2 APIs
+import { devicesApi, trucksApi } from '../services/api2';
 
 function useQuery() {
   const { search } = useLocation();
@@ -15,7 +16,7 @@ const Tabs = [
   { key: 'locks', label: 'Locks' },
 ];
 
-const StatusTab = ({ search, truckFilter, devices, trucks }) => {
+const StatusTab = ({ search, truckFilter, devices, trucks, onEdit, onDelete }) => {
   const rows = devices.map((d) => {
     const truck = trucks.find((t) => t.id === d.truck_id);
     return {
@@ -57,19 +58,37 @@ const StatusTab = ({ search, truckFilter, devices, trucks }) => {
                 <th className="py-2 pr-4">Signal</th>
                 <th className="py-2 pr-4">Lock</th>
                 <th className="py-2 pr-4">Last Seen</th>
+                <th className="py-2 pr-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-indigo-100/60">
-              {filtered.map((r) => (
-                <tr key={r.id} className="text-gray-900">
-                  <td className="py-2 pr-4 font-mono">{r.imei}</td>
-                  <td className="py-2 pr-4">{r.truckName}</td>
-                  <td className="py-2 pr-4">{r.battery}%</td>
-                  <td className="py-2 pr-4">{r.signal} dBm</td>
-                  <td className="py-2 pr-4 capitalize">{String(r.locked)}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap">{r.lastSeen}</td>
-                </tr>
-              ))}
+              {filtered.map((r) => {
+                const device = devices.find(d => d.id === r.id);
+                return (
+                  <tr key={r.id} className="text-gray-900">
+                    <td className="py-2 pr-4 font-mono">{r.imei}</td>
+                    <td className="py-2 pr-4">{r.truckName}</td>
+                    <td className="py-2 pr-4">{r.battery}%</td>
+                    <td className="py-2 pr-4">{r.signal} dBm</td>
+                    <td className="py-2 pr-4 capitalize">{String(r.locked)}</td>
+                    <td className="py-2 pr-4 whitespace-nowrap">{r.lastSeen}</td>
+                    <td className="py-2 pr-4">
+                      <button
+                        onClick={() => onEdit(device)}
+                        className="text-indigo-600 hover:text-indigo-800 text-xs mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => onDelete(device)}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -224,30 +243,67 @@ const DeviceCenter = () => {
   const [sensors, setSensors] = React.useState([]);
   const [lockEvents, setLockEvents] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  // eslint-disable-next-line no-unused-vars
+  const [showDeviceModal, setShowDeviceModal] = React.useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [editingDevice, setEditingDevice] = React.useState(null);
+
+  const loadData = async () => {
+    try {
+      console.log('📡 Loading devices data from Backend 2...');
+      
+      const [devicesRes, trucksRes, sensorsRes] = await Promise.all([
+        devicesApi.getAll(),
+        trucksApi.getAll(),
+        devicesApi.getAllSensors().catch((err) => {
+          console.warn('Failed to load sensors:', err);
+          return { data: { sensors: [] } };
+        }),
+      ]);
+      
+      console.log('✅ Devices response:', devicesRes);
+      console.log('✅ Trucks response:', trucksRes);
+      console.log('✅ Sensors response:', sensorsRes);
+      
+      const devicesArray = devicesRes?.data?.devices || [];
+      const trucksArray = trucksRes?.data?.trucks || [];
+      const sensorsArray = sensorsRes?.data?.sensors || sensorsRes?.data || [];
+      
+      setDevices(Array.isArray(devicesArray) ? devicesArray : []);
+      setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
+      setSensors(Array.isArray(sensorsArray) ? sensorsArray : []);
+      setLockEvents([]); // Lock events would come from a separate API endpoint
+    } catch (error) {
+      console.error('❌ Failed to load data:', error);
+      setDevices([]);
+      setTrucks([]);
+      setSensors([]);
+      setLockEvents([]);
+    }
+    setLoading(false);
+  };
 
   React.useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [devicesRes, trucksRes, sensorsRes] = await Promise.all([
-          devicesAPI.getAll({ limit: 500 }),
-          trucksAPI.getAll({ limit: 500 }),
-          sensorsAPI.getAll({ limit: 1000 }).catch(() => ({ data: [] })),
-        ]);
-        setDevices(Array.isArray(devicesRes?.data?.devices || devicesRes?.data) ? (devicesRes.data.devices || devicesRes.data) : []);
-        setTrucks(Array.isArray(trucksRes?.data?.trucks || trucksRes?.data) ? (trucksRes.data.trucks || trucksRes.data) : []);
-        setSensors(Array.isArray(sensorsRes?.data?.sensors || sensorsRes?.data) ? (sensorsRes.data.sensors || sensorsRes.data) : []);
-        setLockEvents([]);
-      } catch (error) {
-        console.error('Failed to load data:', error);
-        setDevices([]);
-        setTrucks([]);
-        setSensors([]);
-        setLockEvents([]);
-      }
-      setLoading(false);
-    };
     loadData();
   }, []);
+
+  const handleEditDevice = (device) => {
+    setEditingDevice(device);
+    setShowDeviceModal(true);
+  };
+
+  const handleDeleteDevice = async (device) => {
+    if (!window.confirm(`Delete device ${device.imei || device.sn}?`)) return;
+    try {
+      await devicesApi.delete(device.id);
+      console.log('✅ Device deleted successfully');
+      alert('Device deleted successfully!');
+      await loadData();
+    } catch (error) {
+      console.error('❌ Failed to delete device:', error);
+      alert(`Failed to delete device: ${error.message || 'Unknown error'}`);
+    }
+  };
 
   const setTab = (tab) => {
     setActiveTab(tab);
@@ -284,6 +340,12 @@ const DeviceCenter = () => {
                   : 'Status, Sensors, dan Locks dalam satu halaman'}
               </p>
             </div>
+            <button
+              onClick={() => setShowDeviceModal(true)}
+              className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700"
+            >
+              Add Device
+            </button>
           </div>
 
           <div className="mb-6 inline-flex rounded-lg bg-white/60 backdrop-blur-sm border border-indigo-200/40 p-1 shadow-sm">
@@ -339,7 +401,7 @@ const DeviceCenter = () => {
             )}
           </div>
 
-          {activeTab === 'status' && <StatusTab search={search} truckFilter={truckFilter} devices={devices} trucks={trucks} />}
+          {activeTab === 'status' && <StatusTab search={search} truckFilter={truckFilter} devices={devices} trucks={trucks} onEdit={handleEditDevice} onDelete={handleDeleteDevice} />}
           {activeTab === 'sensors' && <SensorsTab search={search} truckFilter={truckFilter} sensors={sensors} devices={devices} trucks={trucks} />}
           {activeTab === 'locks' && (
             <LocksTab search={search} truckFilter={truckFilter} actionFilter={actionFilter} lockEvents={lockEvents} devices={devices} trucks={trucks} />
@@ -351,3 +413,4 @@ const DeviceCenter = () => {
 };
 
 export default DeviceCenter;
+

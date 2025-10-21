@@ -1,6 +1,6 @@
 // src/services/utils/connectionUtils.js
 
-import { API_CONFIG } from '../api/config.js';
+import { API_BASE_URL } from '../api2/config.js';
 
 /**
  * Connection utilities for checking backend availability
@@ -19,15 +19,15 @@ const getAuthToken = () => localStorage.getItem('authToken');
  */
 export const checkBackendConnection = async () => {
   try {
-    console.log('🔌 Checking backend connection to:', API_CONFIG.BASE_URL);
+    console.log('🔌 Checking backend connection to:', API_BASE_URL);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    // Try different endpoints in order of preference (avoiding problematic trucks endpoint)
+    // Try different endpoints in order of preference (no /api/ prefix, already in BASE_URL)
     const endpoints = [
-      '/api/vendors?limit=1', // Working endpoint - try first
-      '/api/devices?limit=1', // Alternative endpoint
-      '/api/dashboard/stats', // Fallback endpoint
+      '/vendors?limit=1', // Working endpoint - try first
+      '/devices?limit=1', // Alternative endpoint
+      '/dashboard/stats', // Fallback endpoint
     ];
 
     let response;
@@ -35,7 +35,7 @@ export const checkBackendConnection = async () => {
     for (const endpoint of endpoints) {
       try {
         const token = getAuthToken();
-        response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+        response = await fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'GET',
           signal: controller.signal,
           mode: 'cors',
@@ -72,10 +72,10 @@ export const checkBackendConnection = async () => {
     let errorMessage = error.message;
     if (error.name === 'AbortError') {
       errorMessage = `Connection timeout after 15s`;
-      console.warn(`⏰ ${errorMessage} for ${API_CONFIG.BASE_URL}`);
+      console.warn(`⏰ ${errorMessage} for ${API_BASE_URL}`);
     } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
       errorMessage = 'Network connection failed - server may be unreachable';
-      console.warn(`🌐 ${errorMessage} for ${API_CONFIG.BASE_URL}`);
+      console.warn(`🌐 ${errorMessage} for ${API_BASE_URL}`);
     } else {
       console.warn(`❌ Backend connection failed (attempt ${connectionAttempts}):`, error.message);
     }

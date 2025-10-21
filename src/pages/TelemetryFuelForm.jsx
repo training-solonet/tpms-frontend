@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { trucksAPI } from '../services/api.js';
+// Use Backend 2 API
+import { trucksApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -40,28 +41,39 @@ export default function TelemetryFuelForm() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const res = await trucksAPI.getAll({ limit: 500 });
+        console.log('📡 Loading fuel data from Backend 2...');
+        
+        const res = await trucksApi.getAll();
+        console.log('✅ Trucks response for fuel:', res);
+        
         const trucks = res?.data?.trucks || res?.data || [];
         
         if (!Array.isArray(trucks) || trucks.length === 0) {
-          if (mounted) setRows([]);
+          if (mounted) {
+            setRows([]);
+            setError('No trucks found');
+          }
           return;
         }
 
-        // Map trucks to fuel data rows
+        // Map trucks to fuel data rows (Backend 2 uses different field names)
         const fuelRows = trucks.map((t) => ({
           id: `fuel-${t.id}`,
           truck_id: t.id,
-          truck_name: t.name || t.plate_number || t.id,
-          plate_number: t.plate_number || '-',
-          fuel_percent: t.fuel_level || t.fuelPercentage || 0,
-          changed_at: t.lastUpdate || t.updated_at || new Date().toISOString(),
-          source: 'Backend',
+          truck_name: t.truckNumber || t.name || t.plateNumber || t.plate_number || t.id,
+          plate_number: t.plateNumber || t.plate_number || '-',
+          fuel_percent: t.fuelLevel || t.fuel_level || t.fuelPercentage || 0,
+          changed_at: t.updatedAt || t.updated_at || t.lastUpdate || new Date().toISOString(),
+          source: 'Backend 2',
         }));
         
-        if (mounted) setRows(fuelRows);
+        console.log(`✅ Loaded ${fuelRows.length} fuel records from Backend 2`);
+        if (mounted) {
+          setRows(fuelRows);
+          setError('');
+        }
       } catch (error) {
-        console.error('Failed to load fuel data:', error);
+        console.error('❌ Failed to load fuel data:', error);
         if (mounted) {
           setError(error.message || 'Failed to load fuel data');
           setRows([]);
@@ -218,3 +230,4 @@ export default function TelemetryFuelForm() {
     </TailwindLayout>
   );
 }
+

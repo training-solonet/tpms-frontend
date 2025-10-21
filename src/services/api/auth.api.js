@@ -13,7 +13,7 @@ const decodeJwt = (token) => {
     const [, payload] = token.split('.');
     const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
     return JSON.parse(json);
-  } catch (e) {
+  } catch {
     return null;
   }
 };
@@ -45,7 +45,7 @@ export const authAPI = {
           console.log(`❌ Login failed via ${endpoint}: ${response.error}`);
           break;
         }
-      } catch (error) {
+      } catch {
         console.log(`⚠️ Login endpoint ${endpoint} failed, trying next...`);
       }
     }
@@ -150,7 +150,7 @@ export const authAPI = {
             return { success: false, data: null };
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore decode errors; assume token is valid if server accepts it
       }
     }
