@@ -29,6 +29,7 @@ import VendorsList from '../pages/VendorsList';
 import VendorForm from '../pages/VendorForm';
 import DriversList from '../pages/DriversList';
 import DriverForm from '../pages/DriverForm';
+import ProposalSections from '../pages/ProposalSections';
 
 /**
  * Application Routes Configuration
