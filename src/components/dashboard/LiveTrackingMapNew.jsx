@@ -1,16 +1,11 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TruckIcon, ClockIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
 import TirePressureDisplay from './TirePressureDisplay';
-import { getLiveTrackingData } from '../../data/dataManagement.js';
-import { getDummyRealRoutePoints, getDummyRealRouteLastPoint } from '../../data/index.js';
-import { devices } from '../../data/devices.js';
-import { deviceStatusEvents } from '../../data/deviceStatusEvents.js';
-import { trucks as trucksList } from '../../data/trucks.js';
+import { trucksAPI, tpmsAPI } from '../../services/api.js';
 
 const LiveTrackingMapNew = () => {
-  const USE_BACKEND = false; // Force use dummy data
   const [map, setMap] = useState(null);
   const [mapUtils, setMapUtils] = useState(null);
   const [vehicles, setVehicles] = useState([]);
@@ -47,137 +42,162 @@ const LiveTrackingMapNew = () => {
   const resolveTruckUUID = (vehicleId) => {
     if (!vehicleId) return null;
     const idStr = String(vehicleId);
-    // if it's already UUID-like
     if (idStr.length === 36 && idStr.includes('-')) return idStr;
-    // try by exact match in trucks list by name or plate contains number
-    const numMatch = idStr.match(/(\d{1,4})/);
-    const num = numMatch ? numMatch[1] : null;
-    if (num) {
-      const t = trucksList.find(
-        (tk) => String(tk.name).includes(num) || String(tk.plate_number).includes(num)
-      );
-      if (t) return t.id;
-    }
-    // fallback: cannot resolve
-    return null;
+    return idStr;
   };
 
   // Truck number helpers & cluster filtering
   const extractTruckNumber = (idOrName) => {
     if (!idOrName) return null;
-    const m = String(idOrName).match(/(\d{1,4})/);
+    const str = String(idOrName);
+    // For TPMS serial numbers, use last 3 digits or show as "T1", "T2", etc.
+    if (str.length > 6) {
+      return str.slice(-3); // Last 3 digits for serial numbers
+    }
+    const m = str.match(/(\d{1,4})/);
     return m ? parseInt(m[1], 10) : null;
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const inSelectedCluster = (truckId) => {
-    if (!clusterSelections || clusterSelections.size === 0) return true;
-    const n = extractTruckNumber(truckId);
-    if (n == null) return false;
-    for (const key of clusterSelections) {
-      const [lo, hi] = key.split('-').map(Number);
-      if (n >= lo && n <= hi) return true;
-    }
-    return false;
-  };
+  const inSelectedCluster = useCallback(
+    (truckId) => {
+      if (!clusterSelections || clusterSelections.size === 0) return true;
+      const n = extractTruckNumber(truckId);
+      if (n == null) return false;
+      for (const key of clusterSelections) {
+        const [lo, hi] = key.split('-').map(Number);
+        if (n >= lo && n <= hi) return true;
+      }
+      return false;
+    },
+    [clusterSelections]
+  );
 
   // Apply marker scale/visibility based on zoom and viewport
-  const applyMarkerZoomStyling = () => {
+  const applyMarkerZoomStyling = useCallback(() => {
+    // Temporarily disabled to prevent glitches - markers will use default size
     if (!map) return;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      const zoom = map.getZoom();
-      let scale = 1;
-      if (zoom >= 16) scale = 1;
-      else if (zoom >= 14) scale = 0.85;
-      else if (zoom >= 12) scale = 0.7;
-      else if (zoom >= 10) scale = 0.55;
-      else scale = 0.4;
 
-      const HIDE_ZOOM_MAX = 5;
-      const SHOW_ZOOM_MIN = 8;
-      let hideAll;
-      if (zoom <= HIDE_ZOOM_MAX) hideAll = true;
-      else if (zoom >= SHOW_ZOOM_MIN) hideAll = false;
-      else hideAll = lastHideStateRef.current ?? false;
-      lastHideStateRef.current = hideAll;
-
-      Object.values(markersRef.current).forEach((marker) => {
-        const el = marker.getElement?.();
-        if (!el) return;
-        const wrapper = el.firstElementChild;
-        if (hideAll) {
-          el.style.visibility = 'hidden';
-        } else {
-          el.style.visibility = 'visible';
-          if (wrapper) {
-            wrapper.style.transform = `scale(${scale})`;
-            wrapper.style.transformOrigin = 'center bottom';
-          }
+    // Simple visibility check without scaling to prevent position glitches
+    Object.values(markersRef.current).forEach((marker) => {
+      try {
+        const element = marker.getElement?.();
+        if (element) {
+          element.style.visibility = 'visible';
         }
-      });
-
-      rafRef.current = null;
+      } catch (err) {
+        // Ignore errors for markers that might be removed
+      }
     });
-  };
+  }, [map]);
 
-  // Initialize sample data if backend not available
-  const initializeSampleData = async () => {
-    console.log('🔄 Backend not available - initializing comprehensive dummy data');
+  // Load live vehicles from TPMS backend with fallback to legacy backend
+  const loadVehiclesFromBackend = async () => {
     try {
-      // Use dummy data directly
-      const liveTrackingData = getLiveTrackingData();
-      console.log(`📊 Loaded ${liveTrackingData.length} vehicles from dummy data`);
+      setLoading(true);
+      let items = [];
+      console.log('🔄 Loading live vehicles from TPMS...');
+      const tpms = await tpmsAPI.getRealtimeSnapshot();
+      console.log('📡 TPMS response:', tpms);
+      if (tpms && tpms.success && Array.isArray(tpms.data)) {
+        items = tpms.data
+          .map((d, index) => {
+            const id = d?.sn ? String(d.sn) : null;
+            const latlngStr = d?.location?.lat_lng || '';
+            const parts = String(latlngStr).split(',');
+            const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
+            const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
 
-      let finalTrackingData = liveTrackingData;
-      if (!liveTrackingData || liveTrackingData.length === 0) {
-        console.warn('⚠️ Dummy data empty, synthesizing demo vehicles');
-        const mdPts = getDummyRealRoutePoints();
-        const mdCoords =
-          Array.isArray(mdPts) && mdPts.length > 0 ? mdPts.map((p) => [p.lat, p.lng]) : [];
-        const total = 5;
-        const synth = Array.from({ length: total }).map((_, i) => ({
-          id: `TRUCK-${String(i + 1).padStart(3, '0')}`,
-          driver: `Demo Driver ${i + 1}`,
-          position:
-            mdCoords.length > 0
-              ? mdCoords[Math.floor((i / Math.max(total - 1, 1)) * (mdCoords.length - 1))]
-              : mapUtils?.polygonCentroid(mapUtils.polygonLatLng) || [-3.58, 115.6],
-          status: 'active',
-          speed: 0,
-          heading: 90,
-          fuel: 80,
-          battery: 90,
-          signal: 'good',
-          lastUpdate: new Date(),
-          route: 'Mining Area',
-          load: 'Empty',
-        }));
-        finalTrackingData = synth;
+            // Validate coordinates are within reasonable bounds
+            const isValidLat = isFinite(lat) && lat >= -90 && lat <= 90;
+            const isValidLng = isFinite(lng) && lng >= -180 && lng <= 180;
+
+            if (!id || !isValidLat || !isValidLng) {
+              console.warn(
+                `⚠️ Invalid coordinates for vehicle ${id}: lat=${lat}, lng=${lng}, raw="${latlngStr}"`
+              );
+              return null;
+            }
+            console.log(`📍 Vehicle ${id} position: [${lat}, ${lng}]`);
+            return {
+              id,
+              truckNumber: index + 1, // Use array index + 1 as truck number
+              position: [lat, lng],
+              status: 'active',
+              speed: 0,
+              heading: 0,
+              fuel: 0,
+              battery: 0,
+              signal: 'unknown',
+              lastUpdate: d?.location?.createdAt ? new Date(d.location.createdAt) : new Date(),
+              tireData: d?.tire || [], // Include tire pressure data
+            };
+          })
+          .filter(Boolean);
+        console.log(`✅ Loaded ${items.length} vehicles from TPMS`);
+        setBackendOnline(true);
+        setWsStatus('disconnected');
+      } else {
+        const result = await trucksAPI.getRealTimeLocations();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load real-time locations');
+        }
+        const data = result.data;
+        if (data && Array.isArray(data.features)) {
+          items = data.features
+            .map((f) => {
+              const coords = f?.geometry?.coordinates;
+              if (!Array.isArray(coords) || coords.length < 2) return null;
+              const lng = Number(coords[0]);
+              const lat = Number(coords[1]);
+              const id = f?.properties?.id || f?.properties?.truck_id || f?.id || null;
+              return id && isFinite(lat) && isFinite(lng)
+                ? {
+                    id: String(id),
+                    position: [lat, lng],
+                    status: f?.properties?.status?.toLowerCase?.() || 'active',
+                    speed: Number(f?.properties?.speed_kph ?? 0),
+                    heading: Number(f?.properties?.heading_deg ?? 0),
+                    fuel: Number(f?.properties?.fuel_percent ?? 0),
+                    battery: Number(f?.properties?.battery_level ?? 0),
+                    signal: f?.properties?.signal_strength ?? 'unknown',
+                    lastUpdate: f?.properties?.ts ? new Date(f.properties.ts) : new Date(),
+                  }
+                : null;
+            })
+            .filter(Boolean);
+        } else if (Array.isArray(data)) {
+          items = data
+            .map((v) => {
+              const lat = v?.lat ?? v?.latitude;
+              const lng = v?.lng ?? v?.longitude;
+              const id = v?.id ?? v?.truck_id ?? v?.plate_number ?? null;
+              return id && isFinite(lat) && isFinite(lng)
+                ? {
+                    id: String(id),
+                    position: [Number(lat), Number(lng)],
+                    status: v?.status?.toLowerCase?.() || 'active',
+                    speed: Number(v?.speed_kph ?? 0),
+                    heading: Number(v?.heading_deg ?? 0),
+                    fuel: Number(v?.fuel_percent ?? 0),
+                    battery: Number(v?.battery_level ?? 0),
+                    signal: v?.signal_strength ?? 'unknown',
+                    lastUpdate: v?.ts ? new Date(v.ts) : new Date(),
+                  }
+                : null;
+            })
+            .filter(Boolean);
+        }
+        setBackendOnline(!!result.success);
+        setWsStatus('disconnected');
       }
 
-      const routes = {};
-      // Use dummy route data for all vehicles
-      for (const vehicle of finalTrackingData) {
-        const mdLast = getDummyRealRouteLastPoint?.();
-        if (mdLast && typeof mdLast.lat === 'number' && typeof mdLast.lng === 'number') {
-          vehicle.position = [mdLast.lat, mdLast.lng];
-        }
-        // Generate dummy route points for each vehicle
-        const routePoints = getDummyRealRoutePoints();
-        if (routePoints && routePoints.length > 0) {
-          routes[vehicle.id] = routePoints.map((p) => [p.lat, p.lng]);
-        }
-      }
-
-      setVehicleRoutes(routes);
-      console.log(
-        `✅ Initialized ${finalTrackingData.length} vehicles with comprehensive dummy data`
-      );
-      return finalTrackingData;
+      setVehicles(items || []);
     } catch (error) {
-      console.error('❌ Failed to initialize dummy data:', error);
-      return [];
+      console.error('❌ Failed to load truck data from backend:', error);
+      setVehicles([]);
+      setBackendOnline(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -200,57 +220,19 @@ const LiveTrackingMapNew = () => {
     mapInstance.on('moveend', () => applyMarkerZoomStyling());
   };
 
-  // Load truck data
+  // Load truck data from backend only
   useEffect(() => {
-    const loadTruckData = async () => {
-      try {
-        setLoading(true);
-
-        if (!USE_BACKEND) {
-          const sampleData = await initializeSampleData();
-          setVehicles(sampleData);
-          setError(null);
-          return;
-        }
-
-        const vehicleData = getLiveTrackingData();
-
-        if (vehicleData && vehicleData.length > 0) {
-          setVehicles(vehicleData);
-        } else {
-          console.log('ℹ️ API returned no vehicles, switching to sample data');
-          const sampleData = await initializeSampleData();
-          setVehicles(sampleData);
-          setError('No vehicles from backend - using demo data');
-        }
-      } catch (error) {
-        console.error('❌ Failed to load truck data:', error);
-        console.log('🔄 Using sample data as fallback');
-
-        const sampleData = await initializeSampleData();
-        setVehicles(sampleData);
-        setError('Connection failed - using demo data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTruckData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadVehiclesFromBackend();
   }, [timeRange, mapUtils]);
 
-  // WebSocket setup disabled for dummy data mode
+  // WebSocket setup (disabled until WS integration is configured)
   useEffect(() => {
-    if (!USE_BACKEND) {
-      setWsStatus('disconnected');
-      return;
-    }
-    // WebSocket logic removed since we're using dummy data only
-  }, [USE_BACKEND]);
+    setWsStatus('disconnected');
+  }, []);
 
-  // Backend connection monitor disabled for dummy data mode
+  // Backend connection monitor
   useEffect(() => {
-    setBackendOnline(false);
+    setBackendOnline(true);
   }, []);
 
   // Geofence-aware smooth movement for live tracking
@@ -342,7 +324,7 @@ const LiveTrackingMapNew = () => {
           return;
         }
 
-        const truckNum = extractTruckNumber(vehicle.id) ?? '';
+        const truckNum = vehicle.truckNumber || extractTruckNumber(vehicle.id) || '';
         const buildIcon = (status) =>
           L.divIcon({
             html: `
@@ -360,37 +342,27 @@ const LiveTrackingMapNew = () => {
 
         let marker = existing[vehicle.id];
         if (!marker) {
+          console.log(`🆕 Creating new marker for ${vehicle.id} at position:`, vehicle.position);
           marker = L.marker(vehicle.position, {
             icon: buildIcon(vehicle.status),
             zIndexOffset: 1000,
             pane: 'markersPane',
+            // Add options to prevent positioning issues
+            keyboard: false,
+            riseOnHover: false,
           });
-          marker.addTo(markersLayerRef.current || map);
+          marker.addTo(map);
           existing[vehicle.id] = marker;
           marker._status = vehicle.status;
+
+          // Add click handler only once when creating marker
           marker.on('click', async () => {
             setSelectedVehicle(vehicle);
             setShowVehicleCard(true);
 
-            // Resolve and load IoT device info aligned with this vehicle
-            try {
-              const truckUUID = resolveTruckUUID(vehicle.id);
-              const dev = devices.find((d) => d.truck_id === (truckUUID || vehicle.id));
-              setSelectedDevice(dev || null);
-              if (dev) {
-                const statuses = deviceStatusEvents.filter((e) => e.device_id === dev.id);
-                const latest =
-                  statuses.sort((a, b) => new Date(b.reported_at) - new Date(a.reported_at))[0] ||
-                  null;
-                setSelectedDeviceStatus(latest);
-              } else {
-                setSelectedDeviceStatus(null);
-              }
-            } catch (e) {
-              console.warn('Failed to resolve IoT device for vehicle:', vehicle?.id, e);
-              setSelectedDevice(null);
-              setSelectedDeviceStatus(null);
-            }
+            // Clear IoT device info (no dummy lookups)
+            setSelectedDevice(null);
+            setSelectedDeviceStatus(null);
 
             // Show live route for this vehicle
             try {
@@ -408,11 +380,25 @@ const LiveTrackingMapNew = () => {
               let routeHistory = vehicleRoutes[vehicle.id] || [];
 
               if (routeHistory.length <= 1) {
-                const pts = getDummyRealRoutePoints?.() || [];
-                const coords =
-                  Array.isArray(pts) && pts.length > 1 ? pts.map((p) => [p.lat, p.lng]) : [];
-                if (coords.length > 1) {
-                  routeHistory = coords;
+                // Try to load from backend
+                try {
+                  const histRes = await trucksAPI.getLocationHistory(vehicle.id, {
+                    range: timeRange,
+                  });
+                  if (histRes.success && Array.isArray(histRes.data)) {
+                    const coords = histRes.data
+                      .map((p) => {
+                        const lat = p?.lat ?? p?.latitude;
+                        const lng = p?.lng ?? p?.longitude;
+                        return isFinite(lat) && isFinite(lng) ? [Number(lat), Number(lng)] : null;
+                      })
+                      .filter(Boolean);
+                    if (coords.length > 1) {
+                      routeHistory = coords;
+                    }
+                  }
+                } catch (e) {
+                  console.warn('Failed to load route history from backend:', e);
                 }
               }
 
@@ -474,20 +460,19 @@ const LiveTrackingMapNew = () => {
             }
           });
         } else {
-          // Update position
+          // Update existing marker position and icon
+          console.log(`🔄 Updating marker ${vehicle.id} to position:`, vehicle.position);
+
+          // Update position cleanly without timeout to prevent glitches
           try {
             marker.setLatLng(vehicle.position);
           } catch (err) {
-            void err;
+            console.warn('Failed to update marker position:', err);
           }
-          // Update icon only if status changed (cheaper)
+
           if (marker._status !== vehicle.status) {
-            try {
-              marker.setIcon(buildIcon(vehicle.status));
-              marker._status = vehicle.status;
-            } catch (err) {
-              void err;
-            }
+            marker.setIcon(buildIcon(vehicle.status));
+            marker._status = vehicle.status;
           }
         }
 
@@ -507,8 +492,8 @@ const LiveTrackingMapNew = () => {
         if (!seen.has(id)) {
           try {
             const m = existing[id];
-            if (m && (map.hasLayer(m) || markersLayerRef.current?.hasLayer(m))) {
-              (markersLayerRef.current || map).removeLayer(m);
+            if (m && map.hasLayer(m)) {
+              map.removeLayer(m);
             }
           } catch (err) {
             void err;
@@ -517,13 +502,12 @@ const LiveTrackingMapNew = () => {
         }
       });
     }
-  }, [map, vehicles, clusterSelections, inSelectedCluster, vehicleRoutes]);
+  }, [map, vehicles, clusterSelections, inSelectedCluster, vehicleRoutes, timeRange]);
 
   // Re-apply marker zoom styling whenever map or selection changes
   useEffect(() => {
     applyMarkerZoomStyling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, vehicles, clusterSelections]);
+  }, [map, vehicles, clusterSelections, applyMarkerZoomStyling]);
 
   // Handle focus via URL param ?focus=<truck>
   useEffect(() => {
@@ -773,7 +757,11 @@ const LiveTrackingMapNew = () => {
             {/* Tire Pressure Display */}
             <div className="mt-5">
               <div className="rounded-lg border border-gray-200 p-3">
-                <TirePressureDisplay selectedTruckId={selectedVehicle?.id} showHeader={true} />
+                <TirePressureDisplay
+                  selectedTruckId={selectedVehicle?.id}
+                  tireData={selectedVehicle?.tireData}
+                  showHeader={true}
+                />
               </div>
             </div>
 

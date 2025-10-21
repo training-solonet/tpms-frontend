@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { drivers } from '../data/index.js';
+import { driversApi } from '../services/api2/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -31,6 +31,8 @@ export default function DriverForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = id === 'new';
+  const isEdit = id && id !== 'new';
+
   const [form, setForm] = React.useState({
     name: '',
     badge_id: '',
@@ -40,43 +42,76 @@ export default function DriverForm() {
     notes: '',
     status: 'active',
   });
-  const [loading, setLoading] = React.useState(!isNew);
+  const [loading, setLoading] = React.useState(isEdit);
   const [saving, setSaving] = React.useState(false);
 
+  // Load driver data if editing
   React.useEffect(() => {
-    // eslint-disable-next-line no-unused-vars
-    let mounted = true;
-    (async () => {
-      if (!isNew) {
+    if (!isEdit) return;
+    const loadDriver = async () => {
+      try {
         setLoading(true);
-        // Use dummy data
-        const driver = drivers.find((d) => d.id === id);
+        console.log('📡 Loading driver data from Backend 2...');
+        const res = await driversApi.getById(id);
+        console.log('✅ Driver response:', res);
+        const driver = res?.data;
         if (driver) {
           setForm({
-            // eslint-disable-next-line no-constant-binary-expression
-            name: `${driver.first_name} ${driver.last_name}` || '',
+            name: driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim(),
+            badge_id: driver.badge_id || '',
             license_number: driver.license_number || '',
             phone: driver.phone || '',
-            email: driver.email || '',
+            address: driver.address || '',
+            notes: driver.notes || '',
+            status: driver.status || 'active',
           });
         }
-        setLoading(false);
+      } catch (error) {
+        console.error('❌ Failed to load driver:', error);
       }
-    })();
-    return () => {
-      mounted = false;
+      setLoading(false);
     };
-  }, [id, isNew]);
+    loadDriver();
+  }, [id, isEdit]);
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
   const onSave = async () => {
-    setSaving(true);
-    // Simulate save operation with dummy data
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      setSaving(true);
+      console.log('💾 Saving driver data to Backend 2...', form);
+
+      const driverData = {
+        name: form.name,
+        badge_id: form.badge_id,
+        license_number: form.license_number,
+        phone: form.phone,
+        address: form.address,
+        notes: form.notes,
+        status: form.status,
+      };
+
+      let response;
+      if (isEdit) {
+        // UPDATE existing driver
+        console.log('🔄 Updating driver:', id);
+        response = await driversApi.update(id, driverData);
+        console.log('✅ Driver updated successfully:', response);
+      } else {
+        // CREATE new driver
+        console.log('➕ Creating new driver');
+        response = await driversApi.create(driverData);
+        console.log('✅ Driver created successfully:', response);
+      }
+
+      alert('Driver saved successfully!');
       navigate('/drivers');
-    }, 1000);
+    } catch (error) {
+      console.error('❌ Failed to save driver:', error);
+      alert(`Failed to save driver: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

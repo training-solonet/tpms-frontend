@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { fuelLevelEvents, trucks } from '../data/index.js';
-// Removed dashboardAPI import - using dummy data
+// Use Backend 2 API
+import { trucksApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -35,29 +35,54 @@ export default function TelemetryFuelForm() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
 
-  // Load from backend first, fallback to dummy
+  // Load from backend
   React.useEffect(() => {
     let mounted = true;
-    (async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        // Use dummy fuel data directly
-        setRows(
-          fuelLevelEvents.map((f) => ({
-            ...f,
-            truck_name: trucks.find((t) => t.id === f.truck_id)?.name || 'Unknown',
-          }))
-        );
-        console.log('✅ Using dummy fuel data for TelemetryFuelForm');
-      } catch (e) {
+        console.log('📡 Loading fuel data from Backend 2...');
+
+        const res = await trucksApi.getAll();
+        console.log('✅ Trucks response for fuel:', res);
+
+        const trucks = res?.data?.trucks || res?.data || [];
+
+        if (!Array.isArray(trucks) || trucks.length === 0) {
+          if (mounted) {
+            setRows([]);
+            setError('No trucks found');
+          }
+          return;
+        }
+
+        // Map trucks to fuel data rows (Backend 2 uses different field names)
+        const fuelRows = trucks.map((t) => ({
+          id: `fuel-${t.id}`,
+          truck_id: t.id,
+          truck_name: t.truckNumber || t.name || t.plateNumber || t.plate_number || t.id,
+          plate_number: t.plateNumber || t.plate_number || '-',
+          fuel_percent: t.fuelLevel || t.fuel_level || t.fuelPercentage || 0,
+          changed_at: t.updatedAt || t.updated_at || t.lastUpdate || new Date().toISOString(),
+          source: 'Backend 2',
+        }));
+
+        console.log(`✅ Loaded ${fuelRows.length} fuel records from Backend 2`);
         if (mounted) {
-          setError(e.message || 'Failed to load fuel data');
-          setRows(fuelLevelEvents.map((e) => ({ ...e })));
+          setRows(fuelRows);
+          setError('');
+        }
+      } catch (error) {
+        console.error('❌ Failed to load fuel data:', error);
+        if (mounted) {
+          setError(error.message || 'Failed to load fuel data');
+          setRows([]);
         }
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
+    };
+    loadData();
     return () => {
       mounted = false;
     };
@@ -65,15 +90,12 @@ export default function TelemetryFuelForm() {
 
   const rowsWithTruck = React.useMemo(
     () =>
-      rows.map((r) => {
-        const t = trucks.find((tr) => tr.id === r.truck_id);
-        return {
-          ...r,
-          truckName: t?.name || 'Unknown Truck',
-          plate: t?.plate_number || 'N/A',
-          group: t?.fleet_group_id || '-',
-        };
-      }),
+      rows.map((r) => ({
+        ...r,
+        truckName: r.truck_name || 'Unknown Truck',
+        plate: r.plate_number || 'N/A',
+        group: '-',
+      })),
     [rows]
   );
 

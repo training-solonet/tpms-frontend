@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage';
-import { trucks, devices, fleetGroups } from '../data/index.js';
+// Use Backend 2 APIs
+import { trucksApi, devicesApi, dashboardApi } from '../services/api2';
 import WheelFrontIcon from '../components/icons/WheelFrontIcon.jsx';
 
 const FleetManagement = () => {
@@ -16,25 +17,41 @@ const FleetManagement = () => {
   const [selectedTruck, setSelectedTruck] = useState(null);
 
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
       setLoading(true);
+      try {
+        console.log('📡 Loading fleet management data from Backend 2...');
 
-      // Use dummy data directly
-      setTrucksData(trucks);
-      setDevicesData(devices);
-      setFleetGroupsState(fleetGroups);
+        // Load trucks from Backend 2
+        const trucksRes = await trucksApi.getAll();
+        console.log('✅ Trucks response:', trucksRes);
+        const trucksArr = trucksRes?.data?.trucks || trucksRes?.data || [];
+        setTrucksData(Array.isArray(trucksArr) ? trucksArr : []);
 
-      console.log('✅ Fleet management data loaded from dummy data:', {
-        trucks: trucks.length,
-        devices: devices.length,
-        fleetGroups: fleetGroups.length,
-      });
+        // Load devices from Backend 2
+        const devicesRes = await devicesApi.getAll();
+        console.log('✅ Devices response:', devicesRes);
+        const devicesArr = devicesRes?.data?.devices || devicesRes?.data || [];
+        setDevicesData(Array.isArray(devicesArr) ? devicesArr : []);
 
-      setLoading(false);
+        // Load fleet summary from Backend 2
+        try {
+          const groupsRes = await dashboardApi.getFleetSummary();
+          console.log('✅ Fleet summary response:', groupsRes);
+          const groupsArr = groupsRes?.data?.groups || groupsRes?.data || [];
+          setFleetGroupsState(Array.isArray(groupsArr) ? groupsArr : []);
+        } catch (err) {
+          console.warn('⚠️ Fleet summary not available:', err.message);
+          setFleetGroupsState([]);
+        }
+      } catch (error) {
+        console.error('❌ Error loading fleet management data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Simulate loading time
-    setTimeout(loadData, 300);
+    loadData();
   }, []);
 
   const getTruckDevices = (truckId) => {

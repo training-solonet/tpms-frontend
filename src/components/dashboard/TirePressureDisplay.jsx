@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { tirePressureEvents } from '../../data/tirePressureEvents.js';
-import { trucks } from '../../data/trucks.js';
+import { trucksAPI } from '../../services/api.js';
 import WheelFrontIcon from '../icons/WheelFrontIcon.jsx';
 
-const TirePressureDisplay = ({ selectedTruckId, className = '', showHeader = true }) => {
+const TirePressureDisplay = ({
+  selectedTruckId,
+  tireData: propTireData,
+  className = '',
+  showHeader = true,
+}) => {
   const [tireData, setTireData] = useState([]);
   const [truckInfo, setTruckInfo] = useState(null);
-  const [viewMode, setViewMode] = useState('visual'); // 'visual' | 'list' | 'icons'
+  const [
+    viewMode,
+    // setViewMode
+  ] = useState('icons'); // 'visual' | 'list' | 'icons'
 
   // Build a per-axle layout that supports dual tires (2 left, 2 right) for rear axles
   // and single tires for the front axle. Also returns the computed total tire count.
@@ -179,39 +186,60 @@ const TirePressureDisplay = ({ selectedTruckId, className = '', showHeader = tru
   };
 
   useEffect(() => {
-    if (!selectedTruckId) {
-      setTireData([]);
-      setTruckInfo(null);
-      return;
-    }
-
-    // Find truck info
-    const truck = trucks.find((t) => t.id === selectedTruckId);
-    setTruckInfo(truck);
-
-    if (!truck) return;
-
-    // Get latest tire pressure data for this truck
-    const truckTireEvents = tirePressureEvents.filter(
-      (event) => event.truck_id === selectedTruckId
-    );
-
-    // Group by tire number and get latest reading for each tire
-    const latestByTire = {};
-    truckTireEvents.forEach((event) => {
-      const tireNo = event.tire_no;
-      if (
-        !latestByTire[tireNo] ||
-        new Date(event.changed_at) > new Date(latestByTire[tireNo].changed_at)
-      ) {
-        latestByTire[tireNo] = event;
+    const loadTireData = async () => {
+      if (!selectedTruckId) {
+        setTireData([]);
+        setTruckInfo(null);
+        return;
       }
-    });
 
-    // Convert to array and sort by tire number
-    const tireArray = Object.values(latestByTire).sort((a, b) => a.tire_no - b.tire_no);
-    setTireData(tireArray);
-  }, [selectedTruckId]);
+      // Default minimal truck info; backend-specific enrichment can be added if available
+      setTruckInfo(
+        (prev) => prev || { id: selectedTruckId, name: String(selectedTruckId), tire_config: '6x4' }
+      );
+
+      // Use propTireData if available (from TPMS), otherwise fetch from API
+      if (propTireData && Array.isArray(propTireData) && propTireData.length > 0) {
+        // Convert TPMS format to expected format
+        const convertedData = propTireData.map((tire) => ({
+          tire_no: tire.tireNo,
+          tireNo: tire.tireNo,
+          pressure_kpa: tire.tiprValue,
+          temp_celsius: tire.tempValue,
+          changed_at: tire.createdAt,
+        }));
+        setTireData(convertedData);
+        return;
+      }
+
+      try {
+        const res = await trucksAPI.getTirePressures(selectedTruckId);
+        if (res.success && Array.isArray(res.data)) {
+          // Expecting array with fields: tire_no, pressure_kpa, temp_celsius, changed_at (optional)
+          const latestByTire = {};
+          res.data.forEach((item) => {
+            const tireNo = Number(item.tire_no ?? item.tireNo);
+            if (!tireNo) return;
+            const ts = item.changed_at || item.timestamp || item.reported_at || null;
+            if (!latestByTire[tireNo]) latestByTire[tireNo] = { ...item, changed_at: ts };
+            else if (ts && new Date(ts) > new Date(latestByTire[tireNo].changed_at || 0)) {
+              latestByTire[tireNo] = { ...item, changed_at: ts };
+            }
+          });
+          const tireArray = Object.values(latestByTire).sort(
+            (a, b) => (a.tire_no ?? a.tireNo) - (b.tire_no ?? b.tireNo)
+          );
+          setTireData(tireArray);
+        } else {
+          setTireData([]);
+        }
+      } catch {
+        setTireData([]);
+      }
+    };
+
+    loadTireData();
+  }, [selectedTruckId, propTireData]);
 
   const getTireStatus = (pressure, temperature, exType) => {
     if (exType) {
@@ -315,7 +343,7 @@ const TirePressureDisplay = ({ selectedTruckId, className = '', showHeader = tru
     );
   }
 
-  const { layout: axleLayout, tireCount } = buildAxleLayout(truckInfo.tire_config);
+  const { layout: axleLayout, tireCount } = buildAxleLayout(truckInfo.tire_config || '6x4');
 
   const Header = () => (
     <div className="mb-4 flex items-center justify-between">
@@ -327,7 +355,7 @@ const TirePressureDisplay = ({ selectedTruckId, className = '', showHeader = tru
         <p className="text-xs text-gray-500">{tireCount} tires</p>
       </div>
       <div className="inline-flex rounded-md border border-gray-200 bg-white overflow-hidden">
-        <button
+        {/* <button
           className={`px-2.5 py-1.5 text-xs font-medium ${viewMode === 'visual' ? 'bg-gray-100 text-gray-900' : 'text-gray-600'}`}
           onClick={() => setViewMode('visual')}
         >
@@ -344,7 +372,7 @@ const TirePressureDisplay = ({ selectedTruckId, className = '', showHeader = tru
           onClick={() => setViewMode('icons')}
         >
           Icons
-        </button>
+        </button> */}
       </div>
     </div>
   );

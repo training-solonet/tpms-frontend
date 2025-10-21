@@ -2,75 +2,97 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import TruckImage from '../components/common/TruckImage.jsx';
-import { trucks, drivers, vendors, gpsPositions, fuelLevelEvents } from '../data/index.js';
+// Use Backend 2 APIs
+import { trucksApi, driversApi, vendorsApi } from '../services/api2';
 
-// Transform dummy data to match expected format
-const allTrucks = trucks.map((truck) => {
-  const driver = drivers.find((d) => d.id === truck.driver_id);
-  const position = gpsPositions.find((pos) => pos.truck_id === truck.id);
-  const fuel = fuelLevelEvents.find((f) => f.truck_id === truck.id);
+const TrucksFormList = () => {
+  const [trucks, setTrucks] = React.useState([]);
+  const [drivers, setDrivers] = React.useState([]);
+  const [vendors, setVendors] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
-  return {
-    id: truck.id,
-    plate: truck.plate_number,
-    name: truck.name,
-    cluster: truck.fleet_group_id || '-',
-    driver: { name: driver ? `${driver.first_name} ${driver.last_name}` : '-' },
-    vendor_id: truck.vendor_id || '',
-    status: position?.speed_kph > 5 ? 'active' : 'idle',
-    fuel: fuel?.fuel_percent || 0,
-    location: position
-      ? { coordinates: [position.latitude, position.longitude] }
-      : { coordinates: [0, 0] },
-    speed: position?.speed_kph || 0,
-    heading: position?.heading_deg || 0,
-    payload: Math.round(Math.random() * 50000), // Random payload in kg
-    odometer: Math.round(Math.random() * 50000 + 100000), // Random odometer
-    engineHours: Math.round(Math.random() * 10000 + 5000),
-    lastUpdate: position?.ts || truck.updated_at,
-    alerts: [],
-    alertCount: 0,
-    manufacturer: truck.manufacturer || 'Caterpillar',
-    model: truck.model,
-    year: truck.year,
-    batteryLevel: Math.round(70 + Math.random() * 30),
-    signalStrength: Math.round(60 + Math.random() * 40),
-    lastMaintenance: new Date(Date.now() - Math.random() * 90 * 24 * 3600000).toISOString(),
-  };
-});
-
-const pageSizes = [10, 25, 50, 100];
-
-export default function TrucksFormList() {
   const [query, setQuery] = React.useState('');
   const [cluster, setCluster] = React.useState('');
   const [vendorFilter, setVendorFilter] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(25);
-  const [rows, setRows] = React.useState(allTrucks);
-  const [vendorsList, setVendorsList] = React.useState(vendors);
-  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // Simulate loading time for better UX
-    const timer = setTimeout(() => {
-      setRows(allTrucks);
-      setVendorsList(vendors);
-      setLoading(false);
-      console.log(`✅ Using dummy data for All Vehicles table: ${allTrucks.length} trucks`);
-    }, 500);
+    const loadData = async () => {
+      try {
+        console.log('📡 Loading trucks data from Backend 2...');
 
-    return () => clearTimeout(timer);
+        const [trucksRes, driversRes, vendorsRes] = await Promise.all([
+          trucksApi.getAll(),
+          driversApi.getAll().catch((err) => {
+            console.warn('Failed to load drivers:', err);
+            return { data: { drivers: [] } };
+          }),
+          vendorsApi.getAll().catch((err) => {
+            console.warn('Failed to load vendors:', err);
+            return { data: { vendors: [] } };
+          }),
+        ]);
+
+        console.log('✅ Trucks response:', trucksRes);
+        console.log('✅ Drivers response:', driversRes);
+        console.log('✅ Vendors response:', vendorsRes);
+
+        const trucksArray = trucksRes?.data?.trucks || [];
+        const driversArray = driversRes?.data?.drivers || [];
+        const vendorsArray = vendorsRes?.data?.vendors || [];
+
+        setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
+        setDrivers(Array.isArray(driversArray) ? driversArray : []);
+        setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
+      } catch (error) {
+        console.error('❌ Failed to load data:', error);
+        setTrucks([]);
+        setDrivers([]);
+        setVendors([]);
+      }
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
+  const allTrucks = React.useMemo(() => {
+    return trucks.map((truck) => {
+      // Backend 2 uses different field names
+      const driver = drivers.find((d) => d.id === truck.driverId);
+      return {
+        id: truck.id,
+        plate: truck.plateNumber || truck.plate_number,
+        name: truck.truckNumber || truck.name,
+        cluster: truck.fleetGroupId || truck.fleet_group_id || '-',
+        driver: {
+          name: driver
+            ? driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || '-'
+            : truck.driverName || '-',
+        },
+        vendor_id: truck.vendorId || truck.vendor_id || '',
+        status: truck.status || 'idle',
+        fuel: truck.fuelLevel || truck.fuel_level || 0,
+        location: { coordinates: [truck.latitude || 0, truck.longitude || 0] },
+        speed: truck.speed || 0,
+        lastUpdate: truck.updatedAt || truck.updated_at || new Date().toISOString(),
+        manufacturer: truck.manufacturer || 'Caterpillar',
+        model: truck.model || '-',
+        year: truck.year || 2020,
+      };
+    });
+  }, [trucks, drivers]);
+
+  const pageSizes = [10, 25, 50, 100];
+
   const clusters = React.useMemo(
-    () => Array.from(new Set(rows.map((t) => t.cluster).filter(Boolean))),
-    [rows]
+    () => Array.from(new Set(allTrucks.map((t) => t.cluster).filter(Boolean))),
+    [allTrucks]
   );
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase();
-    return rows.filter((t) => {
+    return allTrucks.filter((t) => {
       const matchesQ =
         !q ||
         t.id.toLowerCase().includes(q) ||
@@ -81,7 +103,7 @@ export default function TrucksFormList() {
       const matchesVendor = !vendorFilter || t.vendor_id === vendorFilter;
       return matchesQ && matchesCluster && matchesVendor;
     });
-  }, [rows, query, cluster, vendorFilter]);
+  }, [allTrucks, query, cluster, vendorFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -206,7 +228,7 @@ export default function TrucksFormList() {
                           <td className="px-4 py-3">{t.plate}</td>
                           <td className="px-4 py-3">{t.cluster}</td>
                           <td className="px-4 py-3">
-                            {vendorsList.find((v) => v.id === t.vendor_id)?.name || '-'}
+                            {vendors.find((v) => v.id === t.vendor_id)?.name || '-'}
                           </td>
                           <td className="px-4 py-3">{t.driver.name}</td>
                           <td className="px-4 py-3 text-right">
@@ -255,4 +277,6 @@ export default function TrucksFormList() {
       </div>
     </TailwindLayout>
   );
-}
+};
+
+export default TrucksFormList;

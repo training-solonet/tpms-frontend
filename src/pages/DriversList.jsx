@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { driversAPI } from '../services/api.js';
+// Use Backend 2 API
+import { driversApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -26,55 +27,27 @@ export default function DriversList() {
   const load = React.useCallback(async () => {
     try {
       setLoading(true);
-      const res = await driversAPI.getAll();
+      console.log('📡 Loading drivers from Backend 2...');
 
-      // Check if backend returns nested data like trucks
+      const res = await driversApi.getAll();
+      console.log('✅ Drivers response:', res);
+
+      // Backend 2 returns data in res.data.drivers
       const driversArray = res.data?.drivers || res.data;
 
-      if (res.success && Array.isArray(driversArray) && driversArray.length > 0) {
+      if (Array.isArray(driversArray)) {
         setDrivers(driversArray);
-        console.log('✅ Using real drivers data:', driversArray.length, 'drivers');
+        console.log(`✅ Loaded ${driversArray.length} drivers from Backend 2`);
+        setError('');
       } else {
-        // Fallback to dummy data since drivers endpoint may not be available (tracking-only project)
-        const dummyDrivers = [
-          {
-            id: 'driver-001',
-            name: 'John Doe',
-            badge_id: 'BD001',
-            license_number: 'LIC123456',
-            phone: '+62812345678',
-          },
-          {
-            id: 'driver-002',
-            name: 'Jane Smith',
-            badge_id: 'BD002',
-            license_number: 'LIC789012',
-            phone: '+62887654321',
-          },
-          {
-            id: 'driver-003',
-            name: 'Mike Johnson',
-            badge_id: 'BD003',
-            license_number: 'LIC345678',
-            phone: '+62856789012',
-          },
-        ];
-        setDrivers(dummyDrivers);
-        console.log('🔄 Backend drivers unavailable (tracking-only project), using dummy data');
+        setDrivers([]);
+        setError('Drivers data unavailable');
+        console.log('⚠️ Drivers endpoint returned no data');
       }
     } catch (e) {
-      // Use dummy data on error
-      const dummyDrivers = [
-        {
-          id: 'driver-001',
-          name: 'John Doe',
-          badge_id: 'BD001',
-          license_number: 'LIC123456',
-          phone: '+62812345678',
-        },
-      ];
-      setDrivers(dummyDrivers);
-      console.log('🔄 Error loading drivers, using dummy data:', e.message);
+      setDrivers([]);
+      setError(e.message || 'Failed to load drivers');
+      console.log('❌ Error loading drivers:', e);
     } finally {
       setLoading(false);
     }
@@ -107,8 +80,14 @@ export default function DriversList() {
 
   const onDelete = async (id) => {
     if (!window.confirm('Delete this driver?')) return;
-    await driversAPI.remove(id);
-    await load();
+    try {
+      await driversApi.delete(id);
+      console.log('✅ Driver deleted successfully');
+      await load();
+    } catch (error) {
+      console.error('❌ Failed to delete driver:', error);
+      alert('Failed to delete driver: ' + error.message);
+    }
   };
 
   return (

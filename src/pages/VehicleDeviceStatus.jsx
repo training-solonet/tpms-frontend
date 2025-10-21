@@ -3,11 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage.jsx';
-import { devices } from '../data/devices.js';
-import { deviceStatusEvents } from '../data/deviceStatusEvents.js';
-import { trucks as trucksList } from '../data/trucks.js';
 import { trucksAPI } from '../services/api.js';
-import { getLiveTrackingData } from '../data/index.js';
 
 const VehicleDeviceStatus = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -26,15 +22,7 @@ const VehicleDeviceStatus = () => {
     if (!vehicleId) return null;
     const idStr = String(vehicleId);
     if (idStr.length === 36 && idStr.includes('-')) return idStr;
-    const numMatch = idStr.match(/(\d{1,4})/);
-    const num = numMatch ? numMatch[1] : null;
-    if (num) {
-      const t = trucksList.find(
-        (tk) => String(tk.name).includes(num) || String(tk.plate_number).includes(num)
-      );
-      if (t) return t.id;
-    }
-    return null;
+    return idStr;
   };
 
   useEffect(() => {
@@ -44,145 +32,42 @@ const VehicleDeviceStatus = () => {
         const res = await trucksAPI.getAllTrucks();
         const trucksArray = res.data?.trucks || res.data;
         if (res?.success && Array.isArray(trucksArray) && trucksArray.length > 0) {
-          const vehicleData = trucksArray.map((t) => {
-            try {
-              // Try to get real device connectivity data from backend
-              let deviceData = null;
-
-              // Check if backend provides device data in expected format (cmd: "device")
-              if (t.deviceData) {
-                deviceData = t.deviceData;
-              } else if (t.sensors?.device) {
-                deviceData = t.sensors.device;
-              } else {
-                // Generate realistic device connectivity data based on protocol specification
-                deviceData = {
-                  lng: 113.86837 + (Math.random() - 0.5) * 0.1, // Longitude with variation
-                  lat: 22.59955 + (Math.random() - 0.5) * 0.1, // Latitude with variation
-                  bat1: Math.floor(Math.random() * 5), // Host battery level (0-4)
-                  bat2: Math.floor(Math.random() * 5), // Repeater 1 battery level (0-4)
-                  bat3: Math.floor(Math.random() * 5), // Repeater 2 battery level (0-4)
-                  lock: Math.random() > 0.3 ? 1 : 0, // Device state 0-unlocked, 1-locked
-                  simNumber:
-                    t.simNumber ||
-                    `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-                  lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString(),
-                };
-              }
-
-              // Also check for lock state data (cmd: "state")
-              let lockData = null;
-              if (t.lockData) {
-                lockData = t.lockData;
-              } else {
-                lockData = {
-                  is_lock: deviceData.lock || (Math.random() > 0.3 ? 1 : 0),
-                };
-              }
-
-              return {
-                id: t.id,
-                name: t.name || t.truckNumber || t.id,
-                status: t.status || 'offline',
-                speed: t.speed || 0,
-                lastUpdate: t.lastUpdate || new Date(),
-                // Core Device Connectivity data according to protocol
-                lng: deviceData.lng || 0,
-                lat: deviceData.lat || 0,
-                bat1: deviceData.bat1 || 0, // Host battery (0-4)
-                bat2: deviceData.bat2 || 0, // Repeater 1 battery (0-4)
-                bat3: deviceData.bat3 || 0, // Repeater 2 battery (0-4)
-                lock: deviceData.lock || 0, // Lock state from device data
-                is_lock: lockData.is_lock || 0, // Lock state from state data
-                simNumber: deviceData.simNumber || t.simNumber || '-',
-                lastPing: deviceData.lastUpdate || new Date().toISOString(),
-                // Derived connectivity status
-                connectionStatus:
-                  deviceData.bat1 > 0 || deviceData.bat2 > 0 || deviceData.bat3 > 0
-                    ? 'connected'
-                    : 'disconnected',
-                signalStrength: Math.round(60 + Math.random() * 40), // Estimated signal strength
-                networkType: Math.random() > 0.5 ? '4G' : '3G',
-                gpsAccuracy: Math.round(Math.random() * 10 + 2), // 2-12 meters
-                // Battery status analysis
-                hostBatteryStatus:
-                  deviceData.bat1 > 2 ? 'good' : deviceData.bat1 > 0 ? 'low' : 'critical',
-                repeater1Status:
-                  deviceData.bat2 > 2 ? 'good' : deviceData.bat2 > 0 ? 'low' : 'critical',
-                repeater2Status:
-                  deviceData.bat3 > 2 ? 'good' : deviceData.bat3 > 0 ? 'low' : 'critical',
-                // Lock status analysis
-                lockStatus: lockData.is_lock === 1 ? 'locked' : 'unlocked',
-                securityStatus: lockData.is_lock === 1 ? 'secure' : 'unsecured',
-                // Overall device health
-                deviceHealth:
-                  deviceData.bat1 + deviceData.bat2 + deviceData.bat3 > 6
-                    ? 'good'
-                    : deviceData.bat1 + deviceData.bat2 + deviceData.bat3 > 3
-                      ? 'warning'
-                      : 'critical',
-              };
-            } catch (error) {
-              console.error(`Error processing device connectivity data for truck ${t.id}:`, error);
-              return {
-                id: t.id,
-                name: t.name || t.truckNumber || t.id,
-                status: 'error',
-                speed: 0,
-                lastUpdate: new Date(),
-                lng: 0,
-                lat: 0,
-                bat1: 0,
-                bat2: 0,
-                bat3: 0,
-                lock: 0,
-                is_lock: 0,
-                simNumber: '-',
-                lastPing: new Date().toISOString(),
-                connectionStatus: 'disconnected',
-                signalStrength: 0,
-                networkType: 'Unknown',
-                gpsAccuracy: 0,
-                hostBatteryStatus: 'error',
-                repeater1Status: 'error',
-                repeater2Status: 'error',
-                lockStatus: 'unknown',
-                securityStatus: 'unknown',
-                deviceHealth: 'error',
-                hasError: true,
-                errorMessage: 'Failed to load device connectivity data',
-              };
-            }
-          });
+          const vehicleData = trucksArray.map((t) => ({
+            id: t.id || t.truckNumber || t.name || '-',
+            name: t.name || t.truckNumber || t.plate_number || t.id,
+            status: t.status || 'offline',
+            speed: Number(t.speed || t.speed_kph || 0),
+            lastUpdate: t.lastUpdate || t.updated_at || new Date(),
+            lat: Number(t.latitude ?? t.lat ?? 0),
+            lng: Number(t.longitude ?? t.lng ?? 0),
+            simNumber: t.simNumber || '-',
+            // Optional fields if backend provides
+            lock: t.lock ?? 0,
+            is_lock: t.is_lock ?? 0,
+            lastPing: t.lastPing || t.lastUpdate || new Date().toISOString(),
+            connectionStatus: t.connectionStatus || (t.speed > 0 ? 'connected' : 'disconnected'),
+            signalStrength: Number(t.signalStrength ?? 0),
+            networkType: t.networkType || '-',
+            gpsAccuracy: Number(t.gpsAccuracy ?? 0),
+            bat1: Number(t.bat1 ?? 0),
+            bat2: Number(t.bat2 ?? 0),
+            bat3: Number(t.bat3 ?? 0),
+            hostBatteryStatus: t.hostBatteryStatus || 'unknown',
+            repeater1Status: t.repeater1Status || 'unknown',
+            repeater2Status: t.repeater2Status || 'unknown',
+            lockStatus: t.is_lock === 1 ? 'locked' : 'unlocked',
+            deviceHealth: t.deviceHealth || 'unknown',
+          }));
           setVehicles(vehicleData);
           setError(null);
-          console.log(
-            `✅ Using real trucks data for Device Connectivity Status: ${trucksArray.length} vehicles`
-          );
           return;
         }
-        // fallback dummy
-        const demo =
-          getLiveTrackingData()?.map((v) => ({
-            id: v.id,
-            name: v.id,
-            status: v.status || 'offline',
-            speed: v.speed || 0,
-            lastUpdate: v.lastUpdate || new Date(),
-          })) || [];
-        setVehicles(demo);
-        setError('Backend not available or empty - using demo data');
+        // Backend-only: no dummy fallback
+        setVehicles([]);
+        setError('Backend not available or empty');
       } catch (e) {
-        const demo =
-          getLiveTrackingData()?.map((v) => ({
-            id: v.id,
-            name: v.id,
-            status: v.status || 'offline',
-            speed: v.speed || 0,
-            lastUpdate: v.lastUpdate || new Date(),
-          })) || [];
-        setVehicles(demo);
-        setError('Failed to load backend - using demo data');
+        setVehicles([]);
+        setError('Failed to load backend');
       } finally {
         setLoading(false);
       }
@@ -196,14 +81,7 @@ const VehicleDeviceStatus = () => {
   }, [query, statusFilter, clusterSelections, pageSize]);
 
   const rows = useMemo(() => {
-    return vehicles.map((v) => {
-      const uuid = resolveTruckUUID(v.id) || v.id;
-      const dev = devices.find((d) => d.truck_id === uuid) || null;
-      const statusList = dev ? deviceStatusEvents.filter((e) => e.device_id === dev.id) : [];
-      const latest =
-        statusList.sort((a, b) => new Date(b.reported_at) - new Date(a.reported_at))[0] || null;
-      return { vehicle: v, device: dev, deviceStatus: latest };
-    });
+    return vehicles.map((v) => ({ vehicle: v, device: null, deviceStatus: null }));
   }, [vehicles]);
 
   const extractTruckNumber = (idOrName) => {

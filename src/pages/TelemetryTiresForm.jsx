@@ -1,7 +1,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { allDummyTrucks } from '../data/dummyTrucks';
-// Removed trucksAPI import - using dummy data
+// Use Backend 2 API
+import { trucksApi } from '../services/api2';
 
 function Input({ label, ...props }) {
   return (
@@ -30,19 +30,30 @@ function Select({ label, children, ...props }) {
 }
 
 export default function TelemetryTiresForm() {
-  // Attempt to load from backend; fallback to dummy flattened rows
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [clusters, setClusters] = React.useState([]);
 
   React.useEffect(() => {
     let mounted = true;
-    (async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        // Use dummy trucks data directly
-        const trucks = allDummyTrucks;
-        console.log('✅ Using dummy trucks data for TelemetryTiresForm');
+        console.log('📡 Loading tire pressure data from Backend 2...');
+
+        // Load trucks from Backend 2
+        const res = await trucksApi.getAll();
+        console.log('✅ Trucks response for tires:', res);
+
+        const trucks = res?.data?.trucks || res?.data || [];
+
+        if (!Array.isArray(trucks) || trucks.length === 0) {
+          console.warn('No trucks data from Backend 2');
+          if (mounted) setRows([]);
+          return;
+        }
+
+        console.log(`✅ Using ${trucks.length} trucks from Backend 2 for TelemetryTiresForm`);
 
         // Build flattened rows focused on TPMS tire pressure sensor data
         // Based on JSON protocol: cmd: "tpdata" with tireNo, tiprValue, tempValue, bat, exType
@@ -147,10 +158,14 @@ export default function TelemetryTiresForm() {
           const cls = Array.from(new Set(trucks.map((tt) => tt.cluster).filter(Boolean)));
           setClusters(cls);
         }
+      } catch (error) {
+        console.error('Failed to load tire data:', error);
+        if (mounted) setRows([]);
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
+    };
+    loadData();
     return () => {
       mounted = false;
     };

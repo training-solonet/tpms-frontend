@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useNavigate } from 'react-router-dom';
 import { Building2, MapPin, User, Lock, Eye, EyeOff, Shield, Wifi, WifiOff } from 'lucide-react';
-import { API_CONFIG } from '../../services/api.js';
+import { API_BASE_URL } from '../../services/api2/config.js';
 
 const Login = () => {
   const { login, loading, isOnline } = useAuth();
@@ -184,7 +184,7 @@ const Login = () => {
                   </code>
                 </p>
               </div>
-              <p className="mt-3 text-xs text-gray-500">Backend: {API_CONFIG.BASE_URL}</p>
+              <p className="mt-3 text-xs text-gray-500">Backend: {API_BASE_URL}</p>
             </div>
           </div>
         </div>

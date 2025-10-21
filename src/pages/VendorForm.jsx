@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
-import { vendors } from '../data/index.js';
+import { vendorsApi } from '../services/api2/index.js';
 
 function Input({ label, ...props }) {
   return (
@@ -42,34 +42,79 @@ export default function VendorForm() {
   const [loading, setLoading] = React.useState(!isNew);
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
-    (async () => {
-      if (!isNew) {
-        setLoading(true);
-        // Use dummy data
-        const vendor = vendors.find((v) => v.id === id);
+  useEffect(() => {
+    if (isNew) return;
+    const loadVendor = async () => {
+      setLoading(true);
+      try {
+        console.log('📡 Loading vendor data from Backend 2...');
+        const res = await vendorsApi.getById(id);
+        console.log('✅ Vendor response:', res);
+        const vendor = res?.data;
         if (vendor) {
           setForm({
             name: vendor.name || '',
+            code: vendor.code || '',
+            description: vendor.description || '',
             contact_name: vendor.contact_name || '',
             contact_phone: vendor.contact_phone || '',
             contact_email: vendor.contact_email || '',
           });
         }
-        setLoading(false);
+      } catch (error) {
+        console.error('❌ Failed to load vendor:', error);
       }
-    })();
+      setLoading(false);
+    };
+    loadVendor();
   }, [id, isNew]);
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
   const onSave = async () => {
-    setSaving(true);
-    // Simulate save operation with dummy data
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      setSaving(true);
+
+      // Validation
+      if (!form.name || !form.code) {
+        alert('Name and Code are required fields!');
+        setSaving(false);
+        return;
+      }
+
+      console.log('💾 Saving vendor data to Backend 2...', form);
+
+      const vendorData = {
+        name: form.name,
+        code: form.code,
+        description: form.description || '',
+        contact_name: form.contact_name || '',
+        contact_phone: form.contact_phone || '',
+        contact_email: form.contact_email || '',
+      };
+
+      let response;
+      if (!isNew) {
+        // UPDATE existing vendor
+        console.log('🔄 Updating vendor:', id, vendorData);
+        response = await vendorsApi.update(id, vendorData);
+        console.log('✅ Vendor updated successfully:', response);
+        alert('Vendor updated successfully!');
+      } else {
+        // CREATE new vendor
+        console.log('➕ Creating new vendor', vendorData);
+        response = await vendorsApi.create(vendorData);
+        console.log('✅ Vendor created successfully:', response);
+        alert('Vendor created successfully!');
+      }
+
       navigate('/vendors');
-    }, 1000);
+    } catch (error) {
+      console.error('❌ Failed to save vendor:', error);
+      alert(`Failed to save vendor: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

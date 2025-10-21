@@ -3,9 +3,7 @@ import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
-import { devices } from '../../data/devices.js';
-import { trucks as trucksList } from '../../data/trucks.js';
-import { trucksAPI } from '../../services/api.js';
+import { trucksAPI, devicesAPI } from '../../services/api.js';
 
 const debounce = (fn, ms) => {
   let t;
@@ -39,32 +37,62 @@ const CommandPalette = ({ open, setOpen }) => {
     }
     setLoading(true);
     try {
-      // Vehicles: try backend first
+      // Vehicles: backend-only (prefer realtime geojson, fallback to list)
       let vehicles = [];
       try {
         const res = await trucksAPI.getRealTimeLocations();
         if (res?.success && Array.isArray(res.data?.features)) {
           vehicles = res.data.features.map((f) => ({
-            id: f.properties.truckNumber,
-            name: f.properties.truckName || f.properties.truckNumber,
-            status: (f.properties.status || 'offline').toLowerCase(),
+            id: String(f?.properties?.truckNumber || f?.properties?.id || f?.id || ''),
+            name: f?.properties?.truckName || f?.properties?.plateNumber || '',
+            status: String(f?.properties?.status || 'offline').toLowerCase(),
           }));
         }
       } catch {
-        // ignore, fallback
+        // ignore, try trucks list
       }
       if (!vehicles.length) {
-        vehicles = trucksList.map((t) => ({ id: t.id, name: t.name, status: 'offline' }));
+        try {
+          const listRes = await trucksAPI.getAll({ limit: 50 });
+          if (listRes?.success) {
+            const arr = listRes.data?.trucks || listRes.data || [];
+            vehicles = (Array.isArray(arr) ? arr : []).map((t) => ({
+              id: String(t.id || t.truckNumber || t.plate_number || t.name || ''),
+              name: t.name || t.plate_number || '',
+              status: String(t.status || 'offline').toLowerCase(),
+            }));
+          }
+        } catch {
+          // ignore
+        }
       }
       const vMatches = vehicles
         .filter((v) => `${v.id} ${v.name}`.toLowerCase().includes(term))
         .slice(0, 8);
       setVehicleResults(vMatches);
 
-      // Devices search from local
-      const dMatches = devices
-        .filter((d) => `${d.sn} ${d.sim_number}`.toLowerCase().includes(term))
-        .slice(0, 8);
+      // Devices: backend-only
+      let dMatches = [];
+      try {
+        const dRes = await devicesAPI.getAll({ q: term, limit: 50 });
+        if (dRes?.success) {
+          const arr = dRes.data?.devices || dRes.data || [];
+          dMatches = (Array.isArray(arr) ? arr : [])
+            .filter((d) =>
+              `${d.sn || d.serial || ''} ${d.sim_number || d.sim || ''}`
+                .toLowerCase()
+                .includes(term)
+            )
+            .slice(0, 8)
+            .map((d) => ({
+              id: d.id,
+              sn: d.sn || d.serial || '',
+              sim_number: d.sim_number || d.sim || '',
+            }));
+        }
+      } catch {
+        // ignore
+      }
       setDeviceResults(dMatches);
     } finally {
       setLoading(false);
