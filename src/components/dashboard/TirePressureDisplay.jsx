@@ -193,6 +193,9 @@ const TirePressureDisplay = ({
         return;
       }
 
+      console.log('🔧 TirePressureDisplay - selectedTruckId:', selectedTruckId);
+      console.log('🔧 TirePressureDisplay - propTireData:', propTireData);
+
       // Default minimal truck info; backend-specific enrichment can be added if available
       setTruckInfo(
         (prev) => prev || { id: selectedTruckId, name: String(selectedTruckId), tire_config: '6x4' }
@@ -208,6 +211,7 @@ const TirePressureDisplay = ({
           temp_celsius: tire.tempValue,
           changed_at: tire.createdAt,
         }));
+        console.log('🔧 TirePressureDisplay - convertedData:', convertedData);
         setTireData(convertedData);
         return;
       }
