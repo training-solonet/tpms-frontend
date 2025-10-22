@@ -102,12 +102,12 @@ const LiveTrackingMapNew = () => {
         items = tpms.data
           .map((d, index) => {
             const id = d?.sn ? String(d.sn) : null;
-            
+
             // Get location from either location array or direct lat_lng field
             let lat = NaN;
             let lng = NaN;
             let lastUpdate = new Date();
-            
+
             if (d?.location && Array.isArray(d.location) && d.location.length > 0) {
               // Use the most recent location from the array
               const latestLocation = d.location[0]; // Already sorted by latest first in backend
@@ -115,7 +115,9 @@ const LiveTrackingMapNew = () => {
               const parts = String(latlngStr).split(',');
               lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
               lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
-              lastUpdate = latestLocation?.createdAt ? new Date(latestLocation.createdAt) : new Date();
+              lastUpdate = latestLocation?.createdAt
+                ? new Date(latestLocation.createdAt)
+                : new Date();
             } else if (d?.location?.lat_lng) {
               // Fallback to direct lat_lng field
               const latlngStr = d.location.lat_lng || '';
@@ -130,9 +132,7 @@ const LiveTrackingMapNew = () => {
             const isValidLng = isFinite(lng) && lng >= -180 && lng <= 180;
 
             if (!id || !isValidLat || !isValidLng) {
-              console.warn(
-                `⚠️ Invalid coordinates for vehicle ${id}: lat=${lat}, lng=${lng}`
-              );
+              console.warn(`⚠️ Invalid coordinates for vehicle ${id}: lat=${lat}, lng=${lng}`);
               return null;
             }
             console.log(`📍 Vehicle ${id} position: [${lat}, ${lng}]`);
