@@ -245,10 +245,30 @@ const HistoryTrackingMap = () => {
           vehicleData = tpms.data
             .map((d, index) => {
               const id = d?.sn ? String(d.sn) : null;
-              const latlngStr = d?.location?.lat_lng || '';
-              const parts = String(latlngStr).split(',');
-              const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
-              const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+
+              // Get location from either location array or direct lat_lng field
+              let lat = NaN;
+              let lng = NaN;
+              let lastUpdate = new Date();
+
+              if (d?.location && Array.isArray(d.location) && d.location.length > 0) {
+                // Use the most recent location from the array
+                const latestLocation = d.location[0];
+                const latlngStr = latestLocation?.lat_lng || '';
+                const parts = String(latlngStr).split(',');
+                lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
+                lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+                lastUpdate = latestLocation?.createdAt
+                  ? new Date(latestLocation.createdAt)
+                  : new Date();
+              } else if (d?.location?.lat_lng) {
+                const latlngStr = d.location.lat_lng || '';
+                const parts = String(latlngStr).split(',');
+                lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
+                lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+                lastUpdate = d.location?.createdAt ? new Date(d.location.createdAt) : new Date();
+              }
+
               if (!id || !isFinite(lat) || !isFinite(lng)) return null;
               return {
                 id,
@@ -261,7 +281,7 @@ const HistoryTrackingMap = () => {
                 fuel: 0,
                 battery: 0,
                 signal: 'unknown',
-                lastUpdate: d?.location?.createdAt ? new Date(d.location.createdAt) : new Date(),
+                lastUpdate: lastUpdate,
                 route: 'Mining Area',
                 load: 'Unknown',
                 tireData: d?.tire || [], // Include tire pressure data
