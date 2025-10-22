@@ -11,22 +11,8 @@ export const API_CONFIG = {
 
 // TPMS (Tire Pressure Monitoring System) Configuration
 export const TPMS_CONFIG = {
-  REALTIME_ENDPOINT: (() => {
-    const endpoint = import.meta.env?.VITE_API_TPMS_REALTIME_ENDPOINT || '';
-    // Auto-convert relative path ke absolute URL
-    if (endpoint && !endpoint.startsWith('http')) {
-      return `https://be-tpms.connectis.my.id${endpoint}`;
-    }
-    return endpoint;
-  })(),
-  LOCATION_ENDPOINT: (() => {
-    const endpoint = import.meta.env?.VITE_API_TPMS_LOCATION_ENDPOINT || '';
-    // Auto-convert relative path ke absolute URL
-    if (endpoint && !endpoint.startsWith('http')) {
-      return `https://be-tpms.connectis.my.id${endpoint}`;
-    }
-    return endpoint;
-  })(),
+  REALTIME_ENDPOINT: import.meta.env?.VITE_API_TPMS_REALTIME_ENDPOINT || '',
+  LOCATION_ENDPOINT: import.meta.env?.VITE_API_TPMS_LOCATION_ENDPOINT || '',
   API_KEY:
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_API_KEY) ||
     '',
