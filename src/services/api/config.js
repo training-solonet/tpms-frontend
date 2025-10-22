@@ -1,11 +1,3 @@
-// src/services/api/config.js
-
-/**
- * API Configuration
- * Centralized configuration for all API endpoints
- */
-
-// Main API Configuration (read from .env via Vite)
 export const API_CONFIG = {
   BASE_URL:
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
