@@ -11,8 +11,9 @@ export const API_CONFIG = {
 
 // TPMS (Tire Pressure Monitoring System) Configuration
 export const TPMS_CONFIG = {
-  REALTIME_ENDPOINT: import.meta.env?.VITE_API_TPMS_REALTIME_ENDPOINT || '',
-  LOCATION_ENDPOINT: import.meta.env?.VITE_API_TPMS_LOCATION_ENDPOINT || '',
+  // Direct to TPMS server (no proxy) - CORS should be handled by server
+  REALTIME_ENDPOINT: import.meta.env?.VITE_API_TPMS_REALTIME_ENDPOINT || 'https://tpms.solonet.net.id/tpms/realtime',
+  LOCATION_ENDPOINT: import.meta.env?.VITE_API_TPMS_LOCATION_ENDPOINT || 'https://tpms.solonet.net.id/tpms/location',
   API_KEY:
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TPMS_API_KEY) ||
     '',

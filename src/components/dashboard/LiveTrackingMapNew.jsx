@@ -95,17 +95,31 @@ const LiveTrackingMapNew = () => {
     try {
       setLoading(true);
       let items = [];
-      console.log('🔄 Loading live vehicles from TPMS...');
+      console.log('🔄 Loading live vehicles from TPMS (BE 1)...');
       const tpms = await tpmsAPI.getRealtimeSnapshot();
       console.log('📡 TPMS response:', tpms);
-      if (tpms && tpms.success && Array.isArray(tpms.data)) {
-        items = tpms.data
+      console.log('📦 Response data type:', typeof tpms?.data, 'isArray:', Array.isArray(tpms?.data));
+      
+      if (tpms && tpms.success && tpms.data) {
+        // Check if data is array or needs to be wrapped
+        const dataArray = Array.isArray(tpms.data) ? tpms.data : [tpms.data];
+        console.log(`📊 Processing ${dataArray.length} items from TPMS`);
+        
+        items = dataArray
           .map((d, index) => {
+            console.log(`🔍 Parsing item ${index}:`, JSON.stringify(d, null, 2));
+            
             const id = d?.sn ? String(d.sn) : null;
             const latlngStr = d?.location?.lat_lng || '';
+            
+            console.log(`  - ID: ${id}`);
+            console.log(`  - lat_lng string: "${latlngStr}"`);
+            
             const parts = String(latlngStr).split(',');
             const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
             const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+
+            console.log(`  - Parsed: lat=${lat}, lng=${lng}`);
 
             // Validate coordinates are within reasonable bounds
             const isValidLat = isFinite(lat) && lat >= -90 && lat <= 90;
@@ -113,11 +127,11 @@ const LiveTrackingMapNew = () => {
 
             if (!id || !isValidLat || !isValidLng) {
               console.warn(
-                `⚠️ Invalid coordinates for vehicle ${id}: lat=${lat}, lng=${lng}, raw="${latlngStr}"`
+                `⚠️ Skipping invalid vehicle - ID: ${id}, lat: ${lat}, lng: ${lng}, raw: "${latlngStr}"`
               );
               return null;
             }
-            console.log(`📍 Vehicle ${id} position: [${lat}, ${lng}]`);
+            console.log(`✅ Valid vehicle ${id} at [${lat}, ${lng}]`);
             return {
               id,
               truckNumber: index + 1, // Use array index + 1 as truck number
@@ -133,61 +147,15 @@ const LiveTrackingMapNew = () => {
             };
           })
           .filter(Boolean);
-        console.log(`✅ Loaded ${items.length} vehicles from TPMS`);
+        console.log(`✅ Loaded ${items.length} vehicles from TPMS (BE 1)`);
         setBackendOnline(true);
         setWsStatus('disconnected');
       } else {
-        const result = await trucksAPI.getRealTimeLocations();
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to load real-time locations');
-        }
-        const data = result.data;
-        if (data && Array.isArray(data.features)) {
-          items = data.features
-            .map((f) => {
-              const coords = f?.geometry?.coordinates;
-              if (!Array.isArray(coords) || coords.length < 2) return null;
-              const lng = Number(coords[0]);
-              const lat = Number(coords[1]);
-              const id = f?.properties?.id || f?.properties?.truck_id || f?.id || null;
-              return id && isFinite(lat) && isFinite(lng)
-                ? {
-                    id: String(id),
-                    position: [lat, lng],
-                    status: f?.properties?.status?.toLowerCase?.() || 'active',
-                    speed: Number(f?.properties?.speed_kph ?? 0),
-                    heading: Number(f?.properties?.heading_deg ?? 0),
-                    fuel: Number(f?.properties?.fuel_percent ?? 0),
-                    battery: Number(f?.properties?.battery_level ?? 0),
-                    signal: f?.properties?.signal_strength ?? 'unknown',
-                    lastUpdate: f?.properties?.ts ? new Date(f.properties.ts) : new Date(),
-                  }
-                : null;
-            })
-            .filter(Boolean);
-        } else if (Array.isArray(data)) {
-          items = data
-            .map((v) => {
-              const lat = v?.lat ?? v?.latitude;
-              const lng = v?.lng ?? v?.longitude;
-              const id = v?.id ?? v?.truck_id ?? v?.plate_number ?? null;
-              return id && isFinite(lat) && isFinite(lng)
-                ? {
-                    id: String(id),
-                    position: [Number(lat), Number(lng)],
-                    status: v?.status?.toLowerCase?.() || 'active',
-                    speed: Number(v?.speed_kph ?? 0),
-                    heading: Number(v?.heading_deg ?? 0),
-                    fuel: Number(v?.fuel_percent ?? 0),
-                    battery: Number(v?.battery_level ?? 0),
-                    signal: v?.signal_strength ?? 'unknown',
-                    lastUpdate: v?.ts ? new Date(v.ts) : new Date(),
-                  }
-                : null;
-            })
-            .filter(Boolean);
-        }
-        setBackendOnline(!!result.success);
+        // TPMS (BE 1) failed - no fallback, tracking must come from BE 1 only
+        console.warn('⚠️ TPMS (BE 1) failed or returned no data');
+        console.warn('  - Tracking only works for vehicles with tracking devices in BE 1');
+        items = [];
+        setBackendOnline(false);
         setWsStatus('disconnected');
       }
 

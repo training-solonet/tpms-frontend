@@ -16,21 +16,21 @@ import { TPMS_CONFIG } from './config.js';
 const buildTpmsUrl = (baseUrl, extraParams = {}) => {
   if (!baseUrl) return '';
   try {
-    let urlObj;
-    if (/^https?:\/\//i.test(baseUrl) || /^wss?:\/\//i.test(baseUrl)) {
-      urlObj = new URL(baseUrl);
-    } else {
-      const origin =
-        (typeof window !== 'undefined' && window.location && window.location.origin) ||
-        'http://localhost';
-      urlObj = new URL(baseUrl, origin);
-    }
-    const params = new URLSearchParams(urlObj.search);
+    // Build query parameters
+    const params = new URLSearchParams();
     if (TPMS_CONFIG.API_KEY) params.set('apiKey', TPMS_CONFIG.API_KEY);
     if (TPMS_CONFIG.SN) params.set('sn', TPMS_CONFIG.SN);
     Object.entries(extraParams || {}).forEach(([k, v]) => {
       if (v != null && v !== '') params.set(k, v);
     });
+    
+    // For relative paths (proxy), just append query string
+    if (baseUrl.startsWith('/')) {
+      return `${baseUrl}${params.toString() ? '?' + params.toString() : ''}`;
+    }
+    
+    // For absolute URLs, use URL object
+    const urlObj = new URL(baseUrl);
     urlObj.search = params.toString();
     return urlObj.toString();
   } catch {
@@ -47,27 +47,38 @@ const fetchTpms = async (fullUrl) => {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), TPMS_CONFIG.TIMEOUT);
   try {
-    const isSameOrigin =
-      typeof window !== 'undefined' && fullUrl.startsWith(window.location.origin + '/');
+    console.log('🔄 Fetching TPMS:', fullUrl);
+    
+    // For local proxy paths, use same-origin mode
+    const isLocalProxy = fullUrl.startsWith('/');
+    
     const res = await fetch(fullUrl, {
       method: 'GET',
-      mode: 'cors',
+      mode: isLocalProxy ? 'same-origin' : 'cors',
       credentials: 'omit',
-      headers: isSameOrigin && TPMS_CONFIG.API_KEY ? { 'x-api-key': TPMS_CONFIG.API_KEY } : {},
+      headers: {},
       signal: controller.signal,
     });
+    
     clearTimeout(t);
+    console.log('📡 TPMS Response Status:', res.status, res.statusText);
+    
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
     }
+    
     const data = await res.json().catch(() => ({}));
+    console.log('📦 TPMS Data:', data);
+    
     if (data && data.error) {
       return { success: false, data: null, error: String(data.error) };
     }
+    
     return { success: true, data: data.data || data };
   } catch (e) {
     clearTimeout(t);
+    console.error('❌ TPMS Fetch Error:', e);
     return { success: false, data: null, error: e.message || 'Request failed' };
   }
 };

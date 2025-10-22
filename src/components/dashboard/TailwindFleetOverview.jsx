@@ -117,7 +117,15 @@ const TailwindFleetOverview = () => {
           const alertsRes = await alertsApi.getAll({ limit: 4, resolved: false });
           console.log('🚨 Alerts from Backend 2:', alertsRes);
 
-          const alertsArray = alertsRes?.data?.alerts || alertsRes?.data || [];
+          // Safely get alerts array
+          let alertsArray = alertsRes?.data?.alerts || alertsRes?.data || [];
+          
+          // Ensure it's an array
+          if (!Array.isArray(alertsArray)) {
+            console.warn('⚠️ Alerts response is not an array:', alertsArray);
+            alertsArray = [];
+          }
+
           setRecentAlerts(
             alertsArray.slice(0, 4).map((alert) => ({
               id: alert.id || Math.random().toString(36).slice(2),

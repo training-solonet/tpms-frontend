@@ -128,12 +128,16 @@ const HistoryTrackingMap = () => {
 
       const numericId = (String(truckId).match(/\d{1,4}/) || [])[0];
       const primaryId = numericId || truckId;
-      // Try TPMS new backend first using SN as identifier
+      
+      // Try TPMS backend (BE 1) first using SN as identifier
+      console.log(`📍 Fetching location history for: ${truckId} (${params.startTime} to ${params.endTime})`);
       let response = await tpmsAPI.getLocationHistory({
         sn: String(truckId),
         startTime: params.startTime,
         endTime: params.endTime,
       });
+      
+      console.log(`📦 TPMS Response for ${truckId}:`, response);
 
       const toRecords = (records) =>
         (records || [])
@@ -151,7 +155,7 @@ const HistoryTrackingMap = () => {
             const speed = parseFloat(record.speed ?? record.speed_kmh ?? record.v) || null;
             return { lat, lng, t, raw: record, speed };
           })
-          .filter((r) => !isNaN(r.lat) && !isNaN(r.lng) && r.lat !== 0 && r.lng !== 0)
+          .filter((r) => !isNaN(r.lat) && !isNaN(r.lng))
           .filter((r) => {
             if (!r.t || isNaN(r.t)) return true;
             return r.t >= start && r.t <= end;
@@ -160,10 +164,17 @@ const HistoryTrackingMap = () => {
       const toPoints = (recs) => (recs || []).map((r) => [r.lat, r.lng]);
 
       if (response.success && response.data) {
-        // TPMS format: [{ sn, location: [{ createdAt, lat_lng }] }]
         let enriched;
+        
+        console.log(`📦 Raw data structure:`, response.data);
+        
+        // Format 1: [{ sn, location: [{ createdAt, lat_lng }] }]
         if (Array.isArray(response.data) && response.data[0]?.location) {
+          console.log(`✅ TPMS Format 1 detected (array with location property)`);
           const locs = response.data[0].location || [];
+          console.log(`  - Found ${locs.length} location records`);
+          console.log(`  - Sample location:`, locs[0]);
+          
           enriched = (locs || [])
             .map((loc) => {
               const parts = String(loc?.lat_lng || '').split(',');
@@ -173,24 +184,47 @@ const HistoryTrackingMap = () => {
               return { lat, lng, t, raw: loc, speed: null };
             })
             .filter((r) => !isNaN(r.lat) && !isNaN(r.lng));
-        } else {
+        } 
+        // Format 2: { location: [{ createdAt, lat_lng }] }
+        else if (response.data?.location && Array.isArray(response.data.location)) {
+          console.log(`✅ TPMS Format 2 detected (object with location array)`);
+          const locs = response.data.location || [];
+          console.log(`  - Found ${locs.length} location records`);
+          console.log(`  - Sample location:`, locs[0]);
+          
+          enriched = (locs || [])
+            .map((loc) => {
+              const parts = String(loc?.lat_lng || '').split(',');
+              const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
+              const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
+              const t = loc?.createdAt ? new Date(loc.createdAt) : null;
+              return { lat, lng, t, raw: loc, speed: null };
+            })
+            .filter((r) => !isNaN(r.lat) && !isNaN(r.lng));
+        }
+        // Format 3: Array of location records
+        else {
+          console.log(`✅ Standard format detected (array of records)`);
+          console.log(`  - Data is array: ${Array.isArray(response.data)}, length: ${response.data?.length}`);
           enriched = toRecords(response.data);
         }
+        
         let routePoints = toPoints(enriched);
+        console.log(`📍 Processed ${enriched.length} location records, ${routePoints.length} valid points`);
 
-        if ((!routePoints || routePoints.length === 0) && primaryId !== truckId) {
-          console.log(`🔁 Retrying history with legacy backend using: ${truckId}`);
-          const legacy = await trucksAPI.getLocationHistory(truckId, params);
-          if (legacy.success && legacy.data) {
-            enriched = toRecords(legacy.data);
-            routePoints = toPoints(enriched);
-          }
+        console.log(`✅ Loaded ${routePoints.length} route points for ${truckId} from BE 1 (TPMS)`);
+        
+        if (routePoints.length === 0) {
+          console.warn(`⚠️ No tracking data for ${truckId} in BE 1 (TPMS)`);
+          console.warn(`  - This truck might not have tracking device or data in TPMS`);
+          console.warn(`  - Enriched records count: ${enriched.length}`);
+          console.warn(`  - Sample enriched record:`, enriched[0]);
         }
-
-        console.log(`✅ Loaded ${routePoints.length} route points for ${truckId}`);
+        
         return { points: routePoints, records: enriched };
       }
 
+      console.warn(`⚠️ TPMS (BE 1) response failed or no data for ${truckId}:`, response);
       return { points: [], records: [] };
     } catch (error) {
       console.error(`❌ Failed to load route history for ${truckId}:`, error);
@@ -238,23 +272,36 @@ const HistoryTrackingMap = () => {
 
         // Test route disabled: use only backend data
 
-        // Load basic vehicle data from TPMS (fallback to legacy if needed)
+        // Load vehicle list from BE 1 (TPMS) - only trucks with tracking devices
+        console.log('🔄 Loading vehicle list from TPMS (BE 1) for tracking...');
         const tpms = await tpmsAPI.getRealtimeSnapshot();
         let vehicleData = [];
-        if (tpms && tpms.success && Array.isArray(tpms.data)) {
-          vehicleData = tpms.data
+        
+        if (tpms && tpms.success && tpms.data) {
+          // Handle both array and single object response
+          const dataArray = Array.isArray(tpms.data) ? tpms.data : [tpms.data];
+          console.log(`� TPMS (BE 1) returned ${dataArray.length} vehicles with tracking`);
+          
+          vehicleData = dataArray
             .map((d, index) => {
-              const id = d?.sn ? String(d.sn) : null;
+              const sn = d?.sn ? String(d.sn) : null;
               const latlngStr = d?.location?.lat_lng || '';
               const parts = String(latlngStr).split(',');
               const lat = parts[0] != null ? parseFloat(String(parts[0]).trim()) : NaN;
               const lng = parts[1] != null ? parseFloat(String(parts[1]).trim()) : NaN;
-              if (!id || !isFinite(lat) || !isFinite(lng)) return null;
+              
+              if (!sn) {
+                console.warn(`⚠️ Item ${index} has no SN, skipping`);
+                return null;
+              }
+              
+              // Use SN as both ID and trackingDeviceSN
               return {
-                id,
-                truckNumber: index + 1, // Use array index + 1 as truck number
+                id: sn,
+                truckNumber: sn,
+                trackingDeviceSN: sn,
                 driver: 'Unknown Driver',
-                position: [lat, lng],
+                position: isFinite(lat) && isFinite(lng) ? [lat, lng] : [0, 0],
                 status: 'active',
                 speed: 0,
                 heading: 0,
@@ -264,31 +311,15 @@ const HistoryTrackingMap = () => {
                 lastUpdate: d?.location?.createdAt ? new Date(d.location.createdAt) : new Date(),
                 route: 'Mining Area',
                 load: 'Unknown',
-                tireData: d?.tire || [], // Include tire pressure data
+                tireData: d?.tire || [],
               };
             })
             .filter(Boolean);
+          
+          console.log(`✅ ${vehicleData.length} vehicles loaded from BE 1 (with tracking data)`);
         } else {
-          const response = await trucksAPI.getRealTimeLocations();
-          if (response.success && response.data) {
-            vehicleData =
-              response.data.features?.map((feature) => ({
-                id: feature.properties.truckNumber,
-                driver: feature.properties.driverName || 'Unknown Driver',
-                position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-                status: feature.properties.status?.toLowerCase() || 'offline',
-                speed: feature.properties.speed || 0,
-                heading: feature.properties.heading || 0,
-                fuel: feature.properties.fuelPercentage || 0,
-                battery: 90,
-                signal: 'good',
-                lastUpdate: new Date(),
-                route: 'Mining Area',
-                load: feature.properties.payloadTons
-                  ? `Coal - ${feature.properties.payloadTons} tons`
-                  : 'Unknown',
-              })) || [];
-          }
+          console.warn('⚠️ TPMS (BE 1) failed or returned no data');
+          console.warn('  - No vehicles available for tracking');
         }
 
         setVehicles(vehicleData);
@@ -298,8 +329,8 @@ const HistoryTrackingMap = () => {
         const routeVisibilityData = {};
 
         for (const vehicle of vehicleData) {
-          console.log(`🔄 Loading route history for vehicle: ${vehicle.id}`);
-          const history = await loadRouteHistory(vehicle.id, '24h');
+          console.log(`🔄 Loading route history for vehicle SN: ${vehicle.trackingDeviceSN}`);
+          const history = await loadRouteHistory(vehicle.trackingDeviceSN, '24h');
           console.log(`📍 Route points loaded for ${vehicle.id}:`, history.points.length);
           if (history.points.length > 0) {
             routesData[vehicle.id] = history.points;
