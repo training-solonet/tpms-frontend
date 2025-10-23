@@ -2,7 +2,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
+
 import { miningAreaApi } from '../../services/api2'; // BE2 untuk mining area master data
+
 
 const BaseTrackingMap = ({
   children,
@@ -164,7 +166,9 @@ const BaseTrackingMap = ({
 
           // Fetch and add geofence from backend
           try {
+
             const res = await miningAreaApi.getBoundaries(); // Pakai miningAreaApi dari BE2
+
             const geo = res?.data;
             if (geo && geo.type) {
               L.default
@@ -193,7 +197,8 @@ const BaseTrackingMap = ({
               }
             }
           } catch (e) {
-            console.warn('Failed to load mining area boundaries:', e?.message || e);
+            console.error('❌ Failed to load mining area boundaries:', e?.message || e);
+            console.error('Full error:', e);
           }
 
           // Compute mining area bounds for zoom-based hiding (after polygon load)
