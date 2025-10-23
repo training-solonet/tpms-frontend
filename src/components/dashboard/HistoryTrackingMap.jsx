@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
-import { trucksAPI, alertsAPI, tpmsAPI } from '../../services/api.js';
+import { trucksAPI, tpmsAPI } from '../../services/api'; // BE1 untuk tracking & TPMS
+import { alertsApi } from '../../services/api2'; // BE2 untuk alerts
 import TirePressureDisplay from './TirePressureDisplay';
 
 const HistoryTrackingMap = () => {
@@ -680,7 +681,7 @@ const HistoryTrackingMap = () => {
           endTime: end.toISOString(),
           limit: 500,
         };
-        const res = await alertsAPI.getAll(params);
+        const res = await alertsApi.getAll(params); // Pakai alertsApi dari BE2
         if (res.success && Array.isArray(res.data)) {
           setAlertCount(res.data.length);
         } else {

@@ -1,48 +1,34 @@
-// src/services/utils/apiRequest.js
+// src/services/api/apiRequest.js
+// API Request utility for Backend 1 (Tracking & TPMS)
 
-import { API_CONFIG } from '../api2/config.js';
-
-/**
- * Generic API request utility
- * Handles all HTTP requests with authentication, error handling, and timeout
- */
-
-// Helper to get stored auth token
-const getAuthToken = () => localStorage.getItem('authToken');
-
-// Get auth headers
-export const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+import { TRACKING_CONFIG } from './config.js';
 
 /**
- * Make an API request with standardized error handling
+ * Make an API request to Backend 1 (Tracking Server)
  * @param {string} endpoint - API endpoint path
  * @param {object} options - Fetch options
  * @returns {Promise<object>} Response object with success, data, and error
  */
 export const apiRequest = async (endpoint, options = {}) => {
-  // Normalize BASE_URL and endpoint to avoid double /api or missing slashes
-  let base = API_CONFIG.BASE_URL || '';
+  // Use TRACKING_CONFIG for Backend 1
+  let base = TRACKING_CONFIG.BASE_URL || '';
   let path = endpoint || '';
+
+  // Normalize slashes
   if (base.endsWith('/')) base = base.slice(0, -1);
-  // If base already ends with /api and path starts with /api, strip one /api from path
-  if (base.toLowerCase().endsWith('/api') && path.toLowerCase().startsWith('/api')) {
-    path = path.slice(4); // remove leading '/api'
-  }
+  if (!path.startsWith('/')) path = '/' + path;
+
   const url = `${base}${path}`;
-  const token = getAuthToken();
+
+  console.log(`🌐 [BE1 apiRequest] Calling: ${url}`);
 
   const defaultOptions = {
     headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
+      'Content-Type': 'application/json',
     },
-    // Ensure requests are made with CORS mode to satisfy browsers when hitting cross-origin APIs
     mode: 'cors',
-    // We use Bearer tokens, not cookies; keep credentials omitted to avoid unnecessary preflight complications
     credentials: 'omit',
-    timeout: API_CONFIG.TIMEOUT,
+    timeout: TRACKING_CONFIG.TIMEOUT || 30000,
     ...options,
   };
 
@@ -68,19 +54,6 @@ export const apiRequest = async (endpoint, options = {}) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // Handle 401 globally
-      if (response.status === 401) {
-        console.warn('401 Unauthorized detected. Logging out...');
-        // Import authAPI dynamically to avoid circular dependency
-        const { authAPI } = await import('../api2/auth.api.js');
-        try {
-          authAPI.logout();
-        } finally {
-          if (typeof window !== 'undefined') {
-            window.location.replace('/login');
-          }
-        }
-      }
       const message = `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(message);
     }
@@ -93,8 +66,8 @@ export const apiRequest = async (endpoint, options = {}) => {
       online: true,
     };
   } catch (error) {
-    // Better error handling for different error types
     let errorMessage = error.message;
+
     if (error.name === 'AbortError') {
       errorMessage = `Request timeout after ${defaultOptions.timeout}ms`;
       console.warn(`⏰ ${errorMessage} for ${url}`);

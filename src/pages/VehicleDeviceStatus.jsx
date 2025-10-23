@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage.jsx';
-import { trucksAPI } from '../services/api.js';
+import { trucksApi } from '../services/api2'; // BE2 untuk master data trucks
 
 const VehicleDeviceStatus = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -29,7 +29,7 @@ const VehicleDeviceStatus = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await trucksAPI.getAllTrucks();
+        const res = await trucksApi.getAllTrucks(); // Ubah ke trucksApi (BE2)
         const trucksArray = res.data?.trucks || res.data;
         if (res?.success && Array.isArray(trucksArray) && trucksArray.length > 0) {
           const vehicleData = trucksArray.map((t) => ({

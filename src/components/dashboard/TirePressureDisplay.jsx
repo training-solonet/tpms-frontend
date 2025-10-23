@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { trucksAPI } from '../../services/api.js';
+import React, { useEffect, useState } from 'react';
+import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { trucksAPI } from '../../services/api'; // BE1 untuk tracking data
 import WheelFrontIcon from '../icons/WheelFrontIcon.jsx';
 
 const TirePressureDisplay = ({
