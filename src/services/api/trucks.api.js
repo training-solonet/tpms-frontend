@@ -1,10 +1,10 @@
 // src/services/api/trucks.api.js
 
-import { apiRequest } from '../utils/apiRequest.js';
+import { apiRequest } from './apiRequest.js';
 
 /**
- * Trucks API
- * Handles all truck-related operations
+ * Trucks API for Backend 1 (Tracking & Real-time Locations)
+ * Handles truck tracking, GPS, and real-time location operations
  */
 
 // Circuit breaker for problematic endpoints
@@ -230,16 +230,19 @@ export const trucksAPI = {
   },
 
   /**
-   * Get real-time locations of all trucks
+   * Get real-time locations of all trucks from Backend 1 (Tracking Server)
    * @returns {Promise<object>} Real-time location data
    */
   getRealTimeLocations: async () => {
-    console.log(`🚛 Loading real-time truck locations...`);
+    console.log(`🚛 [BE1] Loading real-time truck locations from Tracking Server...`);
 
     const result = await apiRequest('/api/trucks/realtime/locations');
 
     if (result.success) {
-      console.log(`✅ Real-time locations loaded: ${result.data?.features?.length || 0} trucks`);
+      console.log(
+        `✅ [BE1] Real-time locations loaded: ${result.data?.features?.length || 0} trucks`
+      );
+      console.log(`📍 [BE1] Sample data:`, result.data?.features?.[0]);
       return result;
     } else {
       console.error(`❌ Failed to load real-time locations:`, result.error);
