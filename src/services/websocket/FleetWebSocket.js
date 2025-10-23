@@ -1,10 +1,10 @@
 // src/services/websocket/FleetWebSocket.js
 
-import { API_CONFIG } from '../api/config.js';
+import { TRACKING_CONFIG } from '../api/config.js'; // BE1 untuk WebSocket tracking
 
 /**
- * WebSocket connection for real-time fleet updates
- * Handles real-time truck updates, alerts, and dashboard data
+ * WebSocket connection for real-time fleet tracking updates
+ * Handles real-time truck location, TPMS data, and telemetry
  */
 
 export class FleetWebSocket {
@@ -22,7 +22,7 @@ export class FleetWebSocket {
    */
   connect() {
     try {
-      this.ws = new WebSocket(API_CONFIG.WS_URL);
+      this.ws = new WebSocket(TRACKING_CONFIG.WS_URL); // Pakai WS_URL dari TRACKING_CONFIG
 
       this.ws.onopen = () => {
         console.log('✅ WebSocket connected to backend');

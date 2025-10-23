@@ -3,7 +3,10 @@ import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
-import { trucksAPI, devicesAPI } from '../../services/api.js';
+// Import dari BE1 untuk tracking
+import { trucksAPI } from '../../services/api';
+// Import dari BE2 untuk master data devices
+import { devicesApi } from '../../services/api2';
 
 const debounce = (fn, ms) => {
   let t;
@@ -74,7 +77,7 @@ const CommandPalette = ({ open, setOpen }) => {
       // Devices: backend-only
       let dMatches = [];
       try {
-        const dRes = await devicesAPI.getAll({ q: term, limit: 50 });
+        const dRes = await devicesApi.getAll({ q: term, limit: 50 }); // Pakai devicesApi dari BE2
         if (dRes?.success) {
           const arr = dRes.data?.devices || dRes.data || [];
           dMatches = (Array.isArray(arr) ? arr : [])

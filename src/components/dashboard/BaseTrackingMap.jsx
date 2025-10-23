@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
-import { miningAreaAPI } from '../../services/api.js';
+import { miningAreaApi } from '../../services/api2'; // BE2 untuk mining area master data
 
 const BaseTrackingMap = ({
   children,
@@ -164,7 +164,7 @@ const BaseTrackingMap = ({
 
           // Fetch and add geofence from backend
           try {
-            const res = await miningAreaAPI.getBoundaries();
+            const res = await miningAreaApi.getBoundaries(); // Pakai miningAreaApi dari BE2
             const geo = res?.data;
             if (geo && geo.type) {
               L.default

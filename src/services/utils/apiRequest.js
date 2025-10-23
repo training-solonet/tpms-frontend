@@ -1,6 +1,6 @@
 // src/services/utils/apiRequest.js
 
-import { API_CONFIG } from '../api/config.js';
+import { API_CONFIG } from '../api2/config.js';
 
 /**
  * Generic API request utility
@@ -72,7 +72,7 @@ export const apiRequest = async (endpoint, options = {}) => {
       if (response.status === 401) {
         console.warn('401 Unauthorized detected. Logging out...');
         // Import authAPI dynamically to avoid circular dependency
-        const { authAPI } = await import('../api/auth.api.js');
+        const { authAPI } = await import('../api2/auth.api.js');
         try {
           authAPI.logout();
         } finally {
