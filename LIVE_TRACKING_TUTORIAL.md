@@ -97,6 +97,7 @@ import BaseTrackingMap from '../components/dashboard/BaseTrackingMap';
 ```
 
 **Penjelasan**:
+
 - `useState` → Untuk simpan data di memori (seperti variabel)
 - `useEffect` → Untuk jalankan kode otomatis saat halaman dibuka
 - `trucksAPI` → Fungsi untuk ambil data posisi truk
@@ -113,18 +114,19 @@ const LiveTrackingPage = () => {
   const [loading, setLoading] = useState(true); // Loading spinner
   const [selectedTruck, setSelectedTruck] = useState(null); // Truk yang diklik
   const [tpmsData, setTpmsData] = useState(null); // Data tekanan ban
-  
+
   // ... kode selanjutnya
-}
+};
 ```
 
 **Penjelasan**:
+
 - `vehicles` → Menyimpan daftar semua truk
 - `loading` → Status loading (true = sedang loading, false = selesai)
 - `selectedTruck` → Truk yang user klik untuk lihat detail
 - `tpmsData` → Data tekanan ban dari TPMS
 
-**Analogi**: 
+**Analogi**:
 State seperti **kotak penyimpanan**. Setiap kali data berubah, React otomatis update tampilan.
 
 ---
@@ -135,17 +137,17 @@ State seperti **kotak penyimpanan**. Setiap kali data berubah, React otomatis up
 // Fungsi ini dipanggil untuk ambil data truk dari backend
 const fetchTrucks = async () => {
   setLoading(true); // Mulai loading
-  
+
   try {
     // PANGGIL API KE BACKEND
     const response = await trucksAPI.getRealTimeLocations();
     // await = tunggu sampai data dari backend datang
-    
+
     // CEK APAKAH SUKSES
     if (response.success) {
       // Data berhasil didapat
       const trucksData = response.data.features || []; // Array truk
-      
+
       // UBAH FORMAT DATA jadi yang lebih mudah dipakai
       const formattedTrucks = trucksData.map((feature) => ({
         id: feature.properties.id,
@@ -156,7 +158,7 @@ const fetchTrucks = async () => {
         heading: feature.properties.heading || 0,
         status: feature.properties.status || 'offline',
       }));
-      
+
       // SIMPAN KE STATE
       setVehicles(formattedTrucks);
       console.log('✅ Data truk berhasil dimuat:', formattedTrucks.length, 'truk');
@@ -175,7 +177,7 @@ const fetchTrucks = async () => {
 
 **Penjelasan Detail**:
 
-1. **`async/await`**: 
+1. **`async/await`**:
    - Seperti "tunggu sebentar" sebelum lanjut
    - Karena ambil data dari backend butuh waktu (bisa 1-2 detik)
 
@@ -184,6 +186,7 @@ const fetchTrucks = async () => {
    - Backend URL: `https://tpms.solonet.net.id/api/trucks/locations`
 
 3. **Response Format dari Backend**:
+
    ```json
    {
      "success": true,
@@ -206,7 +209,7 @@ const fetchTrucks = async () => {
          {
            "type": "Feature",
            "geometry": {
-             "coordinates": [106.8500, -6.2100]
+             "coordinates": [106.85, -6.21]
            },
            "properties": {
              "id": "TRUCK-002",
@@ -234,12 +237,12 @@ const fetchTrucks = async () => {
 useEffect(() => {
   // Panggil fetch pertama kali
   fetchTrucks();
-  
+
   // Setup interval untuk update otomatis setiap 10 detik
   const interval = setInterval(() => {
     fetchTrucks(); // Panggil lagi setiap 10 detik
   }, 10000); // 10000 ms = 10 detik
-  
+
   // Cleanup: hapus interval saat halaman ditutup
   return () => {
     clearInterval(interval);
@@ -248,6 +251,7 @@ useEffect(() => {
 ```
 
 **Penjelasan**:
+
 - **useEffect** seperti "autopilot"
 - Saat halaman dibuka → otomatis panggil `fetchTrucks()`
 - Setiap 10 detik → otomatis panggil lagi untuk update posisi
@@ -274,11 +278,7 @@ return (
       <BaseTrackingMap>
         {/* Loop setiap truk dan buat marker */}
         {vehicles.map((truck) => (
-          <TruckMarker
-            key={truck.id}
-            truck={truck}
-            onClick={() => handleTruckClick(truck)}
-          />
+          <TruckMarker key={truck.id} truck={truck} onClick={() => handleTruckClick(truck)} />
         ))}
       </BaseTrackingMap>
     )}
@@ -287,6 +287,7 @@ return (
 ```
 
 **Penjelasan**:
+
 - **Conditional rendering**: Tampilkan yang mana tergantung kondisi
 - Kalau `loading = true` → Tampilkan "Loading..."
 - Kalau `loading = false` → Tampilkan peta dengan marker truk
@@ -299,42 +300,37 @@ return (
 const TruckMarker = ({ truck, onClick }) => {
   // Tentukan warna berdasarkan status
   const getColor = (status) => {
-    if (status === 'online') return 'green';  // Hijau = jalan
-    if (status === 'idle') return 'orange';   // Orange = parkir
-    return 'gray';                             // Abu-abu = offline
+    if (status === 'online') return 'green'; // Hijau = jalan
+    if (status === 'idle') return 'orange'; // Orange = parkir
+    return 'gray'; // Abu-abu = offline
   };
-  
+
   return (
     <div
       className="truck-marker"
       style={{
         position: 'absolute',
         left: truck.longitude, // Posisi X di peta
-        top: truck.latitude,   // Posisi Y di peta
+        top: truck.latitude, // Posisi Y di peta
         cursor: 'pointer',
       }}
       onClick={onClick}
     >
       {/* Icon truk */}
-      <div className={`truck-icon ${getColor(truck.status)}`}>
-        🚛
-      </div>
-      
+      <div className={`truck-icon ${getColor(truck.status)}`}>🚛</div>
+
       {/* Label plat nomor */}
-      <div className="truck-label">
-        {truck.plate}
-      </div>
-      
+      <div className="truck-label">{truck.plate}</div>
+
       {/* Info kecepatan */}
-      <div className="truck-speed">
-        {truck.speed} km/h
-      </div>
+      <div className="truck-speed">{truck.speed} km/h</div>
     </div>
   );
 };
 ```
 
 **Penjelasan**:
+
 - Setiap truk punya marker sendiri di peta
 - Marker bisa diklik untuk lihat detail
 - Warna berubah sesuai status (hijau/orange/abu-abu)
@@ -347,11 +343,11 @@ const TruckMarker = ({ truck, onClick }) => {
 // Fungsi dipanggil saat user klik marker truk
 const handleTruckClick = async (truck) => {
   setSelectedTruck(truck); // Simpan truk yang diklik
-  
+
   try {
     // AMBIL DATA TPMS (tekanan ban)
     const response = await tpmsAPI.getRealtimeSnapshot();
-    
+
     if (response.success) {
       setTpmsData(response.data); // Simpan data ban
       console.log('✅ Data TPMS:', response.data);
@@ -363,6 +359,7 @@ const handleTruckClick = async (truck) => {
 ```
 
 **Response TPMS dari Backend**:
+
 ```json
 {
   "success": true,
@@ -371,25 +368,25 @@ const handleTruckClick = async (truck) => {
     "timestamp": "2025-10-23T10:30:00Z",
     "tires": [
       {
-        "id": "FL",           // Front Left (depan kiri)
-        "pressure": 32.5,     // PSI
-        "temperature": 28.3,  // Celsius
+        "id": "FL", // Front Left (depan kiri)
+        "pressure": 32.5, // PSI
+        "temperature": 28.3, // Celsius
         "status": "normal"
       },
       {
-        "id": "FR",           // Front Right (depan kanan)
+        "id": "FR", // Front Right (depan kanan)
         "pressure": 31.8,
         "temperature": 29.1,
         "status": "normal"
       },
       {
-        "id": "RL",           // Rear Left (belakang kiri)
+        "id": "RL", // Rear Left (belakang kiri)
         "pressure": 33.2,
         "temperature": 27.9,
         "status": "normal"
       },
       {
-        "id": "RR",           // Rear Right (belakang kanan)
+        "id": "RR", // Rear Right (belakang kanan)
         "pressure": 32.0,
         "temperature": 28.5,
         "status": "normal"
@@ -407,29 +404,27 @@ const handleTruckClick = async (truck) => {
 // Popup/Sidebar info detail
 const TruckDetailPanel = () => {
   if (!selectedTruck) return null; // Jangan tampilkan kalau belum ada yang diklik
-  
+
   return (
     <div className="detail-panel">
       <h3>Detail Truk</h3>
-      
+
       {/* Info truk */}
       <div className="info-row">
         <span>Plat Nomor:</span>
         <strong>{selectedTruck.plate}</strong>
       </div>
-      
+
       <div className="info-row">
         <span>Kecepatan:</span>
         <strong>{selectedTruck.speed} km/h</strong>
       </div>
-      
+
       <div className="info-row">
         <span>Status:</span>
-        <span className={`status-${selectedTruck.status}`}>
-          {selectedTruck.status}
-        </span>
+        <span className={`status-${selectedTruck.status}`}>{selectedTruck.status}</span>
       </div>
-      
+
       {/* Info ban (TPMS) */}
       {tpmsData && (
         <div className="tpms-section">
@@ -445,11 +440,9 @@ const TruckDetailPanel = () => {
           </div>
         </div>
       )}
-      
+
       {/* Tombol tutup */}
-      <button onClick={() => setSelectedTruck(null)}>
-        Tutup
-      </button>
+      <button onClick={() => setSelectedTruck(null)}>Tutup</button>
     </div>
   );
 };
@@ -473,7 +466,7 @@ export const trucksAPI = {
     try {
       // URL endpoint
       const url = `${TRACKING_CONFIG.BASE_URL}/api/trucks/locations`;
-      
+
       // Kirim request GET
       const response = await fetch(url, {
         method: 'GET',
@@ -481,10 +474,10 @@ export const trucksAPI = {
           'Content-Type': 'application/json',
         },
       });
-      
+
       // Parse JSON
       const data = await response.json();
-      
+
       return {
         success: true,
         data: data,
@@ -509,7 +502,7 @@ export const trucksAPI = {
 export const TRACKING_CONFIG = {
   // Backend 1 URL untuk tracking
   BASE_URL: 'https://tpms.solonet.net.id',
-  
+
   // WebSocket untuk update real-time
   WS_URL: 'wss://tpms.solonet.net.id/ws',
 };
@@ -634,6 +627,7 @@ Interval trigger
 ## 💡 Tips Debugging
 
 ### 1. Cek Data Masuk atau Tidak
+
 ```javascript
 useEffect(() => {
   fetchTrucks();
@@ -641,7 +635,7 @@ useEffect(() => {
 
 const fetchTrucks = async () => {
   const response = await trucksAPI.getRealTimeLocations();
-  
+
   // 👇 Print di console browser
   console.log('Response dari backend:', response);
   console.log('Jumlah truk:', response.data?.features?.length);
@@ -649,6 +643,7 @@ const fetchTrucks = async () => {
 ```
 
 ### 2. Cek Network Tab di Browser
+
 1. Buka browser → F12 (Developer Tools)
 2. Tab **Network**
 3. Refresh halaman
@@ -657,6 +652,7 @@ const fetchTrucks = async () => {
 6. Pastikan data ada dan formatnya benar
 
 ### 3. Cek State Berubah atau Tidak
+
 ```javascript
 const [vehicles, setVehicles] = useState([]);
 
@@ -694,6 +690,7 @@ Setelah semua jalan, user akan lihat:
 **Dokumentasi ini menjelaskan Live Tracking dari awal sampai akhir dengan bahasa sederhana!** 🎉
 
 Untuk file lengkap, lihat:
+
 - `src/pages/LiveTracking.jsx` - Halaman utama
 - `src/services/api/trucks.api.js` - API module
 - `src/components/dashboard/BaseTrackingMap.jsx` - Komponen peta

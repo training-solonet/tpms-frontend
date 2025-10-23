@@ -7,17 +7,20 @@ Aplikasi ini menggunakan **2 backend terpisah** dengan fungsi berbeda:
 ---
 
 ### 🟢 **Backend 1 (BE1) - Tracking & TPMS**
+
 **Folder**: `src/services/api/`  
 **Base URL**: `VITE_TRACKING_API_BASE_URL`  
 **WebSocket**: `VITE_TRACKING_WS_URL`
 
 #### Fungsi:
+
 - ✅ **Live Tracking** - Real-time GPS location tracking
 - ✅ **History Tracking** - Historical route & location data
 - ✅ **TPMS** - Tire Pressure Monitoring System
 - ✅ **Telemetry** - Tire, Temperature, Fuel telemetry data
 
 #### Modul API:
+
 ```javascript
 // src/services/api/
 ├── tpms.api.js          // TPMS tire pressure & location
@@ -27,6 +30,7 @@ Aplikasi ini menggunakan **2 backend terpisah** dengan fungsi berbeda:
 ```
 
 #### Usage:
+
 ```javascript
 import { tpmsAPI, trucksAPI, TPMS_CONFIG } from '@/services/api';
 
@@ -40,11 +44,13 @@ const location = await trucksAPI.getCurrentLocation('TRUCK-001');
 ---
 
 ### 🔵 **Backend 2 (BE2) - Master Data & Management**
+
 **Folder**: `src/services/api2/`  
 **Base URL**: `VITE_API_BASE_URL`  
 **WebSocket**: `VITE_WS_URL`
 
 #### Fungsi:
+
 - ✅ **Dashboard** - Analytics & statistics
 - ✅ **Fleet Management** - Trucks, Drivers, Vendors master data (CRUD)
 - ✅ **IoT Devices** - Device management & configuration
@@ -53,6 +59,7 @@ const location = await trucksAPI.getCurrentLocation('TRUCK-001');
 - ✅ **Authentication** - Login, register, user management
 
 #### Modul API:
+
 ```javascript
 // src/services/api2/
 ├── auth.api.js          // Authentication (login, register)
@@ -69,6 +76,7 @@ const location = await trucksAPI.getCurrentLocation('TRUCK-001');
 ```
 
 #### Usage:
+
 ```javascript
 import { driversApi, trucksApi, authApi } from '@/services/api2';
 
@@ -82,7 +90,7 @@ const drivers = await driversApi.getAll();
 await trucksApi.create({
   plate: 'B1234XYZ',
   model: 'Dump Truck',
-  capacity: 50
+  capacity: 50,
 });
 ```
 
@@ -91,6 +99,7 @@ await trucksApi.create({
 ## Environment Variables
 
 ### Development (.env)
+
 ```env
 # Backend 2 - Master Data & Management
 VITE_API_BASE_URL=https://be-tpms.connectis.my.id/api
@@ -114,34 +123,36 @@ VITE_TPMS_WS_URL=wss://tpms.solonet.net.id/ws
 
 Berdasarkan navigasi sidebar [`TailwindSidebar.jsx`](../components/layout/TailwindSidebar.jsx):
 
-| Sidebar Menu | Backend | Import From |
-|--------------|---------|-------------|
-| **Dashboard** | BE2 | `@/services/api2` (dashboardApi) |
-| **Tracking → Live Tracking** | BE1 | `@/services/api` (trucksAPI) |
-| **Tracking → History** | BE1 | `@/services/api` (trucksAPI) |
-| **Fleet Management → Fleet Groups** | BE2 | `@/services/api2` |
-| **Fleet Management → All Vehicles** | BE2 | `@/services/api2` (trucksApi) |
-| **Fleet Management → Vehicle & IoT Status** | BE2 | `@/services/api2` (devicesApi) |
-| **Fleet Management → Drivers** | BE2 | `@/services/api2` (driversApi) |
-| **Fleet Management → Vendors** | BE2 | `@/services/api2` (vendorsApi) |
-| **IoT Devices** | BE2 | `@/services/api2` (devicesApi) |
-| **Telemetry → Tire Pressure** | BE1 | `@/services/api` (tpmsAPI) |
-| **Telemetry → Hub Temperature** | BE1 | `@/services/api` (trucksAPI) |
-| **Telemetry → Fuel Levels** | BE1 | `@/services/api` (trucksAPI) |
-| **Alerts** | BE2 | `@/services/api2` (alertsApi) |
-| **Settings** | BE2 | `@/services/api2` |
+| Sidebar Menu                                | Backend | Import From                      |
+| ------------------------------------------- | ------- | -------------------------------- |
+| **Dashboard**                               | BE2     | `@/services/api2` (dashboardApi) |
+| **Tracking → Live Tracking**                | BE1     | `@/services/api` (trucksAPI)     |
+| **Tracking → History**                      | BE1     | `@/services/api` (trucksAPI)     |
+| **Fleet Management → Fleet Groups**         | BE2     | `@/services/api2`                |
+| **Fleet Management → All Vehicles**         | BE2     | `@/services/api2` (trucksApi)    |
+| **Fleet Management → Vehicle & IoT Status** | BE2     | `@/services/api2` (devicesApi)   |
+| **Fleet Management → Drivers**              | BE2     | `@/services/api2` (driversApi)   |
+| **Fleet Management → Vendors**              | BE2     | `@/services/api2` (vendorsApi)   |
+| **IoT Devices**                             | BE2     | `@/services/api2` (devicesApi)   |
+| **Telemetry → Tire Pressure**               | BE1     | `@/services/api` (tpmsAPI)       |
+| **Telemetry → Hub Temperature**             | BE1     | `@/services/api` (trucksAPI)     |
+| **Telemetry → Fuel Levels**                 | BE1     | `@/services/api` (trucksAPI)     |
+| **Alerts**                                  | BE2     | `@/services/api2` (alertsApi)    |
+| **Settings**                                | BE2     | `@/services/api2`                |
 
 ---
 
 ## Best Practices
 
 ### ✅ DO:
+
 - Use BE1 (`api/`) untuk **tracking real-time** dan **TPMS data**
 - Use BE2 (`api2/`) untuk **master data CRUD** dan **management**
 - Gunakan **absolute imports**: `@/services/api` atau `@/services/api2`
 - Cek **environment variables** sudah benar di production
 
 ### ❌ DON'T:
+
 - Jangan import driver/vendor dari BE1 (tidak ada!)
 - Jangan campur tracking logic dengan master data
 - Jangan hardcode URL - selalu pakai env variables
@@ -151,20 +162,25 @@ Berdasarkan navigasi sidebar [`TailwindSidebar.jsx`](../components/layout/Tailwi
 ## Troubleshooting
 
 ### ❌ Error: "Cannot find module driversAPI from @/services/api"
+
 **Solusi**: Driver master data ada di BE2, gunakan:
+
 ```javascript
 import { driversApi } from '@/services/api2'; // ✅ Benar
 ```
 
 ### ❌ TPMS data salah di production
+
 **Penyebab**: Environment variables tidak diset dengan benar
-**Solusi**: 
+**Solusi**:
+
 1. Cek `VITE_TRACKING_API_BASE_URL` sudah diset
 2. Cek `VITE_TPMS_API_KEY` dan `VITE_TPMS_SN` benar
 3. Rebuild: `npm run build`
 4. Clear cache browser
 
 ### ❌ 404 Error pada endpoint tracking
+
 **Penyebab**: Salah base URL
 **Solusi**: Pastikan endpoint tracking pakai `VITE_TRACKING_API_BASE_URL`, bukan `VITE_API_BASE_URL`
 

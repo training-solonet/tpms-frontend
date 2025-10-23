@@ -9,10 +9,14 @@
 // Tracking API Configuration (Backend 1)
 export const TRACKING_CONFIG = {
   BASE_URL:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TRACKING_API_BASE_URL) ||
+    (typeof import.meta !== 'undefined' &&
+      import.meta.env &&
+      import.meta.env.VITE_TRACKING_API_BASE_URL) ||
     '', // Backend 1 untuk tracking
   WS_URL:
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TRACKING_WS_URL) || 
+    (typeof import.meta !== 'undefined' &&
+      import.meta.env &&
+      import.meta.env.VITE_TRACKING_WS_URL) ||
     '', // WebSocket untuk live tracking
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 2,

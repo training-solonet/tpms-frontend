@@ -17,7 +17,8 @@ const buildTpmsUrl = (baseUrl, extraParams = {}) => {
   if (!baseUrl) return ''; // Jika tidak ada baseUrl, kembalikan string kosong
   try {
     let urlObj; // Deklarasi objek URL
-    if (/^https?:\/\//i.test(baseUrl) || /^wss?:\/\//i.test(baseUrl)) { // Cek apakah URL sudah lengkap (http/https/ws/wss)
+    if (/^https?:\/\//i.test(baseUrl) || /^wss?:\/\//i.test(baseUrl)) {
+      // Cek apakah URL sudah lengkap (http/https/ws/wss)
       urlObj = new URL(baseUrl); // Buat objek URL dari baseUrl
     } else {
       const origin = // Tentukan origin default
@@ -28,7 +29,8 @@ const buildTpmsUrl = (baseUrl, extraParams = {}) => {
     const params = new URLSearchParams(urlObj.search); // Ambil query parameters yang sudah ada
     if (TPMS_CONFIG.API_KEY) params.set('apiKey', TPMS_CONFIG.API_KEY); // Tambahkan API key jika ada
     if (TPMS_CONFIG.SN) params.set('sn', TPMS_CONFIG.SN); // Tambahkan serial number jika ada
-    Object.entries(extraParams || {}).forEach(([k, v]) => { // Loop melalui parameter tambahan
+    Object.entries(extraParams || {}).forEach(([k, v]) => {
+      // Loop melalui parameter tambahan
       if (v != null && v !== '') params.set(k, v); // Tambahkan parameter jika nilainya valid
     });
     urlObj.search = params.toString(); // Set query string dari parameter
@@ -49,7 +51,8 @@ const fetchTpms = async (fullUrl) => {
   try {
     const isSameOrigin = // Cek apakah URL sama dengan origin saat ini
       typeof window !== 'undefined' && fullUrl.startsWith(window.location.origin + '/'); // Untuk menentukan apakah perlu header tambahan
-    const res = await fetch(fullUrl, { // Lakukan fetch request
+    const res = await fetch(fullUrl, {
+      // Lakukan fetch request
       method: 'GET', // Gunakan metode GET
       mode: 'cors', // Aktifkan CORS
       credentials: 'omit', // Jangan kirim credentials
@@ -57,12 +60,14 @@ const fetchTpms = async (fullUrl) => {
       signal: controller.signal, // Pasang signal untuk abort
     });
     clearTimeout(t); // Hapus timeout jika request berhasil
-    if (!res.ok) { // Jika response tidak OK
+    if (!res.ok) {
+      // Jika response tidak OK
       const text = await res.text().catch(() => ''); // Ambil error text
       throw new Error(`HTTP ${res.status}: ${text || res.statusText}`); // Lempar error dengan detail
     }
     const data = await res.json().catch(() => ({})); // Parse response sebagai JSON
-    if (data && data.error) { // Jika ada error dari server
+    if (data && data.error) {
+      // Jika ada error dari server
       return { success: false, data: null, error: String(data.error) }; // Kembalikan object error
     }
     return { success: true, data: data.data || data }; // Kembalikan data sukses
@@ -77,7 +82,8 @@ export const tpmsAPI = {
    * Get WebSocket URL for real-time TPMS data
    * @returns {string} WebSocket URL
    */
-  getRealtimeWSUrl: () => { // Fungsi untuk mendapatkan URL WebSocket realtime
+  getRealtimeWSUrl: () => {
+    // Fungsi untuk mendapatkan URL WebSocket realtime
     if (!TPMS_CONFIG.WS_URL) return ''; // Jika tidak ada WS_URL, kembalikan string kosong
     return buildTpmsUrl(TPMS_CONFIG.WS_URL); // Bangun URL WebSocket dengan parameter auth
   },
@@ -86,7 +92,8 @@ export const tpmsAPI = {
    * Get real-time TPMS snapshot
    * @returns {Promise<object>} Real-time TPMS data
    */
-  getRealtimeSnapshot: async () => { // Fungsi untuk mendapatkan snapshot data TPMS realtime
+  getRealtimeSnapshot: async () => {
+    // Fungsi untuk mendapatkan snapshot data TPMS realtime
     const url = buildTpmsUrl(TPMS_CONFIG.REALTIME_ENDPOINT); // Bangun URL endpoint realtime
     if (!url) return { success: false, data: null, error: 'Missing realtime endpoint' }; // Jika URL kosong, kembalikan error
     return await fetchTpms(url); // Fetch data dari endpoint realtime
@@ -97,7 +104,8 @@ export const tpmsAPI = {
    * @param {object} options - { sn, startTime, endTime }
    * @returns {Promise<object>} Location history data
    */
-  getLocationHistory: async ({ sn, startTime, endTime } = {}) => { // Fungsi untuk mendapatkan riwayat lokasi TPMS
+  getLocationHistory: async ({ sn, startTime, endTime } = {}) => {
+    // Fungsi untuk mendapatkan riwayat lokasi TPMS
     const extra = {}; // Objek untuk parameter tambahan
     if (sn) extra.sn = sn; // Tambahkan serial number jika ada
     if (startTime) extra.startTime = startTime; // Tambahkan waktu mulai jika ada

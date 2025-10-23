@@ -2,7 +2,7 @@
  * Backend 2 (BE2) API Module - Master Data & Management
  * Handles: Dashboard, Fleet Management, Drivers, Vendors, Devices, Alerts, Settings
  * Semua fitur kecuali tracking & TPMS
- * 
+ *
  * Usage:
  * import { authApi, driversApi, trucksApi } from '@/services/api2';
  */
