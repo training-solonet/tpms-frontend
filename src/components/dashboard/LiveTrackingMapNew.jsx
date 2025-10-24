@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'; // Impo
 import { TruckIcon, ClockIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'; // Import ikon-ikon UI
 import BaseTrackingMap from './BaseTrackingMap'; // Import komponen peta dasar
 import TirePressureDisplay from './TirePressureDisplay'; // Import komponen display tekanan ban
-import { tpmsAPI } from '../../services/api'; // BE1 TPMS data via BE2 proxy
+import { tpmsAPI } from '../../services/api'; // BE1 TPMS data only
 
 const LiveTrackingMapNew = () => {
   const [map, setMap] = useState(null); // State untuk menyimpan instance peta Leaflet
@@ -166,64 +166,9 @@ const LiveTrackingMapNew = () => {
         setBackendOnline(true); // Set status backend online
         setWsStatus('disconnected'); // Set WebSocket status disconnected
       } else {
-        // Jika TPMS gagal, gunakan legacy backend
-        const result = await tpmsAPI.getRealTimeLocations(); // Panggil legacy API
-        if (!result.success) {
-          // Jika gagal
-          throw new Error(result.error || 'Failed to load real-time locations'); // Throw error
-        }
-        const data = result.data; // Ambil data dari response
-        if (data && Array.isArray(data.features)) {
-          // Jika data dalam format GeoJSON features
-          items = data.features
-            .map((f) => {
-              // Map setiap feature
-              const coords = f?.geometry?.coordinates; // Ambil koordinat dari geometry
-              if (!Array.isArray(coords) || coords.length < 2) return null; // Validasi koordinat
-              const lng = Number(coords[0]); // Longitude dari coords[0]
-              const lat = Number(coords[1]); // Latitude dari coords[1]
-              const id = f?.properties?.id || f?.properties?.truck_id || f?.id || null; // Ambil ID
-              return id && isFinite(lat) && isFinite(lng) // Validasi ID dan koordinat
-                ? {
-                    id: String(id), // ID kendaraan
-                    position: [lat, lng], // Posisi [lat, lng]
-                    status: f?.properties?.status?.toLowerCase?.() || 'active', // Status (lowercase)
-                    speed: Number(f?.properties?.speed_kph ?? 0), // Kecepatan (km/h)
-                    heading: Number(f?.properties?.heading_deg ?? 0), // Heading (derajat)
-                    fuel: Number(f?.properties?.fuel_percent ?? 0), // Fuel (persen)
-                    battery: Number(f?.properties?.battery_level ?? 0), // Battery level
-                    signal: f?.properties?.signal_strength ?? 'unknown', // Signal strength
-                    lastUpdate: f?.properties?.ts ? new Date(f.properties.ts) : new Date(), // Waktu update
-                  }
-                : null; // Return null jika tidak valid
-            })
-            .filter(Boolean); // Filter out nilai null
-        } else if (Array.isArray(data)) {
-          // Jika data langsung berupa array
-          items = data
-            .map((v) => {
-              // Map setiap item
-              const lat = v?.lat ?? v?.latitude; // Ambil latitude
-              const lng = v?.lng ?? v?.longitude; // Ambil longitude
-              const id = v?.id ?? v?.truck_id ?? v?.plate_number ?? null; // Ambil ID
-              return id && isFinite(lat) && isFinite(lng) // Validasi ID dan koordinat
-                ? {
-                    id: String(id), // ID kendaraan
-                    position: [Number(lat), Number(lng)], // Posisi [lat, lng]
-                    status: v?.status?.toLowerCase?.() || 'active', // Status (lowercase)
-                    speed: Number(v?.speed_kph ?? 0), // Kecepatan (km/h)
-                    heading: Number(v?.heading_deg ?? 0), // Heading (derajat)
-                    fuel: Number(v?.fuel_percent ?? 0), // Fuel (persen)
-                    battery: Number(v?.battery_level ?? 0), // Battery level
-                    signal: v?.signal_strength ?? 'unknown', // Signal strength
-                    lastUpdate: v?.ts ? new Date(v.ts) : new Date(), // Waktu update
-                  }
-                : null; // Return null jika tidak valid
-            })
-            .filter(Boolean); // Filter out nilai null
-        }
-        setBackendOnline(!!result.success); // Set status backend berdasarkan result
-        setWsStatus('disconnected'); // Set WebSocket status disconnected
+        // Jika TPMS gagal, tidak ada fallback - tampilkan error
+        console.error('❌ TPMS failed, no vehicles loaded');
+        throw new Error(tpms.error || 'Failed to load vehicles from TPMS');
       }
 
       setVehicles(items || []); // Update state vehicles dengan data yang di-load

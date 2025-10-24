@@ -1,12 +1,12 @@
 // Data service to replace dummy data with real API calls
 import {
-  trucksAPI,
-  vendorsAPI,
-  driversAPI,
-  devicesAPI,
-  sensorsAPI,
-  dashboardAPI,
-} from './api/index.js';
+  trucksApi,
+  vendorsApi,
+  driversApi,
+  devicesApi,
+  sensorsApi,
+  dashboardApi,
+} from './api2/index.js';
 
 // Fleet data service - replaces dummy data functions
 export class DataService {
@@ -49,7 +49,7 @@ export class DataService {
       console.log('🚛 Loading fleet data from API...');
 
       // Get trucks with relationships
-      const trucksResponse = await trucksAPI.getAll({ limit: 200 });
+      const trucksResponse = await trucksApi.getAll({ limit: 200 });
 
       if (!trucksResponse.success) {
         throw new Error('Failed to load trucks data');
@@ -95,7 +95,7 @@ export class DataService {
     try {
       console.log('📍 Loading live tracking data from API...');
 
-      const response = await trucksAPI.getRealTimeLocations();
+      const response = await trucksApi.getRealtimeLocations();
 
       if (!response.success) {
         throw new Error('Failed to load real-time locations');
@@ -143,7 +143,7 @@ export class DataService {
       console.log(`🛣️ Loading route history for truck ${truckId}...`);
 
       const params = { timeRange };
-      const response = await trucksAPI.getLocationHistory(truckId, params);
+      const response = await trucksApi.getLocationHistory(truckId, params);
 
       if (!response.success) {
         throw new Error(`Failed to load route for truck ${truckId}`);
@@ -178,7 +178,7 @@ export class DataService {
     try {
       console.log('📊 Loading dashboard statistics from API...');
 
-      const response = await dashboardAPI.getStats();
+      const response = await dashboardApi.getStats();
 
       if (!response.success) {
         throw new Error('Failed to load dashboard stats');
@@ -209,7 +209,7 @@ export class DataService {
     try {
       console.log('🏢 Loading vendors from API...');
 
-      const response = await vendorsAPI.getAll(params);
+      const response = await vendorsApi.getAll(params);
 
       if (!response.success) {
         throw new Error('Failed to load vendors');
@@ -230,7 +230,7 @@ export class DataService {
     try {
       console.log('👨‍💼 Loading drivers from API...');
 
-      const response = await driversAPI.getAll(params);
+      const response = await driversApi.getAll(params);
 
       if (!response.success) {
         throw new Error('Failed to load drivers');
@@ -251,7 +251,7 @@ export class DataService {
     try {
       console.log('📱 Loading devices from API...');
 
-      const response = await devicesAPI.getAll(params);
+      const response = await devicesApi.getAll(params);
 
       if (!response.success) {
         throw new Error('Failed to load devices');
@@ -272,7 +272,7 @@ export class DataService {
     try {
       console.log('🔧 Loading sensors from API...');
 
-      const response = await sensorsAPI.getAll(params);
+      const response = await sensorsApi.getAll(params);
 
       if (!response.success) {
         throw new Error('Failed to load sensors');
