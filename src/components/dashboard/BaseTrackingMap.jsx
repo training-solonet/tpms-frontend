@@ -165,35 +165,68 @@ const BaseTrackingMap = ({
           // Fetch and add geofence from backend
           try {
             const res = await miningAreaApi.getBoundaries(); // Pakai miningAreaApi dari BE2
+            console.log('🗺️ Mining area response:', res);
+
+            // Response format: { success: true, data: GeoJSON }
             const geo = res?.data;
-            if (geo && geo.type) {
+
+            if (geo && geo.type === 'FeatureCollection' && geo.features) {
+              console.log('✅ Valid GeoJSON received with', geo.features.length, 'features');
+
               L.default
                 .geoJSON(geo, {
-                  style: {
-                    color: '#3b82f6',
-                    weight: 3,
-                    opacity: 0.8,
-                    fillColor: '#3b82f6',
-                    fillOpacity: 0.1,
-                    dashArray: '10, 10',
+                  style: (feature) => {
+                    // Different colors for different zone types
+                    const zoneType = feature.properties?.zone_type;
+                    const colors = {
+                      loading: '#3b82f6', // blue
+                      dumping: '#ef4444', // red
+                      hauling: '#10b981', // green
+                      restricted: '#f59e0b', // yellow
+                    };
+
+                    return {
+                      color: colors[zoneType] || '#3b82f6',
+                      weight: 3,
+                      opacity: 0.8,
+                      fillColor: colors[zoneType] || '#3b82f6',
+                      fillOpacity: 0.1,
+                      dashArray: '10, 10',
+                    };
+                  },
+                  onEachFeature: (feature, layer) => {
+                    // Add popup with zone info
+                    if (feature.properties) {
+                      const props = feature.properties;
+                      layer.bindPopup(`
+                        <div class="p-2">
+                          <h3 class="font-bold text-sm">${props.name || 'Unknown Zone'}</h3>
+                          <p class="text-xs text-gray-600">${props.description || ''}</p>
+                          <p class="text-xs mt-1">Type: <span class="font-medium">${props.zone_type || 'N/A'}</span></p>
+                        </div>
+                      `);
+                    }
                   },
                 })
                 .addTo(mapInstance);
 
-              // Try to compute primary polygon ring for utilities
+              // Try to compute primary polygon ring for utilities (use first feature)
               try {
-                const coords =
-                  geo?.features?.[0]?.geometry?.coordinates?.[0] ||
-                  geo?.geometry?.coordinates?.[0] ||
-                  [];
+                const firstFeature = geo.features[0];
+                const coords = firstFeature?.geometry?.coordinates?.[0] || [];
                 const latlng = (coords || []).map(([lng, lat]) => [lat, lng]);
-                if (latlng.length > 0) setPolygonLatLng(latlng);
-              } catch {
-                /* noop */
+                if (latlng.length > 0) {
+                  setPolygonLatLng(latlng);
+                  console.log('📍 Polygon coordinates set:', latlng.length, 'points');
+                }
+              } catch (err) {
+                console.warn('Failed to extract polygon coordinates:', err);
               }
+            } else {
+              console.warn('⚠️ Invalid GeoJSON format received:', geo);
             }
           } catch (e) {
-            console.warn('Failed to load mining area boundaries:', e?.message || e);
+            console.error('❌ Failed to load mining area boundaries:', e?.message || e);
           }
 
           // Compute mining area bounds for zoom-based hiding (after polygon load)
