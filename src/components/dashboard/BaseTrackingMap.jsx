@@ -166,25 +166,25 @@ const BaseTrackingMap = ({
           try {
             const res = await miningAreaApi.getBoundaries(); // Pakai miningAreaApi dari BE2
             console.log('🗺️ Mining area response:', res);
-            
+
             // Response format: { success: true, data: GeoJSON }
             const geo = res?.data;
-            
+
             if (geo && geo.type === 'FeatureCollection' && geo.features) {
               console.log('✅ Valid GeoJSON received with', geo.features.length, 'features');
-              
+
               L.default
                 .geoJSON(geo, {
                   style: (feature) => {
                     // Different colors for different zone types
                     const zoneType = feature.properties?.zone_type;
                     const colors = {
-                      loading: '#3b82f6',    // blue
-                      dumping: '#ef4444',    // red
-                      hauling: '#10b981',    // green
+                      loading: '#3b82f6', // blue
+                      dumping: '#ef4444', // red
+                      hauling: '#10b981', // green
                       restricted: '#f59e0b', // yellow
                     };
-                    
+
                     return {
                       color: colors[zoneType] || '#3b82f6',
                       weight: 3,
