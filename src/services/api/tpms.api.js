@@ -49,14 +49,16 @@ const fetchTpms = async (fullUrl) => {
   const controller = new AbortController(); // Buat controller untuk membatalkan request
   const t = setTimeout(() => controller.abort(), TPMS_CONFIG.TIMEOUT); // Set timeout untuk membatalkan request otomatis
   try {
-    const isSameOrigin = // Cek apakah URL sama dengan origin saat ini
-      typeof window !== 'undefined' && fullUrl.startsWith(window.location.origin + '/'); // Untuk menentukan apakah perlu header tambahan
     const res = await fetch(fullUrl, {
       // Lakukan fetch request
       method: 'GET', // Gunakan metode GET
-      mode: 'no-cors', // Aktifkan CORS
+      mode: 'cors', // Mode CORS untuk bisa baca response
       credentials: 'omit', // Jangan kirim credentials
-      headers: isSameOrigin && TPMS_CONFIG.API_KEY ? { 'x-api-key': TPMS_CONFIG.API_KEY } : {}, // Tambahkan API key di header jika same origin
+      headers: {
+        // Coba kirim API key via header juga (selain query param)
+        'X-API-Key': TPMS_CONFIG.API_KEY || '',
+        'Content-Type': 'application/json',
+      },
       signal: controller.signal, // Pasang signal untuk abort
     });
     clearTimeout(t); // Hapus timeout jika request berhasil
