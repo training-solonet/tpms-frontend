@@ -1,6 +1,7 @@
 # Contoh data dari sensor tpms
 
 ### Untuk data yang realtime
+
 /api/tpms/realtime
 {
 "message": "Realtime data retrieved successfully",
@@ -73,6 +74,7 @@
 }
 
 ### Untuk data history
+
 /api/tpms/location
 {
 "message": "Location data retrieved successfully",
