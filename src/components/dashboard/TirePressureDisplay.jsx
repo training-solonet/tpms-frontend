@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { trucksAPI } from '../../services/api'; // BE1 untuk tracking data
 import WheelFrontIcon from '../icons/WheelFrontIcon.jsx';
 
 const TirePressureDisplay = ({
@@ -201,7 +200,7 @@ const TirePressureDisplay = ({
         (prev) => prev || { id: selectedTruckId, name: String(selectedTruckId), tire_config: '6x4' }
       );
 
-      // Use propTireData if available (from TPMS), otherwise fetch from API
+      // Use propTireData if available (from TPMS), otherwise show empty state
       if (propTireData && Array.isArray(propTireData) && propTireData.length > 0) {
         // Convert TPMS format to expected format
         const convertedData = propTireData.map((tire) => ({
@@ -213,31 +212,8 @@ const TirePressureDisplay = ({
         }));
         console.log('🔧 TirePressureDisplay - convertedData:', convertedData);
         setTireData(convertedData);
-        return;
-      }
-
-      try {
-        const res = await trucksAPI.getTirePressures(selectedTruckId);
-        if (res.success && Array.isArray(res.data)) {
-          // Expecting array with fields: tire_no, pressure_kpa, temp_celsius, changed_at (optional)
-          const latestByTire = {};
-          res.data.forEach((item) => {
-            const tireNo = Number(item.tire_no ?? item.tireNo);
-            if (!tireNo) return;
-            const ts = item.changed_at || item.timestamp || item.reported_at || null;
-            if (!latestByTire[tireNo]) latestByTire[tireNo] = { ...item, changed_at: ts };
-            else if (ts && new Date(ts) > new Date(latestByTire[tireNo].changed_at || 0)) {
-              latestByTire[tireNo] = { ...item, changed_at: ts };
-            }
-          });
-          const tireArray = Object.values(latestByTire).sort(
-            (a, b) => (a.tire_no ?? a.tireNo) - (b.tire_no ?? b.tireNo)
-          );
-          setTireData(tireArray);
-        } else {
-          setTireData([]);
-        }
-      } catch {
+      } else {
+        // No data available
         setTireData([]);
       }
     };

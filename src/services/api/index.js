@@ -13,7 +13,7 @@ export { TRACKING_CONFIG, TPMS_CONFIG } from './config.js'; // Export config unt
 
 // API Endpoints - BE1 (Tracking & TPMS only)
 export { tpmsAPI } from './tpms.api.js'; // TPMS tire pressure monitoring
-export { trucksAPI } from './trucks.api.js'; // Truck tracking (location, routes)
+// export { trucksAPI } from './trucks.api.js'; // Truck tracking (location, routes)
 
 // WebSocket untuk live tracking
 export { FleetWebSocket } from '../websocket/FleetWebSocket.js';
@@ -21,6 +21,5 @@ export { FleetWebSocket } from '../websocket/FleetWebSocket.js';
 // Default export for backward compatibility
 export default {
   tpmsAPI: () => import('./tpms.api.js').then((m) => m.tpmsAPI),
-  trucksAPI: () => import('./trucks.api.js').then((m) => m.trucksAPI),
   FleetWebSocket: () => import('../websocket/FleetWebSocket.js').then((m) => m.FleetWebSocket),
 };

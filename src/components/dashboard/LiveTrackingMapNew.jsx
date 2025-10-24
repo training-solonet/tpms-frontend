@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'; // Impo
 import { TruckIcon, ClockIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'; // Import ikon-ikon UI
 import BaseTrackingMap from './BaseTrackingMap'; // Import komponen peta dasar
 import TirePressureDisplay from './TirePressureDisplay'; // Import komponen display tekanan ban
-import { trucksAPI, tpmsAPI } from '../../services/api'; // BE1 untuk tracking & TPMS
+import { tpmsAPI } from '../../services/api'; // BE1 TPMS data via BE2 proxy
 
 const LiveTrackingMapNew = () => {
   const [map, setMap] = useState(null); // State untuk menyimpan instance peta Leaflet
@@ -167,7 +167,7 @@ const LiveTrackingMapNew = () => {
         setWsStatus('disconnected'); // Set WebSocket status disconnected
       } else {
         // Jika TPMS gagal, gunakan legacy backend
-        const result = await trucksAPI.getRealTimeLocations(); // Panggil legacy API
+        const result = await tpmsAPI.getRealTimeLocations(); // Panggil legacy API
         if (!result.success) {
           // Jika gagal
           throw new Error(result.error || 'Failed to load real-time locations'); // Throw error
@@ -444,7 +444,7 @@ const LiveTrackingMapNew = () => {
                 // Jika rute belum ada/kurang, coba load dari backend
                 // Try to load from backend
                 try {
-                  const histRes = await trucksAPI.getLocationHistory(vehicle.id, {
+                  const histRes = await tpmsAPI.getLocationHistory(vehicle.id, {
                     // Request history dari API
                     range: timeRange, // Dengan range waktu yang dipilih
                   });

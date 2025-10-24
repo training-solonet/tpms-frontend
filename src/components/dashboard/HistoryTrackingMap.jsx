@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
-import { trucksAPI, tpmsAPI } from '../../services/api'; // BE1 untuk tracking & TPMS
+import { tpmsAPI } from '../../services/api'; // BE1 untuk tracking & TPMS
 import { alertsApi } from '../../services/api2'; // BE2 untuk alerts
 import TirePressureDisplay from './TirePressureDisplay';
 
@@ -181,7 +181,7 @@ const HistoryTrackingMap = () => {
 
         if ((!routePoints || routePoints.length === 0) && primaryId !== truckId) {
           console.log(`🔁 Retrying history with legacy backend using: ${truckId}`);
-          const legacy = await trucksAPI.getLocationHistory(truckId, params);
+          const legacy = await tpmsAPI.getLocationHistory(truckId, params);
           if (legacy.success && legacy.data) {
             enriched = toRecords(legacy.data);
             routePoints = toPoints(enriched);
@@ -290,7 +290,7 @@ const HistoryTrackingMap = () => {
             })
             .filter(Boolean);
         } else {
-          const response = await trucksAPI.getRealTimeLocations();
+          const response = await tpmsAPI.getRealTimeLocations();
           if (response.success && response.data) {
             vehicleData =
               response.data.features?.map((feature) => ({
