@@ -4,7 +4,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 // Import dari BE1 untuk tracking
-import { trucksAPI } from '../../services/api';
+// import { trucksAPI } from '../../services/api';
 // Import dari BE2 untuk master data devices
 import { devicesApi } from '../../services/api2';
 
@@ -43,28 +43,28 @@ const CommandPalette = ({ open, setOpen }) => {
       // Vehicles: backend-only (prefer realtime geojson, fallback to list)
       let vehicles = [];
       try {
-        const res = await trucksAPI.getRealTimeLocations();
-        if (res?.success && Array.isArray(res.data?.features)) {
-          vehicles = res.data.features.map((f) => ({
-            id: String(f?.properties?.truckNumber || f?.properties?.id || f?.id || ''),
-            name: f?.properties?.truckName || f?.properties?.plateNumber || '',
-            status: String(f?.properties?.status || 'offline').toLowerCase(),
-          }));
-        }
+        // const res = await trucksAPI.getRealTimeLocations();
+        // if (res?.success && Array.isArray(res.data?.features)) {
+        //   vehicles = res.data.features.map((f) => ({
+        //     id: String(f?.properties?.truckNumber || f?.properties?.id || f?.id || ''),
+        //     name: f?.properties?.truckName || f?.properties?.plateNumber || '',
+        //     status: String(f?.properties?.status || 'offline').toLowerCase(),
+        //   }));
+        // }
       } catch {
         // ignore, try trucks list
       }
       if (!vehicles.length) {
         try {
-          const listRes = await trucksAPI.getAll({ limit: 50 });
-          if (listRes?.success) {
-            const arr = listRes.data?.trucks || listRes.data || [];
-            vehicles = (Array.isArray(arr) ? arr : []).map((t) => ({
-              id: String(t.id || t.truckNumber || t.plate_number || t.name || ''),
-              name: t.name || t.plate_number || '',
-              status: String(t.status || 'offline').toLowerCase(),
-            }));
-          }
+          // const listRes = await trucksAPI.getAll({ limit: 50 });
+          // if (listRes?.success) {
+          //   const arr = listRes.data?.trucks || listRes.data || [];
+          //   vehicles = (Array.isArray(arr) ? arr : []).map((t) => ({
+          //     id: String(t.id || t.truckNumber || t.plate_number || t.name || ''),
+          //     name: t.name || t.plate_number || '',
+          //     status: String(t.status || 'offline').toLowerCase(),
+          //   }));
+          // }
         } catch {
           // ignore
         }
