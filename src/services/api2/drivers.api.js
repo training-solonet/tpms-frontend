@@ -45,23 +45,41 @@ export const driversApi = {
 
   /**
    * Create new driver
+   * Backend 2 API expects:
+   * Required: name, licenseNumber (Badge ID)
+   * Optional: phone, email, address, status ('aktif' or 'nonaktif')
+   *
    * @param {Object} driverData - { name, licenseNumber, phone, email, address, status }
    * @returns {Promise}
    */
   create: async (driverData) => {
-    const response = await api2Instance.post('/drivers', driverData);
-    return response;
+    try {
+      console.log('➕ Creating driver with data:', driverData);
+      const response = await api2Instance.post('/drivers', driverData);
+      console.log('✅ Driver created successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Failed to create driver:', error);
+      throw error;
+    }
   },
 
   /**
    * Update driver
    * @param {string} driverId
-   * @param {Object} driverData
+   * @param {Object} driverData - { name, licenseNumber, phone, email, address, status }
    * @returns {Promise}
    */
   update: async (driverId, driverData) => {
-    const response = await api2Instance.put(`/drivers/${driverId}`, driverData);
-    return response;
+    try {
+      console.log(`🔄 Updating driver ${driverId} with data:`, driverData);
+      const response = await api2Instance.put(`/drivers/${driverId}`, driverData);
+      console.log('✅ Driver updated successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ Failed to update driver:', error);
+      throw error;
+    }
   },
 
   /**

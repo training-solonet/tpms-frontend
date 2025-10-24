@@ -60,12 +60,13 @@ export default function DriversList() {
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase();
     return drivers.filter((v) => {
+      const licenseNum = v.licenseNumber || v.license_number || '';
       return (
         !q ||
         (v.name || '').toLowerCase().includes(q) ||
-        (v.license_number || '').toLowerCase().includes(q) ||
+        licenseNum.toLowerCase().includes(q) ||
         (v.phone || '').toLowerCase().includes(q) ||
-        (v.badge_id || '').toLowerCase().includes(q)
+        (v.email || '').toLowerCase().includes(q)
       );
     });
   }, [drivers, query]);
@@ -109,7 +110,7 @@ export default function DriversList() {
 
           <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
             <Input
-              label="Search (name/license/phone/badge)"
+              label="Search (name/badge/phone/email)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -140,47 +141,64 @@ export default function DriversList() {
                     <tr>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">Name</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">Badge ID</th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">License No.</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">Phone</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Email</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Status</th>
                       <th className="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
-                        <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                        <td className="px-3 py-6 text-gray-500" colSpan={6}>
                           Loading...
                         </td>
                       </tr>
                     ) : pageData.length === 0 ? (
                       <tr>
-                        <td className="px-3 py-6 text-gray-500" colSpan={5}>
+                        <td className="px-3 py-6 text-gray-500" colSpan={6}>
                           No data
                         </td>
                       </tr>
                     ) : (
-                      pageData.map((v) => (
-                        <tr key={v.id}>
-                          <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
-                          <td className="px-3 py-2">{v.badge_id || '-'}</td>
-                          <td className="px-3 py-2">{v.license_number || '-'}</td>
-                          <td className="px-3 py-2">{v.phone || '-'}</td>
-                          <td className="px-3 py-2 text-right">
-                            <a
-                              href={`/drivers/${v.id}`}
-                              className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2"
-                            >
-                              Edit
-                            </a>
-                            <button
-                              onClick={() => onDelete(v.id)}
-                              className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      pageData.map((v) => {
+                        const badgeId = v.licenseNumber || v.license_number || '-';
+                        const statusDisplay =
+                          v.status === 'aktif' || v.status === 'active' ? 'Aktif' : 'Non-Aktif';
+                        const statusColor =
+                          v.status === 'aktif' || v.status === 'active'
+                            ? 'text-green-600 bg-green-50'
+                            : 'text-gray-600 bg-gray-50';
+                        return (
+                          <tr key={v.id}>
+                            <td className="px-3 py-2 text-gray-900 font-medium">{v.name}</td>
+                            <td className="px-3 py-2">{badgeId}</td>
+                            <td className="px-3 py-2">{v.phone || '-'}</td>
+                            <td className="px-3 py-2">{v.email || '-'}</td>
+                            <td className="px-3 py-2">
+                              <span
+                                className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}
+                              >
+                                {statusDisplay}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <a
+                                href={`/drivers/${v.id}`}
+                                className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm mr-2"
+                              >
+                                Edit
+                              </a>
+                              <button
+                                onClick={() => onDelete(v.id)}
+                                className="inline-flex items-center px-3 py-1.5 rounded-md border text-sm text-red-600"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

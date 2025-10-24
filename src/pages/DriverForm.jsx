@@ -15,18 +15,6 @@ function Input({ label, ...props }) {
   );
 }
 
-function TextArea({ label, ...props }) {
-  return (
-    <label className="block">
-      <span className="block text-sm font-medium text-gray-700">{label}</span>
-      <textarea
-        {...props}
-        className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`}
-      />
-    </label>
-  );
-}
-
 export default function DriverForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,15 +23,16 @@ export default function DriverForm() {
 
   const [form, setForm] = React.useState({
     name: '',
-    badge_id: '',
-    license_number: '',
+    licenseNumber: '', // Badge ID (required)
     phone: '',
+    email: '',
     address: '',
-    notes: '',
-    status: 'active',
+    status: 'aktif', // 'aktif' or 'nonaktif'
   });
   const [loading, setLoading] = React.useState(isEdit);
   const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [validationErrors, setValidationErrors] = React.useState([]);
 
   // Load driver data if editing
   React.useEffect(() => {
@@ -57,17 +46,17 @@ export default function DriverForm() {
         const driver = res?.data;
         if (driver) {
           setForm({
-            name: driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim(),
-            badge_id: driver.badge_id || '',
-            license_number: driver.license_number || '',
+            name: driver.name || '',
+            licenseNumber: driver.licenseNumber || driver.license_number || '',
             phone: driver.phone || '',
+            email: driver.email || '',
             address: driver.address || '',
-            notes: driver.notes || '',
-            status: driver.status || 'active',
+            status: driver.status || 'aktif',
           });
         }
-      } catch (error) {
-        console.error('❌ Failed to load driver:', error);
+      } catch (err) {
+        console.error('❌ Failed to load driver:', err);
+        setError(err.message || 'Failed to load driver data');
       }
       setLoading(false);
     };
@@ -79,17 +68,24 @@ export default function DriverForm() {
   const onSave = async () => {
     try {
       setSaving(true);
+      setError(null);
+      setValidationErrors([]);
       console.log('💾 Saving driver data to Backend 2...', form);
 
+      // Prepare data according to API documentation
       const driverData = {
         name: form.name,
-        badge_id: form.badge_id,
-        license_number: form.license_number,
-        phone: form.phone,
-        address: form.address,
-        notes: form.notes,
+        licenseNumber: form.licenseNumber, // Badge ID (required)
+        phone: form.phone || undefined, // Remove if empty
+        email: form.email || undefined, // Remove if empty
+        address: form.address || undefined, // Remove if empty
         status: form.status,
       };
+
+      // Remove undefined fields
+      Object.keys(driverData).forEach(
+        (key) => driverData[key] === undefined && delete driverData[key]
+      );
 
       let response;
       if (isEdit) {
@@ -104,11 +100,21 @@ export default function DriverForm() {
         console.log('✅ Driver created successfully:', response);
       }
 
-      alert('Driver saved successfully!');
+      alert(`Driver "${response.data?.name || form.name}" berhasil disimpan!`);
       navigate('/drivers');
-    } catch (error) {
-      console.error('❌ Failed to save driver:', error);
-      alert(`Failed to save driver: ${error.message || 'Unknown error'}`);
+    } catch (err) {
+      console.error('❌ Failed to save driver:', err);
+
+      // Handle validation errors from backend
+      if (err.data?.errors && Array.isArray(err.data.errors)) {
+        setValidationErrors(err.data.errors);
+        const errorMessages = err.data.errors.map((e) => `${e.field}: ${e.message}`).join('\n');
+        alert(`Validation Error:\n${errorMessages}`);
+      } else {
+        const errorMsg = err.message || err.data?.message || 'Unknown error';
+        setError(errorMsg);
+        alert(`Failed to save driver: ${errorMsg}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -142,41 +148,77 @@ export default function DriverForm() {
           {loading ? (
             <div className="text-gray-500">Loading...</div>
           ) : (
-            <div className="bg-white rounded-xl shadow p-4 grid grid-cols-1 gap-4">
+            <div className="bg-white rounded-xl shadow p-6 space-y-4">
+              {/* Error Alert */}
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-800">
+                    <strong>Error:</strong> {error}
+                  </p>
+                </div>
+              )}
+
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm font-semibold text-yellow-800 mb-2">Validation Errors:</p>
+                  <ul className="list-disc list-inside text-sm text-yellow-700">
+                    {validationErrors.map((err, idx) => (
+                      <li key={idx}>
+                        <strong>{err.field}:</strong> {err.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Form Fields */}
               <Input
-                label="Name"
+                label={
+                  <>
+                    Nama Driver <span className="text-red-500">*</span>
+                  </>
+                }
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}
+                placeholder="Masukkan nama driver"
+                required
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                label={
+                  <>
+                    Badge ID / License Number <span className="text-red-500">*</span>
+                  </>
+                }
+                value={form.licenseNumber}
+                onChange={(e) => update('licenseNumber', e.target.value)}
+                placeholder="Contoh: BADGE001"
+                required
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Badge ID"
-                  value={form.badge_id}
-                  onChange={(e) => update('badge_id', e.target.value)}
-                />
-                <Input
-                  label="License Number"
-                  value={form.license_number}
-                  onChange={(e) => update('license_number', e.target.value)}
-                />
-                <Input
-                  label="Phone"
+                  label="Nomor Telepon"
                   value={form.phone}
                   onChange={(e) => update('phone', e.target.value)}
+                  placeholder="+628123456789 atau 08123456789"
+                  type="tel"
+                />
+                <Input
+                  label="Email"
+                  value={form.email}
+                  onChange={(e) => update('email', e.target.value)}
+                  placeholder="driver@example.com"
+                  type="email"
                 />
               </div>
 
               <Input
-                label="Address"
+                label="Alamat / Notes"
                 value={form.address}
                 onChange={(e) => update('address', e.target.value)}
-              />
-              <TextArea
-                label="Notes"
-                rows={3}
-                value={form.notes}
-                onChange={(e) => update('notes', e.target.value)}
+                placeholder="Masukkan alamat atau catatan"
               />
 
               <label className="block">
@@ -186,10 +228,17 @@ export default function DriverForm() {
                   onChange={(e) => update('status', e.target.value)}
                   className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="aktif">Aktif</option>
+                  <option value="nonaktif">Non-Aktif</option>
                 </select>
               </label>
+
+              {/* Help Text */}
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500">
+                  <span className="text-red-500">*</span> Field yang wajib diisi
+                </p>
+              </div>
             </div>
           )}
         </div>
