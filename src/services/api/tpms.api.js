@@ -58,8 +58,6 @@ const fetchTpms = async (fullUrl) => {
     // Kirim API key di beberapa format header untuk kompatibilitas
     if (TPMS_CONFIG.API_KEY) {
       headers['x-api-key'] = TPMS_CONFIG.API_KEY;
-      headers['apiKey'] = TPMS_CONFIG.API_KEY;
-      headers['api-key'] = TPMS_CONFIG.API_KEY;
     }
 
     // Debug log untuk melihat request details
