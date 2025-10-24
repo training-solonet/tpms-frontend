@@ -48,26 +48,54 @@ const buildTpmsUrl = (baseUrl, extraParams = {}) => {
 const fetchTpms = async (fullUrl) => {
   const controller = new AbortController(); // Buat controller untuk membatalkan request
   const t = setTimeout(() => controller.abort(), TPMS_CONFIG.TIMEOUT); // Set timeout untuk membatalkan request otomatis
+
   try {
+    // Build headers dengan API key
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Kirim API key di beberapa format header untuk kompatibilitas
+    if (TPMS_CONFIG.API_KEY) {
+      headers['x-api-key'] = TPMS_CONFIG.API_KEY;
+      headers['apiKey'] = TPMS_CONFIG.API_KEY;
+      headers['api-key'] = TPMS_CONFIG.API_KEY;
+    }
+
+    // Debug log untuk melihat request details
+    console.log('🔍 TPMS Request:', {
+      url: fullUrl,
+      apiKey: TPMS_CONFIG.API_KEY ? `${TPMS_CONFIG.API_KEY.substring(0, 10)}...` : 'MISSING',
+      sn: TPMS_CONFIG.SN,
+      headers: Object.keys(headers),
+    });
+
     const res = await fetch(fullUrl, {
       // Lakukan fetch request
       method: 'GET', // Gunakan metode GET
       mode: 'cors', // Mode CORS untuk bisa baca response
       credentials: 'omit', // Jangan kirim credentials
-      headers: {
-        // Coba kirim API key via header juga (selain query param)
-        'X-API-Key': TPMS_CONFIG.API_KEY || '',
-        'Content-Type': 'application/json',
-      },
+      headers,
       signal: controller.signal, // Pasang signal untuk abort
     });
     clearTimeout(t); // Hapus timeout jika request berhasil
+
+    console.log('✅ TPMS Response:', {
+      status: res.status,
+      statusText: res.statusText,
+      ok: res.ok,
+    });
+
     if (!res.ok) {
       // Jika response tidak OK
       const text = await res.text().catch(() => ''); // Ambil error text
+      console.error('❌ TPMS Error Response:', text);
       throw new Error(`HTTP ${res.status}: ${text || res.statusText}`); // Lempar error dengan detail
     }
     const data = await res.json().catch(() => ({})); // Parse response sebagai JSON
+
+    console.log('📦 TPMS Data:', data);
+
     if (data && data.error) {
       // Jika ada error dari server
       return { success: false, data: null, error: String(data.error) }; // Kembalikan object error
