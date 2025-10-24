@@ -4,8 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { PlayIcon, PauseIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import BaseTrackingMap from './BaseTrackingMap';
-import { tpmsAPI } from '../../services/api'; // BE1 untuk tracking & TPMS
-import { alertsApi } from '../../services/api2'; // BE2 untuk alerts
+import { tpmsAPI } from '../../services/api'; // BE1 untuk tracking & TPMS only
 import TirePressureDisplay from './TirePressureDisplay';
 
 const HistoryTrackingMap = () => {
@@ -290,26 +289,8 @@ const HistoryTrackingMap = () => {
             })
             .filter(Boolean);
         } else {
-          const response = await tpmsAPI.getRealTimeLocations();
-          if (response.success && response.data) {
-            vehicleData =
-              response.data.features?.map((feature) => ({
-                id: feature.properties.truckNumber,
-                driver: feature.properties.driverName || 'Unknown Driver',
-                position: [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
-                status: feature.properties.status?.toLowerCase() || 'offline',
-                speed: feature.properties.speed || 0,
-                heading: feature.properties.heading || 0,
-                fuel: feature.properties.fuelPercentage || 0,
-                battery: 90,
-                signal: 'good',
-                lastUpdate: new Date(),
-                route: 'Mining Area',
-                load: feature.properties.payloadTons
-                  ? `Coal - ${feature.properties.payloadTons} tons`
-                  : 'Unknown',
-              })) || [];
-          }
+          // Jika TPMS gagal, tidak ada fallback
+          console.error('❌ TPMS failed, no vehicles loaded');
         }
 
         setVehicles(vehicleData);
@@ -681,12 +662,8 @@ const HistoryTrackingMap = () => {
           endTime: end.toISOString(),
           limit: 500,
         };
-        const res = await alertsApi.getAll(params); // Pakai alertsApi dari BE2
-        if (res.success && Array.isArray(res.data)) {
-          setAlertCount(res.data.length);
-        } else {
-          setAlertCount(null);
-        }
+        // Alerts tidak tersedia dari TPMS, set count ke 0
+        setAlertCount(0);
       } catch (e) {
         setAlertCount(null);
       } finally {

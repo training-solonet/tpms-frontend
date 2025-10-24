@@ -16,6 +16,15 @@ export const miningAreaApi = {
   },
 
   /**
+   * Get mining area boundaries (GeoJSON)
+   * @returns {Promise}
+   */
+  getBoundaries: async () => {
+    const response = await api2Instance.get('/mining-area/boundaries');
+    return response;
+  },
+
+  /**
    * Get trucks in specific zone
    * @param {string} zoneName
    * @returns {Promise}

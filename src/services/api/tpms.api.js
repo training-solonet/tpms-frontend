@@ -54,7 +54,7 @@ const fetchTpms = async (fullUrl) => {
     const res = await fetch(fullUrl, {
       // Lakukan fetch request
       method: 'GET', // Gunakan metode GET
-      mode: 'cors', // Aktifkan CORS
+      mode: 'no-cors', // Aktifkan CORS
       credentials: 'omit', // Jangan kirim credentials
       headers: isSameOrigin && TPMS_CONFIG.API_KEY ? { 'x-api-key': TPMS_CONFIG.API_KEY } : {}, // Tambahkan API key di header jika same origin
       signal: controller.signal, // Pasang signal untuk abort
