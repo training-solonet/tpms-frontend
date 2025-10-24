@@ -20,7 +20,7 @@ export const miningAreaApi = {
    * @returns {Promise}
    */
   getBoundaries: async () => {
-    const response = await api2Instance.get('/mining-area/boundaries');
+    const response = await api2Instance.get('/mining-area');
     return response;
   },
 
