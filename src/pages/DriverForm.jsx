@@ -116,7 +116,7 @@ export default function DriverForm() {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-gray-900">

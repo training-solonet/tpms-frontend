@@ -59,7 +59,7 @@ export default function TelemetryTemperatureForm() {
         const flattened = [];
         for (const t of trucks) {
           try {
-            // Try to get real Hub Temperature data from backend
+            // Get real Hub Temperature data from backend
             let hubData = [];
 
             // Check if backend provides Hub data in expected format
@@ -67,18 +67,11 @@ export default function TelemetryTemperatureForm() {
               hubData = t.sensors.hub;
             } else if (t.hubData && Array.isArray(t.hubData)) {
               hubData = t.hubData;
-            } else {
-              // Generate realistic Hub Temperature data based on protocol specification
-              hubData = Array.from({ length: 6 }, (_, idx) => ({
-                tireNo: idx + 1, // Hub position number (same as tire position)
-                tempValue: Math.round((65 + Math.random() * 35) * 10) / 10, // 65-100°C (realistic hub temperature)
-                bat: Math.floor(Math.random() * 5), // 0-4 battery level as per protocol
-                exType: Math.random() > 0.9 ? (Math.random() > 0.5 ? '1,3' : '3') : '', // Occasional brake pad abnormal or high temp
-                simNumber:
-                  t.simNumber ||
-                  `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-                lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString(),
-              }));
+            }
+
+            // Skip truck if no hub data available
+            if (!hubData || hubData.length === 0) {
+              continue;
             }
 
             const driverName = t.driver?.name || '-';
@@ -205,7 +198,7 @@ export default function TelemetryTemperatureForm() {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">

@@ -7,7 +7,7 @@ import TailwindFleetOverview from '../components/dashboard/TailwindFleetOverview
 const Dashboard = () => {
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header with primary CTA */}
           <div className="mb-8 flex items-center justify-between">

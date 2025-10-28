@@ -60,7 +60,7 @@ export default function TelemetryTiresForm() {
         const flattened = [];
         for (const t of trucks) {
           try {
-            // Try to get real TPMS data from backend
+            // Get real TPMS data from backend
             let tpmsData = [];
 
             // Check if backend provides TPMS data in expected format
@@ -68,19 +68,11 @@ export default function TelemetryTiresForm() {
               tpmsData = t.sensors.tpms;
             } else if (t.tpmsData && Array.isArray(t.tpmsData)) {
               tpmsData = t.tpmsData;
-            } else {
-              // Generate realistic TPMS data based on protocol specification
-              tpmsData = Array.from({ length: 6 }, (_, idx) => ({
-                tireNo: idx + 1,
-                tiprValue: Math.round((220 + Math.random() * 80) * 10) / 10, // 220-300 kPa (realistic truck tire pressure)
-                tempValue: Math.round((35 + Math.random() * 25) * 10) / 10, // 35-60°C (realistic tire temperature)
-                bat: Math.floor(Math.random() * 5), // 0-4 battery level as per protocol
-                exType: Math.random() > 0.85 ? (Math.random() > 0.5 ? '1' : '3') : '', // Occasional exceptions
-                simNumber:
-                  t.simNumber ||
-                  `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-                lastUpdate: new Date(Date.now() - Math.random() * 1800000).toISOString(),
-              }));
+            }
+
+            // Skip truck if no TPMS data available
+            if (!tpmsData || tpmsData.length === 0) {
+              continue;
             }
 
             const driverName = t.driver?.name || '-';
@@ -185,7 +177,7 @@ export default function TelemetryTiresForm() {
         r.truckName.toLowerCase().includes(q) ||
         String(r.tireNo).includes(q) ||
         r.driverName.toLowerCase().includes(q) ||
-        r.sensor.data.simNumber.toLowerCase().includes(q);
+        (r.simNumber || '').toLowerCase().includes(q);
       const matchesCluster = !cluster || r.cluster === cluster;
       return matchesQ && matchesCluster;
     });
@@ -203,7 +195,7 @@ export default function TelemetryTiresForm() {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">

@@ -319,7 +319,7 @@ const DeviceCenter = () => {
   if (loading) {
     return (
       <TailwindLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6">
           <div className="max-w-7xl mx-auto text-sm text-gray-600">Loading devices...</div>
         </div>
       </TailwindLayout>
@@ -328,7 +328,7 @@ const DeviceCenter = () => {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
             <div>
