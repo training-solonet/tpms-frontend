@@ -1,9 +1,11 @@
 # Fix untuk Masalah Redirect ke Login
 
 ## Masalah
+
 Halaman terus diarahkan ke login setiap kali dibuka.
 
 ## Penyebab
+
 1. Tidak ada token autentikasi di localStorage
 2. Backend belum siap / tidak terkoneksi
 3. Sedang dalam mode development
@@ -28,6 +30,7 @@ VITE_TRACKING_WS_URL=ws://localhost:8080/ws
 ```
 
 2. Restart dev server:
+
 ```powershell
 # Stop server (Ctrl+C)
 npm run dev
@@ -58,12 +61,15 @@ Buka Browser Console (F12) dan jalankan:
 ```javascript
 // Set dummy token untuk testing
 localStorage.setItem('authToken', 'dummy-token-for-testing');
-localStorage.setItem('user', JSON.stringify({
-  id: 1,
-  username: 'testuser',
-  name: 'Test User',
-  role: 'admin'
-}));
+localStorage.setItem(
+  'user',
+  JSON.stringify({
+    id: 1,
+    username: 'testuser',
+    name: 'Test User',
+    role: 'admin',
+  })
+);
 
 // Reload page
 location.reload();
@@ -96,16 +102,19 @@ location.reload();
 ## Troubleshooting
 
 ### Browser masih redirect ke login setelah set `.env`
+
 - Pastikan file `.env` ada di root project (sejajar dengan `package.json`)
 - Restart dev server (Ctrl+C lalu `npm run dev`)
 - Clear browser cache & localStorage (F12 → Application → Clear Storage)
 
 ### Login berhasil tapi langsung logout
+
 - Cek response dari API login di Network tab (F12)
 - Pastikan API return `{ success: true, data: { token, user } }`
 - Cek console log untuk error message
 
 ### Token ada tapi masih redirect
+
 - Token mungkin expired atau invalid
 - Cek API interceptor di `src/services/api2/config.js`
 - Clear localStorage dan login ulang

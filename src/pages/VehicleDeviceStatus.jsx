@@ -123,15 +123,16 @@ const VehicleDeviceStatus = () => {
 
   // Stats calculation
   const stats = useMemo(() => {
-    const activeCount = vehicles.filter(v => v.status === 'active').length;
-    const warningCount = vehicles.filter(v => 
-      v.hostBatteryStatus === 'low' || 
-      v.repeater1Status === 'low' || 
-      v.repeater2Status === 'low' ||
-      v.signalStrength < 50
+    const activeCount = vehicles.filter((v) => v.status === 'active').length;
+    const warningCount = vehicles.filter(
+      (v) =>
+        v.hostBatteryStatus === 'low' ||
+        v.repeater1Status === 'low' ||
+        v.repeater2Status === 'low' ||
+        v.signalStrength < 50
     ).length;
-    const offlineCount = vehicles.filter(v => v.status === 'offline').length;
-    
+    const offlineCount = vehicles.filter((v) => v.status === 'offline').length;
+
     return {
       total: vehicles.length,
       active: activeCount,
@@ -225,8 +226,18 @@ const VehicleDeviceStatus = () => {
                   placeholder="Search by truck ID or name..."
                   className="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <svg className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </div>
 
@@ -241,8 +252,18 @@ const VehicleDeviceStatus = () => {
                   <option value="idle">Idle</option>
                   <option value="offline">Offline</option>
                 </select>
-                <svg className="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
 
@@ -257,8 +278,18 @@ const VehicleDeviceStatus = () => {
                   <option value={48}>48 / page</option>
                   <option value={96}>96 / page</option>
                 </select>
-                <svg className="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="absolute right-2.5 top-2.5 w-4 h-4 text-slate-400 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
@@ -266,9 +297,14 @@ const VehicleDeviceStatus = () => {
 
           {/* Cluster filter */}
           <div className="p-4 flex flex-wrap items-center gap-4">
-            <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Cluster Range:</div>
+            <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+              Cluster Range:
+            </div>
             {['1-199', '200-399', '400-599', '600-799', '800-999'].map((range) => (
-              <label key={range} className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <label
+                key={range}
+                className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer"
+              >
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
@@ -305,7 +341,11 @@ const VehicleDeviceStatus = () => {
         {/* Pagination and Results Info */}
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm text-slate-600">
-            Showing <span className="font-semibold text-slate-900">{total === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + pageSize, total)}</span> of <span className="font-semibold text-slate-900">{total}</span> vehicles
+            Showing{' '}
+            <span className="font-semibold text-slate-900">
+              {total === 0 ? 0 : startIdx + 1}-{Math.min(startIdx + pageSize, total)}
+            </span>{' '}
+            of <span className="font-semibold text-slate-900">{total}</span> vehicles
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -323,7 +363,8 @@ const VehicleDeviceStatus = () => {
               Previous
             </button>
             <span className="px-3 py-1.5 text-sm text-slate-700">
-              Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{pageCount}</span>
+              Page <span className="font-semibold">{currentPage}</span> of{' '}
+              <span className="font-semibold">{pageCount}</span>
             </span>
             <button
               disabled={currentPage >= pageCount}
@@ -371,7 +412,9 @@ const VehicleDeviceStatus = () => {
               {/* Vehicle Info */}
               <div className="p-5">
                 <div className="mb-4">
-                  <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">Vehicle ID</div>
+                  <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">
+                    Vehicle ID
+                  </div>
                   <div className="text-xl font-bold text-slate-900">{vehicle.id}</div>
                 </div>
 
@@ -379,18 +422,25 @@ const VehicleDeviceStatus = () => {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <div className="text-xs text-slate-500 mb-1">Speed</div>
-                    <div className="text-lg font-semibold text-slate-900">{vehicle.speed} <span className="text-sm font-normal text-slate-500">km/h</span></div>
+                    <div className="text-lg font-semibold text-slate-900">
+                      {vehicle.speed}{' '}
+                      <span className="text-sm font-normal text-slate-500">km/h</span>
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-slate-500 mb-1">SIM Number</div>
-                    <div className="text-sm font-medium text-slate-700">{vehicle.simNumber || '-'}</div>
+                    <div className="text-sm font-medium text-slate-700">
+                      {vehicle.simNumber || '-'}
+                    </div>
                   </div>
                 </div>
 
                 {/* IoT Device Status Section */}
                 <div className="border-t border-slate-200 pt-4 mt-4">
-                  <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">IoT Device Status</div>
-                  
+                  <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">
+                    IoT Device Status
+                  </div>
+
                   <div className="space-y-2.5">
                     {/* Signal Strength */}
                     <div className="flex items-center justify-between">
@@ -402,7 +452,9 @@ const VehicleDeviceStatus = () => {
                         <span
                           className={`w-2 h-2 rounded-full ${vehicle.signalStrength > 80 ? 'bg-emerald-500' : vehicle.signalStrength > 50 ? 'bg-amber-500' : 'bg-red-500'}`}
                         ></span>
-                        <span className="text-sm font-semibold text-slate-900">{vehicle.signalStrength}%</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {vehicle.signalStrength}%
+                        </span>
                         <span className="text-xs text-slate-500">({vehicle.networkType})</span>
                       </div>
                     </div>
@@ -417,7 +469,9 @@ const VehicleDeviceStatus = () => {
                         <span
                           className={`w-2 h-2 rounded-full ${vehicle.hostBatteryStatus === 'good' ? 'bg-emerald-500' : vehicle.hostBatteryStatus === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}
                         ></span>
-                        <span className="text-sm font-semibold text-slate-900">{vehicle.bat1}/4</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {vehicle.bat1}/4
+                        </span>
                       </div>
                     </div>
 
@@ -431,7 +485,9 @@ const VehicleDeviceStatus = () => {
                         <span
                           className={`w-2 h-2 rounded-full ${vehicle.repeater1Status === 'good' ? 'bg-emerald-500' : vehicle.repeater1Status === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}
                         ></span>
-                        <span className="text-sm font-semibold text-slate-900">{vehicle.bat2}/4</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {vehicle.bat2}/4
+                        </span>
                       </div>
                     </div>
 
@@ -445,7 +501,9 @@ const VehicleDeviceStatus = () => {
                         <span
                           className={`w-2 h-2 rounded-full ${vehicle.repeater2Status === 'good' ? 'bg-emerald-500' : vehicle.repeater2Status === 'low' ? 'bg-amber-500' : 'bg-red-500'}`}
                         ></span>
-                        <span className="text-sm font-semibold text-slate-900">{vehicle.bat3}/4</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {vehicle.bat3}/4
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -455,11 +513,15 @@ const VehicleDeviceStatus = () => {
                 <div className="border-t border-slate-200 pt-4 mt-4 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">GPS Position</span>
-                    <span className="font-mono text-slate-700">{vehicle.lat.toFixed(6)}, {vehicle.lng.toFixed(6)}</span>
+                    <span className="font-mono text-slate-700">
+                      {vehicle.lat.toFixed(6)}, {vehicle.lng.toFixed(6)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500">Last Update</span>
-                    <span className="text-slate-700">{new Date(vehicle.lastUpdate).toLocaleString('id-ID')}</span>
+                    <span className="text-slate-700">
+                      {new Date(vehicle.lastUpdate).toLocaleString('id-ID')}
+                    </span>
                   </div>
                 </div>
               </div>

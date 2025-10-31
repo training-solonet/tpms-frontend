@@ -5,7 +5,7 @@ import { trucksApi } from '../../services/api2';
 export default function FuelMonitoring() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTruck, setSelectedTruck] = useState('');
@@ -25,7 +25,7 @@ export default function FuelMonitoring() {
         console.log('✅ Trucks response:', res);
 
         const trucks = res?.data?.trucks || res?.data || [];
-        
+
         if (!Array.isArray(trucks) || trucks.length === 0) {
           console.warn('No trucks data available');
           if (mounted) {
@@ -44,9 +44,10 @@ export default function FuelMonitoring() {
             truckName: truck.truck_number || 'N/A',
             fuelLevel: fuel.fuel_level || 0,
             fuelCapacity: fuel.fuel_capacity || 100,
-            fuelPercentage: fuel.fuel_level && fuel.fuel_capacity 
-              ? (fuel.fuel_level / fuel.fuel_capacity) * 100 
-              : 0,
+            fuelPercentage:
+              fuel.fuel_level && fuel.fuel_capacity
+                ? (fuel.fuel_level / fuel.fuel_capacity) * 100
+                : 0,
             consumption: fuel.consumption_rate || 0,
             efficiency: fuel.fuel_efficiency || 0,
             timestamp: fuel.timestamp || new Date().toISOString(),
@@ -93,8 +94,7 @@ export default function FuelMonitoring() {
       const term = searchTerm.toLowerCase();
       result = result.filter(
         (item) =>
-          item.truckCode.toLowerCase().includes(term) ||
-          item.truckName.toLowerCase().includes(term)
+          item.truckCode.toLowerCase().includes(term) || item.truckName.toLowerCase().includes(term)
       );
     }
 
@@ -117,9 +117,10 @@ export default function FuelMonitoring() {
     const good = filteredData.filter((item) => getStatus(item) === 'Good').length;
     const low = filteredData.filter((item) => getStatus(item) === 'Low').length;
     const critical = filteredData.filter((item) => getStatus(item) === 'Critical').length;
-    const avgFuel = filteredData.length > 0 
-      ? filteredData.reduce((sum, item) => sum + item.fuelPercentage, 0) / filteredData.length 
-      : 0;
+    const avgFuel =
+      filteredData.length > 0
+        ? filteredData.reduce((sum, item) => sum + item.fuelPercentage, 0) / filteredData.length
+        : 0;
 
     return { total, good, low, critical, avgFuel };
   }, [filteredData]);
@@ -150,7 +151,9 @@ export default function FuelMonitoring() {
     };
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}
+      >
         {status}
       </span>
     );
@@ -162,7 +165,9 @@ export default function FuelMonitoring() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Fuel Monitoring</h1>
-          <p className="mt-1 text-sm text-gray-500">Real-time fuel level and consumption tracking</p>
+          <p className="mt-1 text-sm text-gray-500">
+            Real-time fuel level and consumption tracking
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -172,8 +177,18 @@ export default function FuelMonitoring() {
               <div className="flex items-center">
                 <div className="shrink-0">
                   <div className="rounded-md bg-blue-500 p-3">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                    <svg
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -192,8 +207,18 @@ export default function FuelMonitoring() {
               <div className="flex items-center">
                 <div className="shrink-0">
                   <div className="rounded-md bg-green-500 p-3">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -212,15 +237,27 @@ export default function FuelMonitoring() {
               <div className="flex items-center">
                 <div className="shrink-0">
                   <div className="rounded-md bg-yellow-500 p-3">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Low Fuel</dt>
-                    <dd className="text-lg font-semibold text-gray-900">{stats.low + stats.critical}</dd>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {stats.low + stats.critical}
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -232,15 +269,27 @@ export default function FuelMonitoring() {
               <div className="flex items-center">
                 <div className="shrink-0">
                   <div className="rounded-md bg-purple-500 p-3">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    <svg
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                      />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Avg Fuel</dt>
-                    <dd className="text-lg font-semibold text-gray-900">{stats.avgFuel.toFixed(1)}%</dd>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {stats.avgFuel.toFixed(1)}%
+                    </dd>
                   </dl>
                 </div>
               </div>
@@ -256,8 +305,18 @@ export default function FuelMonitoring() {
               {/* Search */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
                 <input
@@ -285,7 +344,12 @@ export default function FuelMonitoring() {
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </div>
@@ -305,7 +369,12 @@ export default function FuelMonitoring() {
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </div>
@@ -324,7 +393,12 @@ export default function FuelMonitoring() {
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </div>
@@ -345,8 +419,18 @@ export default function FuelMonitoring() {
               </div>
             ) : paginatedData.length === 0 ? (
               <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                  />
                 </svg>
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No fuel data</h3>
                 <p className="mt-1 text-sm text-gray-500">No trucks found matching your filters.</p>
@@ -355,14 +439,30 @@ export default function FuelMonitoring() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Truck</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Fuel Level</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Capacity</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Percentage</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Consumption Rate</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Efficiency</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Last Update</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Truck
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Fuel Level
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Capacity
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Percentage
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Consumption Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Efficiency
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Last Update
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -385,10 +485,13 @@ export default function FuelMonitoring() {
                             <div className="shrink-0 h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
                               <div
                                 className={`h-full ${
-                                  truck.fuelPercentage > 50 ? 'bg-green-500' : 
-                                  truck.fuelPercentage > 25 ? 'bg-yellow-500' : 
-                                  truck.fuelPercentage > 10 ? 'bg-orange-500' :
-                                  'bg-red-500'
+                                  truck.fuelPercentage > 50
+                                    ? 'bg-green-500'
+                                    : truck.fuelPercentage > 25
+                                      ? 'bg-yellow-500'
+                                      : truck.fuelPercentage > 10
+                                        ? 'bg-orange-500'
+                                        : 'bg-red-500'
                                 }`}
                                 style={{ width: `${truck.fuelPercentage}%` }}
                               ></div>
@@ -441,20 +544,35 @@ export default function FuelMonitoring() {
                 <div>
                   <p className="text-sm text-gray-700">
                     Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                    <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredData.length)}</span> of{' '}
-                    <span className="font-medium">{filteredData.length}</span> results
+                    <span className="font-medium">
+                      {Math.min(startIndex + itemsPerPage, filteredData.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{filteredData.length}</span> results
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination"
+                  >
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </button>
                     <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
@@ -466,8 +584,18 @@ export default function FuelMonitoring() {
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </button>
                   </nav>

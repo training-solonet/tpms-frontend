@@ -13,7 +13,7 @@ export const authApi = {
    */
   login: async (credentials) => {
     console.log('🔐 Attempting login...', { username: credentials.username });
-    
+
     const response = await api2Instance.post('/auth/login', credentials);
 
     console.log('📥 Login response:', response);

@@ -157,7 +157,10 @@ const AppRoutes = () => {
 
       {/* Protected Routes - Telemetry (Old) - REDIRECT to Monitoring */}
       <Route path="/telemetry/tires" element={<Navigate to="/monitoring/tires" replace />} />
-      <Route path="/telemetry/temperature" element={<Navigate to="/monitoring/temperature" replace />} />
+      <Route
+        path="/telemetry/temperature"
+        element={<Navigate to="/monitoring/temperature" replace />}
+      />
       <Route path="/telemetry/fuel" element={<Navigate to="/monitoring/fuel" replace />} />
 
       {/* Protected Routes - Monitoring (New Design) */}
