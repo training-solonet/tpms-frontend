@@ -127,7 +127,7 @@ export default function TelemetryFuelForm() {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">Telemetry - Fuel Levels</h1>

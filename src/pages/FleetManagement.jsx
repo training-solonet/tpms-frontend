@@ -101,7 +101,7 @@ const FleetManagement = () => {
   if (loading) {
     return (
       <TailwindLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
@@ -112,7 +112,7 @@ const FleetManagement = () => {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-100">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">

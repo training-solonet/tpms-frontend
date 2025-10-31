@@ -23,9 +23,9 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
           {/* Background Pattern */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] [background-size:32px_32px]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] bg-size-[32px_32px]"></div>
 
           <div className="relative max-w-md w-full">
             {/* Error Card */}
@@ -33,12 +33,12 @@ class ErrorBoundary extends React.Component {
               {/* Header */}
               <div className="text-center mb-6">
                 {/* Company Logo */}
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl mb-4 shadow-lg">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-600 to-blue-800 rounded-xl mb-4 shadow-lg">
                   <Building2 className="w-8 h-8 text-white" />
                 </div>
 
                 {/* Error Icon */}
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl mb-4 shadow-lg">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-red-500 to-red-600 rounded-xl mb-4 shadow-lg">
                   <AlertTriangle className="w-8 h-8 text-white" />
                 </div>
 
@@ -52,10 +52,10 @@ class ErrorBoundary extends React.Component {
               {this.state.error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-medium text-red-800 mb-1">Error Details</h3>
-                      <p className="text-xs text-red-700 font-mono break-words">
+                      <p className="text-xs text-red-700 font-mono wrap-break-word">
                         {this.state.error.toString()}
                       </p>
                     </div>
@@ -67,7 +67,7 @@ class ErrorBoundary extends React.Component {
               <div className="space-y-3">
                 <button
                   onClick={() => window.location.reload()}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                  className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                 >
                   <RefreshCw className="w-5 h-5" />
                   Reload Application
@@ -79,7 +79,7 @@ class ErrorBoundary extends React.Component {
                     sessionStorage.clear();
                     window.location.reload();
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                  className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                 >
                   <Trash2 className="w-5 h-5" />
                   Clear Cache & Reload

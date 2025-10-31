@@ -51,7 +51,7 @@ const TirePressureDisplay = ({
     }
 
     // Assign sequential tire numbers across axles and sides
-    let tireNo = 1;
+    let tireNo = 0;
     const layout = axles.map((axle) => {
       const left = Array.from({ length: axle.leftCount }).map(() => ({ tireNo: tireNo++ }));
       const right = Array.from({ length: axle.rightCount }).map(() => ({ tireNo: tireNo++ }));

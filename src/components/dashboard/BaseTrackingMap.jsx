@@ -344,7 +344,7 @@ const BaseTrackingMap = ({
           }`}
         >
           {/* Scrollable sidebar content area */}
-          <div className="flex-1 overflow-y-auto bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex-1 overflow-y-auto bg-linear-to-r from-blue-50 to-indigo-50">
             <div className="p-4 border-b border-gray-200">{sidebarContent}</div>
           </div>
         </div>

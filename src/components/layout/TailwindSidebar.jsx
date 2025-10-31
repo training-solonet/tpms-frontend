@@ -32,7 +32,6 @@ const navigation = [
     children: [
       { name: 'Fleet Groups', href: '/fleet/groups' },
       { name: 'All Vehicles', href: '/trucks' },
-      { name: 'Vehicle & IoT Status', href: '/fleet/status' },
       { name: 'Drivers', href: '/drivers' },
       { name: 'Vendors', href: '/vendors' },
     ],
@@ -40,17 +39,23 @@ const navigation = [
   {
     name: 'IoT Devices',
     icon: CpuChipIcon,
-    href: '/devices',
-  },
-  {
-    name: 'Telemetry',
-    icon: SignalIcon,
     children: [
-      { name: 'Tire Pressure', href: '/telemetry/tires' },
-      { name: 'Hub Temperature', href: '/telemetry/temperature' },
-      { name: 'Fuel Levels', href: '/telemetry/fuel' },
+      { name: 'Device Center', href: '/devices' },
+      { name: 'Sensor Management', href: '/sensors' },
     ],
   },
+  {
+    name: 'Monitoring',
+    icon: ChartBarIcon,
+    children: [
+      { name: 'Vehicle & IoT Status', href: '/fleet/status' },
+      { name: 'Live Tire View', href: '/monitoring/live-view' },
+      { name: 'Tire Pressure', href: '/monitoring/tires' },
+      { name: 'Temperature', href: '/monitoring/temperature' },
+      { name: 'Fuel Level', href: '/monitoring/fuel' },
+    ],
+  },
+
   // { name: 'Analytics', href: '/analytics', icon: ChartBarIcon, current: false },
   // { name: 'Reports', href: '/reports', icon: DocumentTextIcon, current: false },
   { name: 'Alerts', href: '/alerts', icon: BellIcon },
@@ -101,7 +106,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
   };
 
   const SidebarContent = () => (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gradient-to-b from-indigo-400 via-indigo-700 to-indigo-900 px-6 pb-4 backdrop-blur-xl border-r border-white/10 pointer-events-auto">
+    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-linear-to-b from-indigo-400 via-indigo-700 to-indigo-900 px-6 pb-4 backdrop-blur-xl border-r border-white/10 pointer-events-auto">
       <div className="flex h-16 shrink-0 items-center mb-6">
         <div className="flex items-center">
           <img src="/icon2.png" alt="Truck" className="h-50 w-50 object-contain relative top-5" />
@@ -127,7 +132,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                           active
                             ? 'bg-white/20 text-white shadow-md'
                             : 'text-indigo-200 hover:text-white hover:bg-white/10',
-                          'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-200 border border-transparent hover:border-white/20 cursor-pointer relative z-[5001]'
+                          'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-200 border border-transparent hover:border-white/20 cursor-pointer relative z-5001'
                         )}
                       >
                         <item.icon
@@ -147,7 +152,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                             active
                               ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm border border-white/30'
                               : 'text-indigo-200 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-md',
-                            'group flex w-full gap-x-3 rounded-xl p-3 text-left text-sm leading-6 font-semibold transition-all duration-200 relative z-[5001]'
+                            'group flex w-full gap-x-3 rounded-xl p-3 text-left text-sm leading-6 font-semibold transition-all duration-200 relative z-5001'
                           )}
                         >
                           <item.icon
@@ -184,7 +189,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
                                     isActiveHref(subItem.href)
                                       ? 'bg-white/20 text-white shadow-inner border border-white/20'
                                       : 'text-indigo-200 hover:text-white hover:bg-white/10',
-                                    'block rounded-md py-2 pl-9 pr-2 text-sm leading-6 cursor-pointer relative z-[5001]'
+                                    'block rounded-md py-2 pl-9 pr-2 text-sm leading-6 cursor-pointer relative z-5001'
                                   )}
                                   aria-current={isActiveHref(subItem.href) ? 'page' : undefined}
                                 >
@@ -273,7 +278,7 @@ const TailwindSidebar = ({ sidebarOpen, setSidebarOpen }) => {
       </Transition.Root>
 
       {/* Static sidebar for desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-[4000] lg:flex lg:w-72 lg:flex-col pointer-events-auto">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-4000 lg:flex lg:w-72 lg:flex-col pointer-events-auto">
         <SidebarContent />
       </div>
     </>
