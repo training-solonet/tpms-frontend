@@ -12,7 +12,8 @@ import Login from '../components/auth/Login';
 import Dashboard from '../pages/Dashboard';
 import FleetManagement from '../pages/FleetManagement';
 import FleetGroups from '../pages/FleetGroups';
-import DeviceCenter from '../pages/DeviceCenter';
+import Devices from '../pages/listdata/Devices';
+import Sensors from '../pages/listdata/Sensors';
 import VehicleDeviceStatus from '../pages/VehicleDeviceStatus';
 import LiveTracking from '../pages/LiveTracking';
 import HistoryTracking from '../pages/HistoryTracking';
@@ -20,15 +21,17 @@ import Analytics from '../pages/Analytics';
 import Reports from '../pages/Reports';
 import Alerts from '../pages/Alerts';
 import Settings from '../pages/Settings';
-import TrucksFormList from '../pages/TrucksFormList';
-import TruckForm from '../pages/TruckForm';
-import TelemetryTiresForm from '../pages/TelemetryTiresForm';
-import TelemetryTemperatureForm from '../pages/TelemetryTemperatureForm';
-import TelemetryFuelForm from '../pages/TelemetryFuelForm';
-import VendorsList from '../pages/VendorsList';
-import VendorForm from '../pages/VendorForm';
-import DriversList from '../pages/DriversList';
-import DriverForm from '../pages/DriverForm';
+import TrucksFormList from '../pages/listdata/TrucksList';
+import TruckForm from '../pages/form/TruckForm';
+// Monitoring Pages with All Vehicles Design
+import TirePressureMonitoring from '../pages/monitoring/TirePressureMonitoring';
+import TemperatureMonitoring from '../pages/monitoring/TemperatureMonitoring';
+import FuelMonitoring from '../pages/monitoring/FuelMonitoring';
+import LiveTireView from '../pages/monitoring/LiveTireView';
+import VendorsList from '../pages/listdata/VendorsList';
+import VendorForm from '../pages/form/VendorForm';
+import DriversList from '../pages/listdata/DriversList';
+import DriverForm from '../pages/form/DriverForm';
 
 /**
  * Application Routes Configuration
@@ -116,12 +119,20 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Protected Routes - Devices */}
+      {/* Protected Routes - IoT Devices */}
       <Route
         path="/devices"
         element={
           <ProtectedRoute>
-            <DeviceCenter />
+            <Devices />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sensors"
+        element={
+          <ProtectedRoute>
+            <Sensors />
           </ProtectedRoute>
         }
       />
@@ -144,28 +155,44 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Protected Routes - Telemetry */}
-      <Route
-        path="/telemetry/tires"
-        element={
-          <ProtectedRoute>
-            <TelemetryTiresForm />
-          </ProtectedRoute>
-        }
-      />
+      {/* Protected Routes - Telemetry (Old) - REDIRECT to Monitoring */}
+      <Route path="/telemetry/tires" element={<Navigate to="/monitoring/tires" replace />} />
       <Route
         path="/telemetry/temperature"
+        element={<Navigate to="/monitoring/temperature" replace />}
+      />
+      <Route path="/telemetry/fuel" element={<Navigate to="/monitoring/fuel" replace />} />
+
+      {/* Protected Routes - Monitoring (New Design) */}
+      <Route
+        path="/monitoring/tires"
         element={
           <ProtectedRoute>
-            <TelemetryTemperatureForm />
+            <TirePressureMonitoring />
           </ProtectedRoute>
         }
       />
       <Route
-        path="/telemetry/fuel"
+        path="/monitoring/temperature"
         element={
           <ProtectedRoute>
-            <TelemetryFuelForm />
+            <TemperatureMonitoring />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/monitoring/fuel"
+        element={
+          <ProtectedRoute>
+            <FuelMonitoring />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/monitoring/live-view"
+        element={
+          <ProtectedRoute>
+            <LiveTireView />
           </ProtectedRoute>
         }
       />

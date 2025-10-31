@@ -9,12 +9,12 @@ const ComingSoon = ({
 }) => {
   return (
     <TailwindLayout>
-      <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
+      <div className="h-full flex items-center justify-center bg-linear-to-br from-slate-50 to-indigo-50">
         <div className="max-w-md w-full mx-auto text-center p-8">
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/20">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 bg-linear-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                   <ClockIcon className="w-10 h-10 text-white" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">

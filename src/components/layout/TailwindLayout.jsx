@@ -6,7 +6,7 @@ const TailwindLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="relative h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-hidden">
+    <div className="relative h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-hidden">
       {/* Sidebar */}
       <TailwindSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 

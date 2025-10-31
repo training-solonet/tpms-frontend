@@ -124,7 +124,7 @@ const Alerts = () => {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-100">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
@@ -225,21 +225,21 @@ const Alerts = () => {
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">
                       Alert
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">
                       Vehicle
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">
                       Severity
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">
                       Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase bg-gray-50">
                       Status
                     </th>
                     <th className="px-6 py-3"></th>

@@ -252,7 +252,7 @@ const TailwindFleetOverview = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
 
@@ -359,7 +359,7 @@ const TailwindFleetOverview = () => {
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                       >
                         <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0">
+                          <div className="shrink-0">
                             <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center">
                               <span className="text-sm font-medium text-white">
                                 {vehicle.id.split('-')[1]}

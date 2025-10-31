@@ -12,12 +12,24 @@ export const authApi = {
    * @returns {Promise} - { success, data: { token, user }, message }
    */
   login: async (credentials) => {
+    console.log('🔐 Attempting login...', { username: credentials.username });
+
     const response = await api2Instance.post('/auth/login', credentials);
+
+    console.log('📥 Login response:', response);
 
     // Store token and user data
     if (response.data?.token) {
+      console.log('💾 Storing token and user data');
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+    } else if (response.token) {
+      // Handle case where token is at root level
+      console.log('💾 Storing token and user data (root level)');
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user || response.data?.user));
+    } else {
+      console.warn('⚠️ No token found in response');
     }
 
     return response;

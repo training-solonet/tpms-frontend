@@ -123,7 +123,7 @@ const CommandPalette = ({ open, setOpen }) => {
 
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-[2000]" onClose={setOpen}>
+      <Dialog as="div" className="relative z-2000" onClose={setOpen}>
         <Transition.Child
           as={Fragment}
           enter="transition-opacity ease-linear duration-150"
