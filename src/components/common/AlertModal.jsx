@@ -2,13 +2,13 @@ import React from 'react';
 
 /**
  * Modern Alert Modal Component for CRUD Operations
- * 
+ *
  * Types:
  * - success: Data saved/created successfully
  * - error: Operation failed
  * - warning: Delete confirmation
  * - info: Information message
- * 
+ *
  * @example
  * <AlertModal
  *   isOpen={showAlert}
@@ -59,7 +59,12 @@ const AlertModal = ({
       icon: (
         <svg className="w-16 h-16 mx-auto" viewBox="0 0 100 100" fill="none">
           <circle cx="50" cy="50" r="45" stroke="#F44336" strokeWidth="6" fill="none" />
-          <path d="M35 35 L65 65 M65 35 L35 65" stroke="#F44336" strokeWidth="6" strokeLinecap="round" />
+          <path
+            d="M35 35 L65 65 M65 35 L35 65"
+            stroke="#F44336"
+            strokeWidth="6"
+            strokeLinecap="round"
+          />
         </svg>
       ),
       iconBg: 'bg-red-50',
@@ -122,7 +127,15 @@ const AlertModal = ({
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              fill={type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : type === 'warning' ? '#FF9800' : '#2196F3'}
+              fill={
+                type === 'success'
+                  ? '#4CAF50'
+                  : type === 'error'
+                    ? '#F44336'
+                    : type === 'warning'
+                      ? '#FF9800'
+                      : '#2196F3'
+              }
               fillOpacity="1"
               d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,96C1248,75,1344,53,1392,42.7L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
             />
@@ -130,7 +143,9 @@ const AlertModal = ({
         </div>
 
         {/* Icon */}
-        <div className={`${config.iconBg} rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 relative z-10`}>
+        <div
+          className={`${config.iconBg} rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6 relative z-10`}
+        >
           {config.icon}
         </div>
 
