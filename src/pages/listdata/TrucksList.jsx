@@ -2,8 +2,18 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import TruckImage from '../../components/common/TruckImage.jsx';
-// Use Backend 2 APIs
+import { Button } from '../../components/common/Button.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from '../../components/common/DropdownMenu.jsx';
+// Use Backend 2 APIs and Hooks
 import { trucksApi, driversApi, vendorsApi } from '../../services/api2/index.js';
+import { useCRUD } from '../../hooks/useApi2.js';
 
 function Input({ label, icon, ...props }) {
   return (
@@ -25,41 +35,23 @@ function Input({ label, icon, ...props }) {
 }
 
 function TruckActionMenu({ truck, onEdit, onDelete }) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [showTimestamp, setShowTimestamp] = React.useState(false);
-  const menuRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const [showTimestamp] = React.useState(false);
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        title="More options"
-      >
-        <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button
-            onClick={() => {
-              onEdit(truck.id);
-              setIsOpen(false);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="More options"
           >
+            <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end">
+          <DropdownMenuItem onClick={() => onEdit(truck.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -69,31 +61,11 @@ function TruckActionMenu({ truck, onEdit, onDelete }) {
               />
             </svg>
             Edit Vehicle
-          </button>
-
-          <button
-            onClick={() => setShowTimestamp(!showTimestamp)}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            {showTimestamp ? 'Hide' : 'Show'} Timestamps
-          </button>
-
-          <hr className="my-1" />
-
-          <button
-            onClick={() => {
-              onDelete(truck.id);
-              setIsOpen(false);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => onDelete(truck.id)}
+            className="gap-3 text-red-600 hover:bg-red-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -104,9 +76,9 @@ function TruckActionMenu({ truck, onEdit, onDelete }) {
               />
             </svg>
             Delete Vehicle
-          </button>
-        </div>
-      )}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {showTimestamp && (
         <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20">
@@ -146,7 +118,7 @@ function TruckActionMenu({ truck, onEdit, onDelete }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -163,6 +135,9 @@ const TrucksFormList = () => {
   const [statusFilter, setStatusFilter] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(25);
+
+  // Use CRUD hook for delete operations
+  const { remove: deleteTruck } = useCRUD(trucksApi);
 
   // Column visibility state - only for optional columns
   const [visibleColumns, setVisibleColumns] = React.useState({
@@ -205,6 +180,13 @@ const TrucksFormList = () => {
       const driversArray = driversRes?.data?.drivers || [];
       const vendorsArray = vendorsRes?.data?.vendors || [];
 
+      console.log('✅ Trucks array length:', trucksArray.length);
+      console.log('✅ Drivers array length:', driversArray.length);
+      console.log('✅ Vendors array length:', vendorsArray.length);
+      console.log('✅ First truck sample:', trucksArray?.[0]);
+      console.log('✅ First driver sample:', driversArray?.[0]);
+      console.log('✅ First vendor sample:', vendorsArray?.[0]);
+
       setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
       setDrivers(Array.isArray(driversArray) ? driversArray : []);
       setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
@@ -224,38 +206,71 @@ const TrucksFormList = () => {
   }, [load]);
 
   const allTrucks = React.useMemo(() => {
-    return trucks.map((truck) => {
+    console.log('🔍 Processing trucks data...');
+    console.log('📊 Raw trucks array:', trucks);
+
+    return trucks.map((truck, index) => {
+      if (index === 0) {
+        console.log('🚛 First truck raw object:', truck);
+        console.log('🔍 All truck fields:', Object.keys(truck));
+        console.log('🔍 truck.name:', truck.name);
+        console.log('🔍 truck.truckName:', truck.truckName);
+        console.log('🔍 truck.truck_name:', truck.truck_name);
+        console.log('🔍 truck.year:', truck.year);
+        console.log('🔍 truck.model:', truck.model);
+        console.log('🔍 truck.vin:', truck.vin);
+        console.log('🔍 truck.vendor_id:', truck.vendor_id);
+        console.log('🔍 truck.fleet_group_id:', truck.fleet_group_id);
+        console.log('🔍 truck.cluster:', truck.cluster);
+      }
+
       // Backend 2 uses different field names
-      const driver = drivers.find((d) => d.id === truck.driverId);
-      return {
+      const driver = drivers.find((d) => d.id === (truck.driver_id || truck.driverId));
+      const vendor = vendors.find((v) => v.id === (truck.vendor_id || truck.vendorId));
+
+      const processedTruck = {
         id: truck.id,
-        name: truck.truckNumber || truck.name,
+        // API doc shows 'name' field for truck name
+        name: truck.name || truck.truckNumber || truck.truck_number || '-',
         image: truck.image || truck.imageUrl || '',
-        year: truck.year || '',
+        // API shows 'year' field
+        year: truck.year || '-',
+        // API shows 'model' field
         model: truck.model || '-',
         type: truck.type || truck.truckType || '-',
-        vendor_id: truck.vendorId || truck.vendor_id || '',
+        vendor_id: truck.vendor_id || truck.vendorId || '',
+        vendor_name: vendor
+          ? vendor.name || vendor.name_vendor || vendor.vendor_name || '-'
+          : truck.vendor_name || '-',
         status: truck.status || 'idle',
+        // API shows 'vin' field
         vin: truck.vin || truck.vinNumber || '-',
-        plate: truck.plateNumber || truck.plate_number,
+        plate: truck.plate || truck.plateNumber || truck.plate_number || '-',
         createdAt: truck.createdAt || truck.created_at || '-',
         updatedAt: truck.updatedAt || truck.updated_at || '-',
         deletedAt: truck.deletedAt || truck.deleted_at || null,
         createdBy: truck.createdBy || truck.created_by || '-',
         updatedBy: truck.updatedBy || truck.updated_by || '-',
-        cluster: truck.fleetGroupId || truck.fleet_group_id || '-',
+        // API shows 'fleet_group_id' but not cluster field
+        cluster: truck.fleet_group_id || truck.fleetGroupId || truck.cluster || '-',
         driver: {
           name: driver
             ? driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || '-'
-            : truck.driverName || '-',
+            : truck.driver_name || truck.driverName || '-',
         },
         fuel: truck.fuelLevel || truck.fuel_level || 0,
         location: { coordinates: [truck.latitude || 0, truck.longitude || 0] },
         speed: truck.speed || 0,
         manufacturer: truck.manufacturer || 'Caterpillar',
       };
+
+      if (index === 0) {
+        console.log('✅ Processed truck:', processedTruck);
+      }
+
+      return processedTruck;
     });
-  }, [trucks, drivers]);
+  }, [trucks, drivers, vendors]);
 
   const clusters = React.useMemo(
     () => Array.from(new Set(allTrucks.map((t) => t.cluster).filter(Boolean))),
@@ -263,48 +278,28 @@ const TrucksFormList = () => {
   );
 
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    if (sortConfig.key === key) {
+      // Toggle between asc and desc for the same column
+      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      // New column, start with asc
+      setSortConfig({ key, direction: 'asc' });
     }
-    setSortConfig({ key, direction });
   };
 
   const getSortIcon = (key) => {
     if (sortConfig.key === key) {
       return sortConfig.direction === 'asc' ? (
-        <svg
-          className="w-3 h-3 text-indigo-600 ml-1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3l-6 8h12l-6-8z" />
         </svg>
       ) : (
-        <svg
-          className="w-3 h-3 text-indigo-600 ml-1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 17l6-8H4l6 8z" />
         </svg>
       );
     }
-    return (
-      <svg
-        className="w-3 h-3 text-gray-300 ml-1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    );
+    return null; // No icon when not sorted
   };
 
   const toggleColumn = (columnKey) => {
@@ -370,7 +365,7 @@ const TrucksFormList = () => {
   const onDelete = async (id) => {
     if (!confirm('Delete this vehicle? This action cannot be undone.')) return;
     try {
-      await trucksApi.delete(id);
+      await deleteTruck(id);
       console.log('✅ Vehicle deleted successfully');
       alert('Vehicle deleted successfully!');
       await load();
@@ -389,37 +384,23 @@ const TrucksFormList = () => {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-gray-50 p-4 max-h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-100">
-        <div className="max-w-full mx-auto">
+      <div className="max-w-full mx-auto max-h-[calc(100vh-100px)] overflow-y-scroll">
+        {/* Breadcrumb */}
+        <div className="p-6 space-y-6">
           {/* Breadcrumb */}
-          <nav className="flex mb-4" aria-label="Breadcrumb">
-            <ol className="inline-flex items-center space-x-1 md:space-x-3">
-              <li className="inline-flex items-center">
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                  </svg>
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2">Vehicles</span>
-                </div>
-              </li>
-            </ol>
+          <nav className="flex items-center space-x-2 text-sm text-gray-600">
+            <Link to="/" className="hover:text-indigo-600 transition-colors">
+              Dashboard
+            </Link>
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-gray-900 font-medium">Vehicles</span>
           </nav>
-
           {/* Header Section */}
           <div className="mb-5">
             <div className="flex items-center justify-between mb-4">
@@ -588,121 +569,142 @@ const TrucksFormList = () => {
                   </div>
 
                   {/* Cluster Filter */}
-                  <div className="relative">
-                    <select
-                      value={cluster}
-                      onChange={(e) => setCluster(e.target.value)}
-                      className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
-                    >
-                      <option value="">All Clusters</option>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="justify-between min-w-[150px]">
+                        {cluster || 'All Clusters'}
+                        <svg
+                          className="ml-2 w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[150px]">
+                      <DropdownMenuItem onClick={() => setCluster('')}>
+                        All Clusters
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       {clusters.map((c) => (
-                        <option key={c} value={c}>
+                        <DropdownMenuItem key={c} onClick={() => setCluster(c)}>
                           {c}
-                        </option>
+                        </DropdownMenuItem>
                       ))}
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   {/* Vendor Filter */}
-                  <div className="relative">
-                    <select
-                      value={vendorFilter}
-                      onChange={(e) => setVendorFilter(e.target.value)}
-                      className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
-                    >
-                      <option value="">All Vendors</option>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="justify-between min-w-[150px]">
+                        {vendorFilter
+                          ? vendors.find((v) => v.id === vendorFilter)?.name || 'All Vendors'
+                          : 'All Vendors'}
+                        <svg
+                          className="ml-2 w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[150px]">
+                      <DropdownMenuItem onClick={() => setVendorFilter('')}>
+                        All Vendors
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       {vendors.map((v) => (
-                        <option key={v.id} value={v.id}>
+                        <DropdownMenuItem key={v.id} onClick={() => setVendorFilter(v.id)}>
                           {v.name}
-                        </option>
+                        </DropdownMenuItem>
                       ))}
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   {/* Status Filter */}
-                  <div className="relative">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
-                    >
-                      <option value="">All Status</option>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="justify-between min-w-[130px]">
+                        {statusFilter
+                          ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+                          : 'All Status'}
+                        <svg
+                          className="ml-2 w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[130px]">
+                      <DropdownMenuItem onClick={() => setStatusFilter('')}>
+                        All Status
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       {statusOptions.map((s) => (
-                        <option key={s} value={s}>
+                        <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
                           {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </option>
+                        </DropdownMenuItem>
                       ))}
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   {/* Per Page Selector */}
-                  <div className="relative">
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
-                    >
-                      <option value={10}>10 / page</option>
-                      <option value={25}>25 / page</option>
-                      <option value={50}>50 / page</option>
-                      <option value={100}>100 / page</option>
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="justify-between min-w-[120px]">
+                        {pageSize} / page
+                        <svg
+                          className="ml-2 w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[120px]">
+                      {[10, 25, 50, 100].map((size) => (
+                        <DropdownMenuItem
+                          key={size}
+                          onClick={() => {
+                            setPageSize(size);
+                            setPage(1);
+                          }}
+                        >
+                          {size} / page
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   {/* Column Toggle Dropdown */}
                   <div className="relative">
@@ -928,7 +930,7 @@ const TrucksFormList = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 bg-gray-50"
                         onClick={() => handleSort('id')}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           ID
                           {getSortIcon('id')}
                         </div>
@@ -945,7 +947,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('name')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Name
                         {getSortIcon('name')}
                       </div>
@@ -955,7 +957,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('plate')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Plate
                         {getSortIcon('plate')}
                       </div>
@@ -965,7 +967,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('year')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Year
                         {getSortIcon('year')}
                       </div>
@@ -975,7 +977,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('model')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Model
                         {getSortIcon('model')}
                       </div>
@@ -985,7 +987,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('type')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Type
                         {getSortIcon('type')}
                       </div>
@@ -995,7 +997,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('vendor')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Vendor
                         {getSortIcon('vendor')}
                       </div>
@@ -1005,7 +1007,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('status')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Status
                         {getSortIcon('status')}
                       </div>
@@ -1015,7 +1017,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('vin')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         VIN
                         {getSortIcon('vin')}
                       </div>
@@ -1025,7 +1027,7 @@ const TrucksFormList = () => {
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('cluster')}
                     >
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-center gap-2">
                         Cluster
                         {getSortIcon('cluster')}
                       </div>
@@ -1036,7 +1038,7 @@ const TrucksFormList = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('createdAt')}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           Created At
                           {getSortIcon('createdAt')}
                         </div>
@@ -1048,7 +1050,7 @@ const TrucksFormList = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('updatedAt')}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           Updated At
                           {getSortIcon('updatedAt')}
                         </div>
@@ -1060,7 +1062,7 @@ const TrucksFormList = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('deletedAt')}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           Deleted At
                           {getSortIcon('deletedAt')}
                         </div>
@@ -1072,7 +1074,7 @@ const TrucksFormList = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('createdBy')}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           Created By
                           {getSortIcon('createdBy')}
                         </div>
@@ -1084,7 +1086,7 @@ const TrucksFormList = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('updatedBy')}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           Updated By
                           {getSortIcon('updatedBy')}
                         </div>
@@ -1173,7 +1175,9 @@ const TrucksFormList = () => {
                           {truck.type}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                          {vendors.find((v) => v.id === truck.vendor_id)?.name || '-'}
+                          {vendors.find((v) => v.id === truck.vendor_id)?.name ||
+                            vendors.find((v) => v.id === truck.vendor_id)?.name_vendor ||
+                            '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span

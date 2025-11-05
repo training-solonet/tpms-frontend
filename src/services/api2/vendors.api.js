@@ -44,8 +44,28 @@ export const vendorsApi = {
   },
 
   /**
+   * Get vendor trucks
+   * @param {string} vendorId
+   * @param {Object} params - { page, limit }
+   * @returns {Promise}
+   */
+  getTrucks: async (vendorId, params = {}) => {
+    const queryParams = new URLSearchParams();
+
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const queryString = queryParams.toString();
+    const url = queryString
+      ? `/vendors/${vendorId}/trucks?${queryString}`
+      : `/vendors/${vendorId}/trucks`;
+    const response = await api2Instance.get(url);
+    return response;
+  },
+
+  /**
    * Create new vendor
-   * @param {Object} vendorData - { name, contactPerson, phone, email, address, status }
+   * @param {Object} vendorData - { name_vendor, email, telephone, address, contact_person }
    * @returns {Promise}
    */
   create: async (vendorData) => {

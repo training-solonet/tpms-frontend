@@ -8,7 +8,7 @@ import api2Instance from './config';
 export const driversApi = {
   /**
    * Get all drivers with pagination
-   * @param {Object} params - { page, limit }
+   * @param {Object} params - { page, limit, status, vendorId }
    * @returns {Promise}
    */
   getAll: async (params = {}) => {
@@ -16,6 +16,9 @@ export const driversApi = {
       const queryParams = new URLSearchParams();
 
       if (params.page) queryParams.append('page', params.page);
+      if (params.limit) queryParams.append('limit', params.limit);
+      if (params.status) queryParams.append('status', params.status);
+      if (params.vendorId) queryParams.append('vendorId', params.vendorId);
 
       const queryString = queryParams.toString();
       const url = queryString ? `/drivers?${queryString}` : '/drivers';
@@ -24,7 +27,7 @@ export const driversApi = {
       const response = await api2Instance.get(url);
       console.log(
         '✅ Drivers data loaded:',
-        response?.data?.length || response?.length || 'unknown count'
+        response?.data?.drivers?.length || response?.data?.length || 'unknown count'
       );
       return response;
     } catch (error) {
@@ -44,18 +47,30 @@ export const driversApi = {
   },
 
   /**
-   * Create new driver
-   * Backend 2 API expects:
-   * Required: name, licenseNumber (Badge ID)
-   * Optional: phone, email, address, status ('aktif' or 'nonaktif')
-   *
-   * @param {Object} driverData - { name, licenseNumber, phone, email, address, status }
+   * Get drivers with expiring licenses
+   * @param {number} days - Number of days (default: 30)
+   * @returns {Promise}
+   */
+  getExpiringLicenses: async (days = 30) => {
+    const response = await api2Instance.get(`/drivers/expiring-licenses?days=${days}`);
+    return response;
+  },
+
+  /**
+   * Create new driver (with optional image upload)
+   * @param {Object|FormData} driverData - FormData for image upload or Object { name, phone, email, license_number, license_type, license_expiry, vendor_id, status, image }
    * @returns {Promise}
    */
   create: async (driverData) => {
     try {
       console.log('➕ Creating driver with data:', driverData);
-      const response = await api2Instance.post('/drivers', driverData);
+      const config =
+        driverData instanceof FormData
+          ? {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            }
+          : {};
+      const response = await api2Instance.post('/drivers', driverData, config);
       console.log('✅ Driver created successfully:', response);
       return response;
     } catch (error) {
@@ -65,15 +80,21 @@ export const driversApi = {
   },
 
   /**
-   * Update driver
+   * Update driver (with optional image upload)
    * @param {string} driverId
-   * @param {Object} driverData - { name, licenseNumber, phone, email, address, status }
+   * @param {Object|FormData} driverData - FormData for image upload or Object { name, phone, email, license_number, license_type, license_expiry, status }
    * @returns {Promise}
    */
   update: async (driverId, driverData) => {
     try {
       console.log(`🔄 Updating driver ${driverId} with data:`, driverData);
-      const response = await api2Instance.put(`/drivers/${driverId}`, driverData);
+      const config =
+        driverData instanceof FormData
+          ? {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            }
+          : {};
+      const response = await api2Instance.put(`/drivers/${driverId}`, driverData, config);
       console.log('✅ Driver updated successfully:', response);
       return response;
     } catch (error) {
@@ -83,21 +104,13 @@ export const driversApi = {
   },
 
   /**
-   * Delete driver (Soft delete - set status to inactive)
+   * Delete driver
    * @param {string} driverId
    * @returns {Promise}
    */
   delete: async (driverId) => {
-    try {
-      // Try using DELETE endpoint first (backend might handle soft delete internally)
-      const response = await api2Instance.delete(`/drivers/${driverId}`);
-      return response;
-    } catch (error) {
-      // Fallback: Try PATCH with status update
-      console.warn('DELETE failed, trying PATCH with status update:', error.message);
-      const response = await api2Instance.patch(`/drivers/${driverId}`, { status: 'inactive' });
-      return response;
-    }
+    const response = await api2Instance.delete(`/drivers/${driverId}`);
+    return response;
   },
 };
 

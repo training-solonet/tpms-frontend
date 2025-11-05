@@ -39,12 +39,11 @@ export default function VendorForm() {
   const navigate = useNavigate();
   const isNew = id === 'new';
   const [form, setForm] = React.useState({
-    name: '',
-    code: '',
-    description: '',
-    contact_name: '',
-    contact_phone: '',
-    contact_email: '',
+    name_vendor: '',
+    email: '',
+    telephone: '',
+    address: '',
+    contact_person: '',
   });
   const [loading, setLoading] = React.useState(!isNew);
   const [saving, setSaving] = React.useState(false);
@@ -60,12 +59,11 @@ export default function VendorForm() {
         const vendor = res?.data;
         if (vendor) {
           setForm({
-            name: vendor.name || '',
-            code: vendor.code || '',
-            description: vendor.description || '',
-            contact_name: vendor.contact_name || '',
-            contact_phone: vendor.contact_phone || '',
-            contact_email: vendor.contact_email || '',
+            name_vendor: vendor.name || vendor.name_vendor || '',
+            email: vendor.email || '',
+            telephone: vendor.telephone || vendor.contact_phone || '',
+            address: vendor.address || vendor.description || '',
+            contact_person: vendor.contact_person || vendor.contact_name || '',
           });
         }
       } catch (error) {
@@ -83,8 +81,8 @@ export default function VendorForm() {
       setSaving(true);
 
       // Validation
-      if (!form.name || !form.code) {
-        alert('Name and Code are required fields!');
+      if (!form.name_vendor) {
+        alert('Vendor Name is required!');
         setSaving(false);
         return;
       }
@@ -92,13 +90,17 @@ export default function VendorForm() {
       console.log('💾 Saving vendor data to Backend 2...', form);
 
       const vendorData = {
-        name: form.name,
-        code: form.code,
-        description: form.description || '',
-        contact_name: form.contact_name || '',
-        contact_phone: form.contact_phone || '',
-        contact_email: form.contact_email || '',
+        name_vendor: form.name_vendor,
+        email: form.email || undefined,
+        telephone: form.telephone || undefined,
+        address: form.address || undefined,
+        contact_person: form.contact_person || undefined,
       };
+
+      // Remove undefined fields
+      Object.keys(vendorData).forEach(
+        (key) => vendorData[key] === undefined && delete vendorData[key]
+      );
 
       let response;
       if (!isNew) {
@@ -139,17 +141,7 @@ export default function VendorForm() {
               clipRule="evenodd"
             />
           </svg>
-          <Link to="/vendors" className="hover:text-indigo-600 transition-colors">
-            Vendors
-          </Link>
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-gray-900 font-medium">{isNew ? 'New Vendor' : 'Edit Vendor'}</span>
+          <span className="text-gray-900 font-medium">Vendors</span>
         </nav>
 
         {/* Header */}
@@ -216,7 +208,7 @@ export default function VendorForm() {
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Save Vendor
+                  {isNew ? 'Add Data' : 'Save Changes'}
                 </>
               )}
             </button>
@@ -245,8 +237,8 @@ export default function VendorForm() {
                   <Input
                     label="Vendor Name *"
                     placeholder="Enter vendor name"
-                    value={form.name}
-                    onChange={(e) => update('name', e.target.value)}
+                    value={form.name_vendor}
+                    onChange={(e) => update('name_vendor', e.target.value)}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -264,10 +256,11 @@ export default function VendorForm() {
                     }
                   />
                   <Input
-                    label="Vendor Code *"
-                    placeholder="Enter vendor code"
-                    value={form.code}
-                    onChange={(e) => update('code', e.target.value)}
+                    label="Email"
+                    placeholder="vendor@example.com"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => update('email', e.target.value)}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -279,7 +272,7 @@ export default function VendorForm() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                         />
                       </svg>
                     }
@@ -288,11 +281,11 @@ export default function VendorForm() {
 
                 <div className="mt-4">
                   <TextArea
-                    label="Description"
-                    placeholder="Enter vendor description (optional)"
+                    label="Address"
+                    placeholder="Enter vendor address (optional)"
                     rows={3}
-                    value={form.description}
-                    onChange={(e) => update('description', e.target.value)}
+                    value={form.address}
+                    onChange={(e) => update('address', e.target.value)}
                   />
                 </div>
               </div>
@@ -300,12 +293,12 @@ export default function VendorForm() {
               {/* Contact Section */}
               <div className="pt-6 border-t border-gray-200">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">Contact Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label="Contact Name"
+                    label="Contact Person"
                     placeholder="Contact person name"
-                    value={form.contact_name}
-                    onChange={(e) => update('contact_name', e.target.value)}
+                    value={form.contact_person}
+                    onChange={(e) => update('contact_person', e.target.value)}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -323,10 +316,10 @@ export default function VendorForm() {
                     }
                   />
                   <Input
-                    label="Contact Phone"
+                    label="Telephone"
                     placeholder="Phone number"
-                    value={form.contact_phone}
-                    onChange={(e) => update('contact_phone', e.target.value)}
+                    value={form.telephone}
+                    onChange={(e) => update('telephone', e.target.value)}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -339,28 +332,6 @@ export default function VendorForm() {
                           strokeLinejoin="round"
                           strokeWidth={2}
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <Input
-                    label="Contact Email"
-                    placeholder="Email address"
-                    type="email"
-                    value={form.contact_email}
-                    onChange={(e) => update('contact_email', e.target.value)}
-                    icon={
-                      <svg
-                        className="w-4 h-4 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                         />
                       </svg>
                     }
@@ -393,25 +364,20 @@ export default function VendorForm() {
             </div>
 
             {/* Form Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <p className="text-xs text-gray-500">
-                Last updated: {new Date().toLocaleDateString()}
-              </p>
-              <div className="flex gap-3">
-                <Link
-                  to="/vendors"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </Link>
-                <button
-                  onClick={onSave}
-                  disabled={saving}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  {saving ? 'Saving...' : isNew ? 'Create Vendor' : 'Update Vendor'}
-                </button>
-              </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3">
+              <Link
+                to="/vendors"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </Link>
+              <button
+                onClick={onSave}
+                disabled={saving}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                {saving ? 'Saving...' : isNew ? 'Add Data' : 'Save Changes'}
+              </button>
             </div>
           </div>
         )}

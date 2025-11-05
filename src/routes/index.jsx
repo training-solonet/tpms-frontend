@@ -32,6 +32,8 @@ import VendorsList from '../pages/listdata/VendorsList';
 import VendorForm from '../pages/form/VendorForm';
 import DriversList from '../pages/listdata/DriversList';
 import DriverForm from '../pages/form/DriverForm';
+import DeviceForm from '../pages/form/DeviceForm';
+import SensorForm from '../pages/form/SensorForm';
 
 /**
  * Application Routes Configuration
@@ -129,10 +131,26 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/devices/:id"
+        element={
+          <ProtectedRoute>
+            <DeviceForm />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/sensors"
         element={
           <ProtectedRoute>
             <Sensors />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sensors/:id"
+        element={
+          <ProtectedRoute>
+            <SensorForm />
           </ProtectedRoute>
         }
       />

@@ -5,7 +5,7 @@ import { driversApi } from '../../services/api2/index.js';
 
 function DriverActionMenu({ driver, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [showTimestamp, setShowTimestamp] = React.useState(false);
+  const [showTimestamp] = React.useState(false);
   const menuRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -48,21 +48,6 @@ function DriverActionMenu({ driver, onEdit, onDelete }) {
               />
             </svg>
             Edit Driver
-          </button>
-
-          <button
-            onClick={() => setShowTimestamp(!showTimestamp)}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            {showTimestamp ? 'Hide' : 'Show'} Timestamps
           </button>
 
           <hr className="my-1" />
@@ -147,8 +132,11 @@ export default function DriversList() {
 
       const res = await driversApi.getAll();
       console.log('✅ Drivers response:', res);
+      console.log('✅ Drivers data structure:', res.data);
 
       const driversArray = res.data?.drivers || res.data;
+      console.log('✅ Drivers array:', driversArray);
+      console.log('✅ First driver sample:', driversArray?.[0]);
 
       if (Array.isArray(driversArray)) {
         setDrivers(driversArray);
@@ -173,48 +161,28 @@ export default function DriversList() {
   }, [load]);
 
   const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    if (sortConfig.key === key) {
+      // Toggle between asc and desc for the same column
+      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      // New column, start with asc
+      setSortConfig({ key, direction: 'asc' });
     }
-    setSortConfig({ key, direction });
   };
 
   const getSortIcon = (columnKey) => {
     if (sortConfig.key === columnKey) {
       return sortConfig.direction === 'asc' ? (
-        <svg
-          className="w-3 h-3 text-indigo-600 ml-1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3l-6 8h12l-6-8z" />
         </svg>
       ) : (
-        <svg
-          className="w-3 h-3 text-indigo-600 ml-1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 17l6-8H4l6 8z" />
         </svg>
       );
     }
-    return (
-      <svg
-        className="w-3 h-3 text-gray-300 ml-1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    );
+    return null; // No icon when not sorted
   };
 
   const toggleColumn = (columnKey) => {
@@ -233,7 +201,7 @@ export default function DriversList() {
         !q ||
         (v.name || '').toLowerCase().includes(q) ||
         licenseNum.toLowerCase().includes(q) ||
-        (v.phone || '').toLowerCase().includes(q) ||
+        (v.telephone || v.phone || '').toLowerCase().includes(q) ||
         (v.email || '').toLowerCase().includes(q) ||
         licenseType.toLowerCase().includes(q)
       );
@@ -446,7 +414,6 @@ export default function DriversList() {
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex gap-4 flex-1 w-full">
                 <div className="flex-1 max-w-md">
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Search</label>
                   <input
                     type="text"
                     placeholder="Name, license, phone, email..."
@@ -457,7 +424,6 @@ export default function DriversList() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Per Page</label>
                   <div className="relative">
                     <select
                       value={pageSize}
@@ -490,7 +456,6 @@ export default function DriversList() {
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Columns</label>
                   <details className="group">
                     <summary className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-300 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors list-none">
                       <svg
@@ -569,7 +534,7 @@ export default function DriversList() {
                           d.name || '',
                           d.license_number || '',
                           d.license_type || '',
-                          d.phone || '',
+                          d.telephone || d.phone || '',
                           d.email || '',
                           d.address || '',
                           d.status || '',
@@ -729,8 +694,8 @@ export default function DriversList() {
                             }`}
                             onClick={() => col.sortable && handleSort(col.key)}
                           >
-                            <div className="flex items-center space-x-1">
-                              <span>{col.label}</span>
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="whitespace-normal">{col.label}</span>
                               {col.sortable && getSortIcon(col.key)}
                             </div>
                           </th>
@@ -761,7 +726,7 @@ export default function DriversList() {
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">
+                          <span className="text-sm text-gray-900">
                             {driver.license_number || '-'}
                           </span>
                         </td>
@@ -769,7 +734,9 @@ export default function DriversList() {
                           <div className="text-sm text-gray-900">{driver.license_type || '-'}</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{driver.phone || '-'}</div>
+                          <div className="text-sm text-gray-900">
+                            {driver.phone || driver.telephone || '-'}
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{driver.email || '-'}</div>

@@ -56,6 +56,25 @@ export const dashboardApi = {
     const response = await api2Instance.get('/dashboard/maintenance');
     return response;
   },
+
+  /**
+   * Get recent alerts
+   * @param {number} limit - Number of alerts to retrieve (default: 10)
+   * @returns {Promise}
+   */
+  getRecentAlerts: async (limit = 10) => {
+    const response = await api2Instance.get(`/dashboard/recent-alerts?limit=${limit}`);
+    return response;
+  },
+
+  /**
+   * Get fleet performance metrics
+   * @returns {Promise}
+   */
+  getFleetPerformance: async () => {
+    const response = await api2Instance.get('/dashboard/fleet-performance');
+    return response;
+  },
 };
 
 export default dashboardApi;

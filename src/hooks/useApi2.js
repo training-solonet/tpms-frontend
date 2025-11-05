@@ -10,8 +10,10 @@ import {
   driversApi,
   vendorsApi,
   devicesApi,
+  sensorsApi,
   alertsApi,
   miningAreaApi,
+  fleetApi,
 } from '../services/api2';
 
 /**
@@ -303,4 +305,130 @@ export const useRealtimeLocations = () => {
   }, [fetchLocations]);
 
   return { locations, loading, error, refetch: fetchLocations };
+};
+
+/**
+ * Hook for sensors with filters
+ * @param {Object} params - { page, limit, device_id, status, tireNo, search }
+ * @returns {Object} - { sensors, loading, error, refetch, totalPages }
+ */
+export const useSensors = (params = {}) => {
+  const [sensors, setSensors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchSensors = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await sensorsApi.getAll(params);
+      setSensors(response.data?.sensors || []);
+      setTotalPages(response.data?.pagination?.totalPages || 1);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch sensors');
+      console.error('Error fetching sensors:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    fetchSensors();
+  }, [fetchSensors]);
+
+  return { sensors, loading, error, refetch: fetchSensors, totalPages };
+};
+
+/**
+ * Hook for fleet summary
+ * @returns {Object} - { fleet, loading, error, refetch }
+ */
+export const useFleet = () => {
+  const [fleet, setFleet] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchFleet = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fleetApi.getSummary();
+      setFleet(response.data);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch fleet summary');
+      console.error('Error fetching fleet summary:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFleet();
+  }, [fetchFleet]);
+
+  return { fleet, loading, error, refetch: fetchFleet };
+};
+
+/**
+ * Generic CRUD hook for any entity
+ * @param {Object} api - API service object with create, update, delete methods
+ * @returns {Object} - CRUD operations
+ */
+export const useCRUD = (api) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const create = useCallback(
+    async (data) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.create(data);
+        return response;
+      } catch (err) {
+        setError(err.message || 'Failed to create');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api]
+  );
+
+  const update = useCallback(
+    async (id, data) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.update(id, data);
+        return response;
+      } catch (err) {
+        setError(err.message || 'Failed to update');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api]
+  );
+
+  const remove = useCallback(
+    async (id) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.delete(id);
+        return response;
+      } catch (err) {
+        setError(err.message || 'Failed to delete');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api]
+  );
+
+  return { create, update, remove, loading, error };
 };
