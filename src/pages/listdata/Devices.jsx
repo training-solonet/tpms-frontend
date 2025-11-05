@@ -1,13 +1,119 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { devicesApi, trucksApi } from '../../services/api2';
+import { useCRUD } from '../../hooks/useApi2';
+import { useAlert } from '../../hooks/useAlert';
+import AlertModal from '../../components/common/AlertModal';
 import TailwindLayout from '../../components/layout/TailwindLayout';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../../components/common/DropdownMenu';
+
+function DevicesActionMenu({ device, onEdit, onDelete }) {
+  const [showTimestamp] = React.useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="More options"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end">
+          <DropdownMenuItem onClick={() => onEdit(device.id)} className="gap-3">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Edit Vehicle
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={() => onDelete(device.id)}
+            className="gap-3 text-red-600 hover:bg-red-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Delete Vehicle
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {showTimestamp && (
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20">
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Created:</span>
+              <span className="text-gray-900 font-medium">
+                {device.createdAt && device.createdAt !== '-'
+                  ? new Date(device.createdAt).toLocaleString()
+                  : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Created By:</span>
+              <span className="text-gray-900 font-medium">{device.createdBy || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Updated:</span>
+              <span className="text-gray-900 font-medium">
+                {device.updatedAt && device.updatedAt !== '-'
+                  ? new Date(device.updatedAt).toLocaleString()
+                  : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Updated By:</span>
+              <span className="text-gray-900 font-medium">{device.updatedBy || '-'}</span>
+            </div>
+            {device.deletedAt && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Deleted:</span>
+                <span className="text-red-600 font-medium">
+                  {new Date(device.deletedAt).toLocaleString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 const Devices = () => {
   // State
   const [devices, setDevices] = useState([]);
   const [trucks, setTrucks] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Use alert hook
+  const { showAlert, alertState } = useAlert();
+
+  // Use CRUD hook
+  const { remove: deleteDevice } = useCRUD(devicesApi);
 
   // Filters
   const [query, setQuery] = useState('');
@@ -49,16 +155,34 @@ const Devices = () => {
       console.log('📥 Devices API response:', response);
 
       // Handle different response formats
-      const data = Array.isArray(response)
-        ? response
-        : Array.isArray(response?.data)
-          ? response.data
-          : [];
+      let data = [];
+      if (response?.data?.devices) {
+        data = response.data.devices;
+      } else if (Array.isArray(response?.data)) {
+        data = response.data;
+      } else if (Array.isArray(response)) {
+        data = response;
+      }
 
-      console.log('✅ Devices data:', data);
+      console.log('✅ Devices data:', data.length, 'devices');
+
+      // Check field names in first device
+      if (data[0]) {
+        console.log('🔍 Device fields available:', Object.keys(data[0]));
+        console.log('🔍 First device sample:', data[0]);
+        console.log('🔍 Device sn:', data[0].sn);
+        console.log('🔍 Device serial_number:', data[0].serial_number);
+        console.log('🔍 Device sim_number:', data[0].sim_number);
+        console.log('🔍 Device sim_4g_number:', data[0].sim_4g_number);
+        console.log('🔍 Device bat1:', data[0].bat1);
+        console.log('🔍 Device bat2:', data[0].bat2);
+        console.log('🔍 Device bat3:', data[0].bat3);
+      }
+
       setDevices(data);
     } catch (err) {
       console.error('❌ Error fetching devices:', err);
+      alert(`Failed to load devices:\n${err.message}`);
       setDevices([]);
     } finally {
       setLoading(false);
@@ -90,8 +214,12 @@ const Devices = () => {
     return devices.filter((device) => {
       const matchQuery =
         !query ||
-        device.serial_number?.toLowerCase().includes(query.toLowerCase()) ||
-        device.sim_4g_number?.toLowerCase().includes(query.toLowerCase()) ||
+        // API shows 'sn' field for serial number
+        (device.sn || device.serial_number || '').toLowerCase().includes(query.toLowerCase()) ||
+        // API shows 'sim_number' field
+        (device.sim_number || device.sim_4g_number || '')
+          .toLowerCase()
+          .includes(query.toLowerCase()) ||
         device.truck?.name?.toLowerCase().includes(query.toLowerCase());
 
       const matchTruck = !truckFilter || device.truck_id?.toString() === truckFilter;
@@ -124,16 +252,22 @@ const Devices = () => {
   }, [devices]);
 
   // Delete device
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this device?')) return;
+  const onDelete = (device) => {
+    showAlert.delete(device.sn || `Device #${device.id}`, async () => {
+      try {
+        await deleteDevice(parseInt(device.id));
+        setDevices((prev) => prev.filter((d) => d.id !== device.id));
+        showAlert.success('Device has been deleted successfully.', 'Deleted!');
+      } catch (err) {
+        console.error('Error deleting device:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Unknown error occurred';
+        showAlert.error(`Failed to delete device: ${errorMessage}`, 'Delete Failed');
+      }
+    });
+  };
 
-    try {
-      await devicesApi.delete(id);
-      setDevices((prev) => prev.filter((d) => d.id !== id));
-    } catch (err) {
-      console.error('Error deleting device:', err);
-      alert('Failed to delete device: ' + (err.message || 'Unknown error'));
-    }
+  const handleEdit = (id) => {
+    window.location.href = `/device/${id}`;
   };
 
   // Battery health indicator
@@ -160,8 +294,21 @@ const Devices = () => {
 
   return (
     <TailwindLayout>
-      <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Header */}
+      <div className="p-6 space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-gray-600">
+          <Link to="/" className="hover:text-indigo-600 transition-colors">
+            Dashboard
+          </Link>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-900 font-medium">Devices</span>
+        </nav>
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -323,7 +470,7 @@ const Devices = () => {
                   <select
                     value={truckFilter}
                     onChange={(e) => setTruckFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value="">All Trucks</option>
                     {trucks.map((truck) => (
@@ -352,7 +499,8 @@ const Devices = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
+                                focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value="">All Status</option>
                     {statusOptions.map((status) => (
@@ -384,7 +532,8 @@ const Devices = () => {
                       setPageSize(Number(e.target.value));
                       setPage(1);
                     }}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
+                                focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value={10}>10 / page</option>
                     <option value={25}>25 / page</option>
@@ -438,7 +587,7 @@ const Devices = () => {
                         />
                       </svg>
                     </summary>
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-20 max-h-96 overflow-y-auto">
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-20 max-h-96">
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-gray-700 mb-2">Toggle Columns</p>
                         {toggleableColumns.map((col) => (
@@ -459,85 +608,89 @@ const Devices = () => {
                     </div>
                   </details>
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    if (filtered.length === 0) {
-                      alert('No data to export');
-                      return;
-                    }
-                    const csvContent = [
-                      [
-                        'No',
-                        'Serial Number',
-                        'Truck',
-                        'SIM 4G',
-                        'Battery 1',
-                        'Battery 2',
-                        'Battery 3',
-                        'Status',
-                        'Installed',
-                      ].join(','),
-                      ...filtered.map((d, i) =>
-                        [
-                          i + 1,
-                          d.serial_number || '',
-                          d.truck?.name || 'Unassigned',
-                          d.sim_4g_number || '',
-                          d.bat1 || '',
-                          d.bat2 || '',
-                          d.bat3 || '',
-                          d.status || '',
-                          d.installed_at || '',
-                        ]
-                          .map((field) => `"${String(field).replace(/"/g, '""')}"`)
-                          .join(',')
-                      ),
-                    ].join('\n');
-
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `devices_${new Date().toISOString().split('T')[0]}.csv`;
-                    link.click();
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                  title="Export to CSV"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  Export
-                </button>
-
-                {query && (
+                {/* Actions */}
+                <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      setQuery('');
-                      setPage(1);
+                      if (filtered.length === 0) {
+                        alert('No data to export');
+                        return;
+                      }
+                      const csvContent = [
+                        [
+                          'No',
+                          'Serial Number',
+                          'Truck',
+                          'SIM 4G',
+                          'Battery 1',
+                          'Battery 2',
+                          'Battery 3',
+                          'Status',
+                          'Installed',
+                        ].join(','),
+                        ...filtered.map((d, i) =>
+                          [
+                            i + 1,
+                            d.sn || d.serial_number || '',
+                            d.truck?.name || 'Unassigned',
+                            d.sim_number || d.sim_4g_number || '',
+                            d.bat1 || '',
+                            d.bat2 || '',
+                            d.bat3 || '',
+                            d.status || '',
+                            d.installed_at || '',
+                          ]
+                            .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+                            .join(',')
+                        ),
+                      ].join('\n');
+
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `devices_${new Date().toISOString().split('T')[0]}.csv`;
+                      link.click();
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                    title="Clear search"
+                    title="Export to CSV"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    Clear
+                    Export
                   </button>
-                )}
+
+                  {query && (
+                    <button
+                      onClick={() => {
+                        setQuery('');
+                        setPage(1);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                      title="Clear search"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -685,7 +838,7 @@ const Devices = () => {
                           )}
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              {device.serial_number || '--'}
+                              {device.sn || device.serial_number || '--'}
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
@@ -701,7 +854,7 @@ const Devices = () => {
                             )}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {device.sim_4g_number || '--'}
+                            {device.sim_number || device.sim_4g_number || '--'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="text-xs space-y-1">
@@ -750,69 +903,11 @@ const Devices = () => {
                           )}
                           <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-2">
-                              <Link
-                                to={`/devices/${device.id}`}
-                                className="text-indigo-600 hover:text-indigo-900"
-                                title="View Details"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                  />
-                                </svg>
-                              </Link>
-                              <Link
-                                to={`/devices/${device.id}/edit`}
-                                className="text-blue-600 hover:text-blue-900"
-                                title="Edit"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                  />
-                                </svg>
-                              </Link>
-                              <button
-                                onClick={() => handleDelete(device.id)}
-                                className="text-red-600 hover:text-red-900"
-                                title="Delete"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                  />
-                                </svg>
-                              </button>
+                              <DevicesActionMenu
+                                Sensor={device}
+                                onEdit={handleEdit}
+                                onDelete={onDelete}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -873,6 +968,19 @@ const Devices = () => {
           )}
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertState.isOpen}
+        type={alertState.type}
+        title={alertState.title}
+        message={alertState.message}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+      />
     </TailwindLayout>
   );
 };

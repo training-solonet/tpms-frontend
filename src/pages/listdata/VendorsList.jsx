@@ -5,7 +5,7 @@ import { vendorsApi } from '../../services/api2/index.js';
 
 function VendorActionMenu({ vendor, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [showTimestamp, setShowTimestamp] = React.useState(false);
+  const [showTimestamp] = React.useState(false);
   const menuRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -48,21 +48,6 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
               />
             </svg>
             Edit Vendor
-          </button>
-
-          <button
-            onClick={() => setShowTimestamp(!showTimestamp)}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            {showTimestamp ? 'Hide' : 'Show'} Timestamps
           </button>
 
           <hr className="my-1" />
@@ -148,8 +133,19 @@ export default function VendorsList() {
 
       const res = await vendorsApi.getAll();
       console.log('✅ Vendors response:', res);
+      console.log('✅ Vendors data structure:', res.data);
 
       const vendorsArray = res.data?.vendors || res.data || [];
+      console.log('✅ Vendors array:', vendorsArray);
+      console.log('✅ First vendor sample:', vendorsArray[0]);
+
+      // Check all field names in first vendor
+      if (vendorsArray[0]) {
+        console.log('🔍 Vendor fields available:', Object.keys(vendorsArray[0]));
+        console.log('🔍 Vendor code field:', vendorsArray[0].code);
+        console.log('🔍 Vendor description field:', vendorsArray[0].description);
+      }
+
       setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
       setError('');
     } catch (err) {
@@ -288,40 +284,18 @@ export default function VendorsList() {
   const paginatedVendors = filtered.slice(startIndex, endIndex);
 
   const getSortIcon = (columnKey) => {
-    if (sortConfig.key !== columnKey) {
-      return (
-        <svg
-          className="w-3 h-3 text-gray-300 ml-1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    if (sortConfig.key === columnKey) {
+      return sortConfig.direction === 'asc' ? (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3l-6 8h12l-6-8z" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 17l6-8H4l6 8z" />
         </svg>
       );
     }
-    return sortConfig.direction === 'asc' ? (
-      <svg
-        className="w-3 h-3 text-indigo-600 ml-1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-      </svg>
-    ) : (
-      <svg
-        className="w-3 h-3 text-indigo-600 ml-1"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-      </svg>
-    );
+    return null; // No icon when not sorted
   };
 
   // Column definitions - separate optional columns for toggle
@@ -500,7 +474,6 @@ export default function VendorsList() {
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex gap-4 flex-1 w-full">
                 <div className="flex-1 max-w-md">
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Search</label>
                   <input
                     type="text"
                     placeholder="Name, code, email, phone..."
@@ -514,7 +487,6 @@ export default function VendorsList() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Per Page</label>
                   <div className="relative">
                     <select
                       value={pageSize}
@@ -547,7 +519,6 @@ export default function VendorsList() {
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Columns</label>
                   <details className="group">
                     <summary className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-300 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors list-none">
                       <svg
@@ -750,7 +721,7 @@ export default function VendorsList() {
                             }`}
                             onClick={() => col.sortable && handleSort(col.key)}
                           >
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center justify-center gap-2">
                               <span>{col.label}</span>
                               {col.sortable && getSortIcon(col.key)}
                             </div>
@@ -798,7 +769,7 @@ export default function VendorsList() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {vendor.telephone || vendor.phone || vendor.contact_phone || '-'}
+                            {vendor.telephone || vendor.contact_phone || vendor.phone || '-'}
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -809,8 +780,8 @@ export default function VendorsList() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             {vendor.contact_person ||
-                              vendor.contactPerson ||
                               vendor.contact_name ||
+                              vendor.contactPerson ||
                               '-'}
                           </div>
                         </td>

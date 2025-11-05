@@ -22,6 +22,7 @@ export { default as vendorsApi } from './vendors.api'; // Vendor master data (CR
 // IoT & Monitoring
 export { default as devicesApi } from './devices.api'; // Device management
 export { default as sensorsApi } from './sensors.api'; // Sensor configuration
+export { default as iotApi } from './iot.api'; // IoT real-time data updates
 
 // Mining Operations
 export { default as miningAreaApi } from './miningArea.api'; // Mining area master data
@@ -31,3 +32,6 @@ export { default as dashboardApi } from './dashboard.api'; // Dashboard statisti
 
 // Notifications
 export { default as alertsApi } from './alerts.api'; // Alert/notification management
+
+// Fleet Summary
+export { default as fleetApi } from './fleet.api'; // Fleet summary and management

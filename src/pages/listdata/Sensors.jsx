@@ -1,8 +1,120 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { devicesApi, trucksApi } from '../../services/api2';
+import { devicesApi, sensorsApi, trucksApi } from '../../services/api2';
 import TailwindLayout from '../../components/layout/TailwindLayout';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from '../../components/common/DropdownMenu.jsx';
 
+function SensorsActionMenu({ truck, onEdit, onDelete }) {
+  const [showTimestamp] = React.useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="More options"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end">
+          <DropdownMenuItem onClick={() => onEdit(sensorsApi.id)} className="gap-3">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Edit sensors
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={() => onDelete(sensorsApi.id)}
+            className="gap-3 text-red-600 hover:bg-red-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Delete sensors
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {showTimestamp && (
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20">
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Created:</span>
+              <span className="text-gray-900 font-medium">
+                {truck.createdAt && truck.createdAt !== '-'
+                  ? new Date(truck.createdAt).toLocaleString()
+                  : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Created By:</span>
+              <span className="text-gray-900 font-medium">{truck.createdBy || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Updated:</span>
+              <span className="text-gray-900 font-medium">
+                {truck.updatedAt && truck.updatedAt !== '-'
+                  ? new Date(truck.updatedAt).toLocaleString()
+                  : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Updated By:</span>
+              <span className="text-gray-900 font-medium">{truck.updatedBy || '-'}</span>
+            </div>
+            {truck.deletedAt && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Deleted:</span>
+                <span className="text-red-600 font-medium">
+                  {new Date(truck.deletedAt).toLocaleString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+const handleEdit = (id) => {
+  window.location.href = `/sensors/${id}`;
+};
+
+const onDelete = async (id) => {
+  if (!confirm('Delete this sensors? This action cannot be undone.')) return;
+  try {
+    await id;
+    alert('sensors deleted successfully!');
+  } catch (error) {
+    console.error('❌ Failed to delete sensors:', error);
+    const errorMsg = error.message || 'Unknown error';
+    alert('Failed to delete sensors: ' + errorMsg);
+  }
+};
 const Sensors = () => {
   // State
   const [sensors, setSensors] = useState([]);
@@ -56,11 +168,31 @@ const Sensors = () => {
       // Handle different response formats
       const data = Array.isArray(response)
         ? response
-        : Array.isArray(response?.data)
-          ? response.data
-          : [];
+        : Array.isArray(response?.data?.sensors)
+          ? response.data.sensors
+          : Array.isArray(response?.data)
+            ? response.data
+            : [];
 
-      console.log('✅ Sensors data:', data);
+      console.log('✅ Sensors data:', data.length, 'sensors');
+
+      // Check field names in first sensor
+      if (data[0]) {
+        console.log('🔍 Sensor fields available:', Object.keys(data[0]));
+        console.log('🔍 First sensor sample:', data[0]);
+        console.log('🔍 Sensor sn:', data[0].sn);
+        console.log('🔍 Sensor device_id:', data[0].device_id);
+        console.log('🔍 Sensor tireNo:', data[0].tireNo);
+        console.log('🔍 Sensor tire_no:', data[0].tire_no);
+        console.log('🔍 Sensor tempValue:', data[0].tempValue);
+        console.log('🔍 Sensor temp_value:', data[0].temp_value);
+        console.log('🔍 Sensor tirepValue:', data[0].tirepValue);
+        console.log('🔍 Sensor tirep_value:', data[0].tirep_value);
+        console.log('🔍 Sensor tire_value:', data[0].tire_value);
+        console.log('🔍 Sensor bat:', data[0].bat);
+        console.log('🔍 Sensor status:', data[0].status);
+      }
+
       setSensors(data);
     } catch (err) {
       console.error('❌ Error fetching sensors:', err);
@@ -113,8 +245,13 @@ const Sensors = () => {
   // Get device and truck info for sensor
   const getSensorInfo = useCallback(
     (sensor) => {
+      // API may use sim_number field to link sensor to device
       const device = devices.find(
-        (d) => d.serial_number === sensor.sim_number || d.sim_4g_number === sensor.sim_number
+        (d) =>
+          d.sn === sensor.sim_number ||
+          d.serial_number === sensor.sim_number ||
+          d.sim_number === sensor.sim_number ||
+          d.id === sensor.device_id
       );
       const truck = device ? trucks.find((t) => t.id === device.truck_id) : null;
       return { device, truck };
@@ -129,10 +266,10 @@ const Sensors = () => {
 
       const matchQuery =
         !query ||
-        sensor.sn?.toLowerCase().includes(query.toLowerCase()) ||
-        sensor.sim_number?.toLowerCase().includes(query.toLowerCase()) ||
-        device?.serial_number?.toLowerCase().includes(query.toLowerCase()) ||
-        truck?.name?.toLowerCase().includes(query.toLowerCase());
+        (sensor.sn || '').toLowerCase().includes(query.toLowerCase()) ||
+        (sensor.sim_number || '').toLowerCase().includes(query.toLowerCase()) ||
+        (device?.sn || device?.serial_number || '').toLowerCase().includes(query.toLowerCase()) ||
+        (truck?.name || '').toLowerCase().includes(query.toLowerCase());
 
       const matchDevice = !deviceFilter || device?.id?.toString() === deviceFilter;
       const matchTruck = !truckFilter || truck?.id?.toString() === truckFilter;
@@ -167,19 +304,6 @@ const Sensors = () => {
   const statusOptions = useMemo(() => {
     return [...new Set(sensors.map((s) => s.status).filter(Boolean))];
   }, [sensors]);
-
-  // Delete sensor
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this sensor?')) return;
-
-    try {
-      await devicesApi.deleteSensor(id);
-      setSensors((prev) => prev.filter((s) => s.id !== id));
-    } catch (err) {
-      console.error('Error deleting sensor:', err);
-      alert('Failed to delete sensor: ' + (err.message || 'Unknown error'));
-    }
-  };
 
   // Get tire position label
   const getTirePosition = (tireNo) => {
@@ -228,8 +352,21 @@ const Sensors = () => {
 
   return (
     <TailwindLayout>
-      <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Header */}
+      <div className="p-6 space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-gray-600">
+          <Link to="/" className="hover:text-indigo-600 transition-colors">
+            Dashboard
+          </Link>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-900 font-medium">Sensors</span>
+        </nav>
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -391,7 +528,8 @@ const Sensors = () => {
                   <select
                     value={deviceFilter}
                     onChange={(e) => setDeviceFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
+                                focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value="">All Devices</option>
                     {devices.map((device) => (
@@ -420,7 +558,8 @@ const Sensors = () => {
                   <select
                     value={truckFilter}
                     onChange={(e) => setTruckFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
+                                focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value="">All Trucks</option>
                     {trucks.map((truck) => (
@@ -449,7 +588,8 @@ const Sensors = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
+                                focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value="">All Status</option>
                     {statusOptions.map((status) => (
@@ -481,7 +621,8 @@ const Sensors = () => {
                       setPageSize(Number(e.target.value));
                       setPage(1);
                     }}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
+                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
+                                focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value={10}>10 / page</option>
                     <option value={25}>25 / page</option>
@@ -556,86 +697,91 @@ const Sensors = () => {
                     </div>
                   </details>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    if (filtered.length === 0) {
-                      alert('No data to export');
-                      return;
-                    }
-                    const csvContent = [
-                      [
-                        'No',
-                        'Serial Number',
-                        'Device',
-                        'Truck',
-                        'Tire Position',
-                        'Temperature',
-                        'Pressure',
-                        'Battery',
-                        'Status',
-                      ].join(','),
-                      ...filtered.map((s, i) => {
-                        const { device, truck } = getSensorInfo(s);
-                        return [
-                          i + 1,
-                          s.sn || '',
-                          device?.serial_number || 'N/A',
-                          truck?.name || 'Unassigned',
-                          getTirePosition(s.tire_no),
-                          s.temp_value || '',
-                          s.tire_value || '',
-                          s.bat || '',
-                          s.status || '',
-                        ]
-                          .map((field) => `"${String(field).replace(/"/g, '""')}"`)
-                          .join(',');
-                      }),
-                    ].join('\n');
-
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `sensors_${new Date().toISOString().split('T')[0]}.csv`;
-                    link.click();
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                  title="Export to CSV"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  Export
-                </button>
-
-                {query && (
+                {/* Actions */}
+                <div className="relative">
                   <button
                     onClick={() => {
-                      setQuery('');
-                      setPage(1);
+                      if (filtered.length === 0) {
+                        alert('No data to export');
+                        return;
+                      }
+                      const csvContent = [
+                        [
+                          'No',
+                          'Serial Number',
+                          'Device',
+                          'Truck',
+                          'Tire Position',
+                          'Temperature',
+                          'Pressure',
+                          'Battery',
+                          'Status',
+                        ].join(','),
+                        ...filtered.map((s, i) => {
+                          const { device, truck } = getSensorInfo(s);
+                          return [
+                            i + 1,
+                            s.sn || '',
+                            device?.sn || device?.serial_number || 'N/A',
+                            truck?.name || 'Unassigned',
+                            getTirePosition(s.tireNo || s.tire_no),
+                            s.tempValue || s.temp_value || '',
+                            s.tirepValue || s.tirep_value || s.tire_value || '',
+                            s.bat || '',
+                            s.status || '',
+                          ]
+                            .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+                            .join(',');
+                        }),
+                      ].join('\n');
+
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = `sensors_${new Date().toISOString().split('T')[0]}.csv`;
+                      link.click();
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                    title="Clear search"
+                    title="Export to CSV"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    Clear
+                    Export
                   </button>
-                )}
+
+                  {query && (
+                    <button
+                      onClick={() => {
+                        setQuery('');
+                        setPage(1);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                      title="Clear search"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -812,7 +958,7 @@ const Sensors = () => {
                                 to={`/devices/${device.id}`}
                                 className="text-sm text-indigo-600 hover:text-indigo-900"
                               >
-                                {device.serial_number}
+                                {device.sn || device.serial_number || 'N/A'}
                               </Link>
                             ) : (
                               <span className="text-sm text-gray-400">N/A</span>
@@ -831,38 +977,40 @@ const Sensors = () => {
                             )}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {getTirePosition(sensor.tire_no)}
+                            {getTirePosition(sensor.tireNo || sensor.tire_no)}
                           </td>
                           {visibleColumns.sensorNo && (
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {sensor.sensor_no || '--'}
+                              {sensor.sensorNo || sensor.sensor_no || '--'}
                             </td>
                           )}
                           <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            {sensor.temp_value ? (
+                            {sensor.tempValue || sensor.temp_value ? (
                               <span
                                 className={
-                                  parseFloat(sensor.temp_value) > 60
+                                  parseFloat(sensor.tempValue || sensor.temp_value) > 60
                                     ? 'text-red-600 font-medium'
                                     : 'text-gray-900'
                                 }
                               >
-                                {sensor.temp_value}°C
+                                {sensor.tempValue || sensor.temp_value}°C
                               </span>
                             ) : (
                               '--'
                             )}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            {sensor.tire_value ? (
+                            {sensor.tirepValue || sensor.tirep_value || sensor.tire_value ? (
                               <span
                                 className={
-                                  parseFloat(sensor.tire_value) < 28
+                                  parseFloat(
+                                    sensor.tirepValue || sensor.tirep_value || sensor.tire_value
+                                  ) < 28
                                     ? 'text-yellow-600 font-medium'
                                     : 'text-gray-900'
                                 }
                               >
-                                {sensor.tire_value} PSI
+                                {sensor.tirepValue || sensor.tirep_value || sensor.tire_value} PSI
                               </span>
                             ) : (
                               '--'
@@ -889,71 +1037,11 @@ const Sensors = () => {
                             </td>
                           )}
                           <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
-                              <Link
-                                to={`/sensors/${sensor.id}`}
-                                className="text-indigo-600 hover:text-indigo-900"
-                                title="View Details"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                  />
-                                </svg>
-                              </Link>
-                              <Link
-                                to={`/sensors/${sensor.id}/edit`}
-                                className="text-blue-600 hover:text-blue-900"
-                                title="Edit"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                  />
-                                </svg>
-                              </Link>
-                              <button
-                                onClick={() => handleDelete(sensor.id)}
-                                className="text-red-600 hover:text-red-900"
-                                title="Delete"
-                              >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
+                            <SensorsActionMenu
+                              Sensor={sensor}
+                              onEdit={handleEdit}
+                              onDelete={onDelete}
+                            />
                           </td>
                         </tr>
                       );

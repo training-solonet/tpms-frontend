@@ -1,44 +1,69 @@
-/* eslint-disable no-unused-vars */
 import React from 'react';
-import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { trucksApi, vendorsApi } from '../../services/api2/index.js';
+import { trucksApi, vendorsApi, driversApi } from '../../services/api2/index.js';
+import { useCRUD } from '../../hooks/useApi2.js';
 
-function Input({ label, ...props }) {
+function Input({ label, icon, ...props }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-gray-700">{label}</span>
-      <input
-        {...props}
-        className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`}
-      />
+      <span className="block text-xs font-medium text-gray-700 mb-1.5">{label}</span>
+      <div className="relative">
+        {icon && (
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+            {icon}
+          </div>
+        )}
+        <input
+          {...props}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all ${props.className || ''}`}
+        />
+      </div>
     </label>
   );
 }
 
-function Select({ label, children, ...props }) {
+function Select({ label, icon, children, ...props }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-gray-700">{label}</span>
-      <select
-        {...props}
-        className={`mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${props.className || ''}`}
-      >
-        {children}
-      </select>
+      <span className="block text-xs font-medium text-gray-700 mb-1.5">{label}</span>
+      <div className="relative">
+        {icon && (
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+            {icon}
+          </div>
+        )}
+        <select
+          {...props}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none bg-white cursor-pointer ${props.className || ''}`}
+        >
+          {children}
+        </select>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     </label>
   );
 }
 
 export default function TruckForm() {
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [vendors, setVendors] = React.useState([]);
-  const [trucks, setTrucks] = React.useState([]);
+  const [drivers, setDrivers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [saving, setSaving] = React.useState(false);
   const isNewTruck = id === 'new';
+
+  // Use CRUD hook for create and update operations
+  const { create: createTruck, update: updateTruck, loading: saving } = useCRUD(trucksApi);
 
   // Initialize form data
   const [formData, setFormData] = React.useState({
@@ -50,6 +75,7 @@ export default function TruckForm() {
     vin: '',
     capacity: 0,
     vendorId: '',
+    driverId: '',
     status: 'active',
     manufacturer: 'Caterpillar',
   });
@@ -65,6 +91,11 @@ export default function TruckForm() {
         const vendorsArray = vendorsRes?.data?.vendors || vendorsRes?.data || [];
         setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
 
+        // Load drivers
+        const driversRes = await driversApi.getAll().catch(() => ({ data: { drivers: [] } }));
+        const driversArray = driversRes?.data?.drivers || driversRes?.data || [];
+        setDrivers(Array.isArray(driversArray) ? driversArray : []);
+
         // Load truck data if editing existing truck
         if (!isNewTruck) {
           try {
@@ -74,14 +105,15 @@ export default function TruckForm() {
 
             // Map backend data to form
             setFormData({
-              truckNumber: truckData.truckNumber || truckData.truck_number || '',
-              plateNumber: truckData.plateNumber || truckData.plate_number || '',
+              truckNumber: truckData.name || truckData.truckNumber || truckData.truck_number || '',
+              plateNumber: truckData.plate || truckData.plateNumber || truckData.plate_number || '',
               model: truckData.model || '',
               year: truckData.year || new Date().getFullYear(),
               type: truckData.type || truckData.truckType || '',
               vin: truckData.vin || truckData.vinNumber || '',
               capacity: truckData.capacity || 0,
               vendorId: truckData.vendorId || truckData.vendor_id || '',
+              driverId: truckData.driverId || truckData.driver_id || '',
               status: truckData.status || 'active',
               manufacturer: truckData.manufacturer || 'Caterpillar',
             });
@@ -137,18 +169,18 @@ export default function TruckForm() {
     if (!validateForm()) return;
 
     try {
-      setSaving(true);
       console.log('💾 Saving truck data to Backend 2...', formData);
 
       const truckData = {
-        truckNumber: formData.truckNumber,
-        plateNumber: formData.plateNumber,
+        name: formData.truckNumber,
+        plate: formData.plateNumber,
         model: formData.model,
         year: parseInt(formData.year),
         type: formData.type,
         vin: formData.vin,
         capacity: parseFloat(formData.capacity) || 0,
-        vendorId: formData.vendorId || null,
+        vendor_id: formData.vendorId ? parseInt(formData.vendorId) : null,
+        driver_id: formData.driverId ? parseInt(formData.driverId) : null,
         status: formData.status,
         manufacturer: formData.manufacturer,
       };
@@ -157,13 +189,13 @@ export default function TruckForm() {
       if (isNewTruck) {
         // CREATE new truck
         console.log('➕ Creating new truck');
-        response = await trucksApi.create(truckData);
+        response = await createTruck(truckData);
         console.log('✅ Truck created successfully:', response);
         alert('Truck created successfully!');
       } else {
         // UPDATE existing truck
         console.log('🔄 Updating truck:', id);
-        response = await trucksApi.update(id, truckData);
+        response = await updateTruck(id, truckData);
         console.log('✅ Truck updated successfully:', response);
         alert('Truck updated successfully!');
       }
@@ -171,20 +203,18 @@ export default function TruckForm() {
       navigate('/trucks');
     } catch (error) {
       console.error('❌ Failed to save truck:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      const errorMsg = error.message || 'Unknown error';
       alert(`Failed to save truck:\n${errorMsg}`);
-    } finally {
-      setSaving(false);
     }
   };
 
   if (loading) {
     return (
       <TailwindLayout>
-        <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 flex items-center justify-center">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-4 flex items-center justify-center">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-            <p className="text-gray-600">Loading truck data...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+            <p className="text-gray-500 text-sm">Loading truck data...</p>
           </div>
         </div>
       </TailwindLayout>
@@ -193,46 +223,141 @@ export default function TruckForm() {
 
   return (
     <TailwindLayout>
-      <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+      {/* <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50 p-4 overflow-y-auto"> */}
+      <div className="p-6 space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-gray-600">
+          <Link to="/" className="hover:text-indigo-600 transition-colors">
+            Dashboard
+          </Link>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-900 font-medium">Vendors</span>
+        </nav>
+
+        {/* Header */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                {isNewTruck ? 'Add New Vehicle' : `Edit Vehicle: ${formData.truckNumber || id}`}
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isNewTruck ? 'Add New Vehicle' : 'Edit Vehicle'}
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs text-gray-600 mt-0.5">
                 {isNewTruck ? 'Create a new vehicle entry' : 'Update vehicle information'}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <Link
                 to="/trucks"
-                className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+                Back
               </Link>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
               >
-                {saving ? 'Saving...' : 'Save Vehicle'}
+                {saving ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    {isNewTruck ? 'Add Data' : 'Save Changes'}
+                  </>
+                )}
               </button>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Basic Information */}
-              <section className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-gray-900 mb-4">Basic Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-12 gap-3">
+          {/* Left Column - Main Info (spans 7 columns on xl, 8 on lg) */}
+          <div className="lg:col-span-8 xl:col-span-7 space-y-3">
+            {/* Basic Information Card */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-200 bg-linear-to-r from-indigo-50 to-blue-50">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-indigo-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Basic Information</h2>
+                    <p className="text-xs text-gray-600">Vehicle identification details</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <Input
                     label="Truck Number *"
                     value={formData.truckNumber}
                     onChange={(e) => handleInputChange('truckNumber', e.target.value)}
                     placeholder="e.g., TRUCK001"
                     required
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                        />
+                      </svg>
+                    }
                   />
                   <Input
                     label="Plate Number *"
@@ -240,6 +365,21 @@ export default function TruckForm() {
                     onChange={(e) => handleInputChange('plateNumber', e.target.value)}
                     placeholder="e.g., B 1234 XYZ"
                     required
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                        />
+                      </svg>
+                    }
                   />
                   <Input
                     label="Model *"
@@ -247,7 +387,25 @@ export default function TruckForm() {
                     onChange={(e) => handleInputChange('model', e.target.value)}
                     placeholder="e.g., 777D"
                     required
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
+                      </svg>
+                    }
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <Input
                     type="number"
                     label="Year *"
@@ -257,18 +415,87 @@ export default function TruckForm() {
                     min="1900"
                     max="2100"
                     required
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    }
                   />
                   <Input
                     label="Type"
                     value={formData.type}
                     onChange={(e) => handleInputChange('type', e.target.value)}
-                    placeholder="e.g., Dump Truck, Hauler"
+                    placeholder="e.g., Dump Truck"
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                        />
+                      </svg>
+                    }
                   />
+                  <Input
+                    label="Manufacturer"
+                    value={formData.manufacturer}
+                    onChange={(e) => handleInputChange('manufacturer', e.target.value)}
+                    placeholder="e.g., Caterpillar"
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
+                      </svg>
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
                     label="VIN"
                     value={formData.vin}
                     onChange={(e) => handleInputChange('vin', e.target.value)}
                     placeholder="Vehicle Identification Number"
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    }
                   />
                   <Input
                     type="number"
@@ -277,85 +504,32 @@ export default function TruckForm() {
                     value={formData.capacity}
                     onChange={(e) => handleInputChange('capacity', e.target.value)}
                     placeholder="e.g., 100"
-                  />
-                  <Input
-                    label="Manufacturer"
-                    value={formData.manufacturer}
-                    onChange={(e) => handleInputChange('manufacturer', e.target.value)}
-                    placeholder="e.g., Caterpillar"
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
+                        />
+                      </svg>
+                    }
                   />
                 </div>
-              </section>
-
-              {/* Assignment */}
-              <section className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-gray-900 mb-4">Assignment</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700">Vendor</span>
-                    <select
-                      className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      value={formData.vendorId}
-                      onChange={(e) => handleInputChange('vendorId', e.target.value)}
-                    >
-                      <option value="">Select Vendor (Optional)</option>
-                      {vendors.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name} {v.code ? `(${v.code})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700">Status</span>
-                    <select
-                      className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      value={formData.status}
-                      onChange={(e) => handleInputChange('status', e.target.value)}
-                    >
-                      <option value="active">Active</option>
-                      <option value="operational">Operational</option>
-                      <option value="idle">Idle</option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="out-of-service">Out of Service</option>
-                    </select>
-                  </label>
-                </div>
-              </section>
+              </div>
             </div>
 
-            {/* Actions Sidebar */}
-            <div className="space-y-6">
-              <section className="bg-white rounded-xl shadow p-4">
-                <h2 className="font-semibold text-gray-900 mb-4">Actions</h2>
-                <div className="space-y-3">
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="w-full px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? 'Saving...' : isNewTruck ? 'Create Vehicle' : 'Update Vehicle'}
-                  </button>
-                  <Link
-                    to="/trucks"
-                    className="block w-full px-4 py-2 rounded-md border border-gray-300 text-gray-700 text-sm text-center hover:bg-gray-50"
-                  >
-                    Cancel
-                  </Link>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
-                    <strong>Note:</strong> Fields marked with * are required.
-                  </p>
-                </div>
-              </section>
-
-              {/* Info Card */}
-              <section className="bg-blue-50 rounded-xl border border-blue-200 p-4">
-                <div className="flex items-start gap-2">
+            {/* Assignment Card */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-200 bg-linear-to-r from-green-50 to-emerald-50">
+                <div className="flex items-center gap-2">
                   <svg
-                    className="w-5 h-5 text-blue-600 mt-0.5 shrink-0"
+                    className="w-4 h-4 text-green-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -364,23 +538,219 @@ export default function TruckForm() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                     />
                   </svg>
                   <div>
-                    <h3 className="text-sm font-semibold text-blue-900 mb-1">Vehicle Management</h3>
-                    <p className="text-xs text-blue-700">
-                      {isNewTruck
-                        ? 'Fill in the vehicle details to add it to your fleet. Make sure all required fields are completed.'
-                        : 'Update vehicle information as needed. Changes will be saved immediately.'}
+                    <h2 className="text-sm font-semibold text-gray-900">Assignment</h2>
+                    <p className="text-xs text-gray-600">Vendor and driver information</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <Select
+                  label="Vendor"
+                  value={formData.vendorId}
+                  onChange={(e) => handleInputChange('vendorId', e.target.value)}
+                  icon={
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  }
+                >
+                  <option value="">Select Vendor (Optional)</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name || v.name_vendor} {v.code ? `(${v.code})` : ''}
+                    </option>
+                  ))}
+                </Select>
+
+                <Select
+                  label="Driver"
+                  value={formData.driverId}
+                  onChange={(e) => handleInputChange('driverId', e.target.value)}
+                  icon={
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  }
+                >
+                  <option value="">Select Driver (Optional)</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Status (spans 5 columns on xl, 4 on lg) */}
+          <div className="lg:col-span-4 xl:col-span-5 space-y-3">
+            {/* Status Card */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-4 py-3 border-b border-gray-200 bg-linear-to-r from-purple-50 to-pink-50">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Status</h2>
+                    <p className="text-xs text-gray-600">Vehicle operational status</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <Select
+                  label="Status *"
+                  value={formData.status}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  icon={
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  }
+                >
+                  <option value="active">✅ Active</option>
+                  <option value="operational">🟢 Operational</option>
+                  <option value="idle">⏸️ Idle</option>
+                  <option value="maintenance">🔧 Maintenance</option>
+                  <option value="out-of-service">⛔ Out of Service</option>
+                </Select>
+
+                <div className="pt-2 border-t border-gray-100">
+                  <div
+                    className={`p-3 rounded-md text-center ${
+                      formData.status === 'active' || formData.status === 'operational'
+                        ? 'bg-green-50 border border-green-200'
+                        : formData.status === 'maintenance'
+                          ? 'bg-yellow-50 border border-yellow-200'
+                          : formData.status === 'idle'
+                            ? 'bg-blue-50 border border-blue-200'
+                            : 'bg-red-50 border border-red-200'
+                    }`}
+                  >
+                    <div
+                      className={`text-2xl mb-1 ${
+                        formData.status === 'active' || formData.status === 'operational'
+                          ? 'text-green-600'
+                          : formData.status === 'maintenance'
+                            ? 'text-yellow-600'
+                            : formData.status === 'idle'
+                              ? 'text-blue-600'
+                              : 'text-red-600'
+                      }`}
+                    >
+                      {formData.status === 'active' || formData.status === 'operational'
+                        ? '✓'
+                        : formData.status === 'maintenance'
+                          ? '⚠'
+                          : formData.status === 'idle'
+                            ? '⏸'
+                            : '✕'}
+                    </div>
+                    <p
+                      className={`text-xs font-semibold ${
+                        formData.status === 'active' || formData.status === 'operational'
+                          ? 'text-green-700'
+                          : formData.status === 'maintenance'
+                            ? 'text-yellow-700'
+                            : formData.status === 'idle'
+                              ? 'text-blue-700'
+                              : 'text-red-700'
+                      }`}
+                    >
+                      {formData.status === 'active'
+                        ? 'Vehicle Active'
+                        : formData.status === 'operational'
+                          ? 'Vehicle Operational'
+                          : formData.status === 'maintenance'
+                            ? 'Under Maintenance'
+                            : formData.status === 'idle'
+                              ? 'Vehicle Idle'
+                              : 'Out of Service'}
                     </p>
                   </div>
                 </div>
-              </section>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Footer - Full Width */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Fields marked with <span className="text-red-500 font-medium">*</span> are required
+            </p>
+            <div className="flex gap-2">
+              <Link
+                to="/trucks"
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </Link>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                {saving ? 'Saving...' : isNewTruck ? 'Add Data' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>
       </div>
+      {/* </div> */}
     </TailwindLayout>
   );
 }

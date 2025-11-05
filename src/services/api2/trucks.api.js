@@ -8,21 +8,19 @@ import api2Instance from './config';
 export const trucksApi = {
   /**
    * Get all trucks with pagination and filters
-   * @param {Object} params - { page, limit, status, minFuel, search }
+   * @param {Object} params - { page, limit, status, vendor_id, search }
    * @returns {Promise}
    */
   getAll: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
 
-      // Be-tpms.connectis.my.id might not support large limit values
-      // Try without query params first, or use smaller limit
       if (params.page) queryParams.append('page', params.page);
+      if (params.limit) queryParams.append('limit', params.limit);
       if (params.status) queryParams.append('status', params.status);
-      if (params.minFuel) queryParams.append('minFuel', params.minFuel);
+      if (params.vendor_id) queryParams.append('vendor_id', params.vendor_id);
       if (params.search) queryParams.append('search', params.search);
 
-      // Try with query string first
       const queryString = queryParams.toString();
       const url = queryString ? `/trucks?${queryString}` : '/trucks';
 
@@ -30,7 +28,7 @@ export const trucksApi = {
       const response = await api2Instance.get(url);
       console.log(
         '✅ Trucks data loaded:',
-        response?.data?.length || response?.length || 'unknown count',
+        response?.data?.trucks?.length || response?.data?.length || 'unknown count',
         'trucks'
       );
       return response;
@@ -38,6 +36,25 @@ export const trucksApi = {
       console.error('❌ Failed to load trucks:', error.message);
       throw error;
     }
+  },
+
+  /**
+   * Get truck summary statistics
+   * @returns {Promise}
+   */
+  getSummary: async () => {
+    const response = await api2Instance.get('/trucks/summary');
+    return response;
+  },
+
+  /**
+   * Get trucks by status
+   * @param {string} status - 'active', 'maintenance', 'inactive'
+   * @returns {Promise}
+   */
+  getByStatus: async (status) => {
+    const response = await api2Instance.get(`/trucks/by-status?status=${status}`);
+    return response;
   },
 
   /**
@@ -62,34 +79,52 @@ export const trucksApi = {
 
   /**
    * Get truck location history
-   * @param {string} truckId - Can be ID or plate number
-   * @param {Object} params - { timeRange, limit, minSpeed }
+   * @param {string} truckId - Truck ID
+   * @param {Object} params - { startDate, endDate, limit }
    * @returns {Promise}
    */
   getLocationHistory: async (truckId, params = {}) => {
     const queryParams = new URLSearchParams();
 
-    if (params.timeRange) queryParams.append('timeRange', params.timeRange);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
     if (params.limit) queryParams.append('limit', params.limit);
-    if (params.minSpeed !== undefined) queryParams.append('minSpeed', params.minSpeed);
 
-    const response = await api2Instance.get(`/trucks/${truckId}/history?${queryParams.toString()}`);
+    const queryString = queryParams.toString();
+    const url = queryString
+      ? `/trucks/${truckId}/history?${queryString}`
+      : `/trucks/${truckId}/history`;
+    const response = await api2Instance.get(url);
+    return response;
+  },
+
+  /**
+   * Get truck locations by name
+   * @param {string} truckName - Truck name
+   * @returns {Promise}
+   */
+  getLocationsByName: async (truckName) => {
+    const response = await api2Instance.get(`/trucks/${encodeURIComponent(truckName)}/locations`);
     return response;
   },
 
   /**
    * Get truck alerts
    * @param {string} truckId
-   * @param {Object} params - { resolved, limit }
+   * @param {Object} params - { status, severity }
    * @returns {Promise}
    */
   getAlerts: async (truckId, params = {}) => {
     const queryParams = new URLSearchParams();
 
-    if (params.resolved !== undefined) queryParams.append('resolved', params.resolved);
-    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.severity) queryParams.append('severity', params.severity);
 
-    const response = await api2Instance.get(`/trucks/${truckId}/alerts?${queryParams.toString()}`);
+    const queryString = queryParams.toString();
+    const url = queryString
+      ? `/trucks/${truckId}/alerts?${queryString}`
+      : `/trucks/${truckId}/alerts`;
+    const response = await api2Instance.get(url);
     return response;
   },
 
@@ -103,41 +138,35 @@ export const trucksApi = {
   },
 
   /**
-   * Get truck location by plate number
-   * @param {string} plateNumber
-   * @param {Object} params - { timeRange, limit }
-   * @returns {Promise}
-   */
-  getLocationByPlate: async (plateNumber, params = {}) => {
-    const queryParams = new URLSearchParams();
-
-    if (params.timeRange) queryParams.append('timeRange', params.timeRange);
-    if (params.limit) queryParams.append('limit', params.limit);
-
-    const response = await api2Instance.get(
-      `/location-history/${encodeURIComponent(plateNumber)}?${queryParams.toString()}`
-    );
-    return response;
-  },
-
-  /**
-   * Create new truck
-   * @param {Object} truckData - { truckNumber, plateNumber, model, year, capacity, vendor, driver, status }
+   * Create new truck (with optional image upload)
+   * @param {Object|FormData} truckData - FormData for image upload or Object { name, plate, vin, model, type, year, status, vendor_id, driver_id, image }
    * @returns {Promise}
    */
   create: async (truckData) => {
-    const response = await api2Instance.post('/trucks', truckData);
+    const config =
+      truckData instanceof FormData
+        ? {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        : {};
+    const response = await api2Instance.post('/trucks', truckData, config);
     return response;
   },
 
   /**
-   * Update truck
+   * Update truck (with optional image upload)
    * @param {string} truckId
-   * @param {Object} truckData
+   * @param {Object|FormData} truckData - FormData for image upload or Object
    * @returns {Promise}
    */
   update: async (truckId, truckData) => {
-    const response = await api2Instance.put(`/trucks/${truckId}`, truckData);
+    const config =
+      truckData instanceof FormData
+        ? {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        : {};
+    const response = await api2Instance.put(`/trucks/${truckId}`, truckData, config);
     return response;
   },
 
@@ -149,17 +178,6 @@ export const trucksApi = {
    */
   updateStatus: async (truckId, status) => {
     const response = await api2Instance.put(`/trucks/${truckId}/status`, { status });
-    return response;
-  },
-
-  /**
-   * Bulk update truck status
-   * @param {Array} truckIds
-   * @param {string} status
-   * @returns {Promise}
-   */
-  bulkUpdateStatus: async (truckIds, status) => {
-    const response = await api2Instance.put('/trucks/bulk/status', { truckIds, status });
     return response;
   },
 

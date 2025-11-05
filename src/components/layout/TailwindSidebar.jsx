@@ -27,10 +27,21 @@ const navigation = [
     ],
   },
   {
+    name: 'Monitoring',
+    icon: ChartBarIcon,
+    children: [
+      { name: 'Vehicle & IoT Status', href: '/fleet/status' },
+      // { name: 'Live Tire View', href: '/monitoring/live-view' },
+      { name: 'Tire Pressure', href: '/monitoring/tires' },
+      { name: 'Temperature', href: '/monitoring/temperature' },
+      { name: 'Fuel Level', href: '/monitoring/fuel' },
+    ],
+  },
+  {
     name: 'Fleet Management',
     icon: TruckIcon,
     children: [
-      { name: 'Fleet Groups', href: '/fleet/groups' },
+      // { name: 'Fleet Groups', href: '/fleet/groups' },
       { name: 'All Vehicles', href: '/trucks' },
       { name: 'Drivers', href: '/drivers' },
       { name: 'Vendors', href: '/vendors' },
@@ -42,17 +53,6 @@ const navigation = [
     children: [
       { name: 'Device Center', href: '/devices' },
       { name: 'Sensor Management', href: '/sensors' },
-    ],
-  },
-  {
-    name: 'Monitoring',
-    icon: ChartBarIcon,
-    children: [
-      { name: 'Vehicle & IoT Status', href: '/fleet/status' },
-      { name: 'Live Tire View', href: '/monitoring/live-view' },
-      { name: 'Tire Pressure', href: '/monitoring/tires' },
-      { name: 'Temperature', href: '/monitoring/temperature' },
-      { name: 'Fuel Level', href: '/monitoring/fuel' },
     ],
   },
 
