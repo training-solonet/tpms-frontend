@@ -786,151 +786,229 @@ const HistoryTrackingMap = () => {
   }, [map]);
 
   const sidebarContent = (
-    <>
-      <h4 className="text-lg font-semibold text-gray-900">History Tracking</h4>
-
-      {/* Date filter */}
-      <div className="mt-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Date (06:00 – 16:00)</label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          disabled={loading}
-        />
-
-        {/* Shift selector */}
-        <label className="block text-xs font-medium text-gray-700 mb-1">Shift</label>
-        <select
-          value={shiftMode}
-          onChange={(e) => setShiftMode(e.target.value)}
-          className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          disabled={loading}
-        >
-          <option value="day">Day (06:00–16:00)</option>
-          <option value="night">Night (16:00–06:00)</option>
-          <option value="custom">Custom</option>
-        </select>
-
-        {shiftMode === 'custom' && (
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <div>
-              <label className="block text-[10px] text-gray-600 mb-0.5">Start</label>
-              <input
-                type="time"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] text-gray-600 mb-0.5">End</label>
-              <input
-                type="time"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        )}
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="pb-3 border-b border-gray-200 mb-3 shrink-0">
+        <h4 className="text-base font-bold text-gray-900">History Tracking</h4>
+        <p className="text-xs text-gray-500 mt-0.5">Pantau riwayat perjalanan kendaraan</p>
       </div>
 
-      {/* Cluster Filter */}
-      <div className="mt-3">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Cluster (Truck No)</label>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          {['1-199', '200-399', '400-599', '600-799', '800-999'].map((range) => (
-            <label key={range} className="flex items-center gap-2 cursor-pointer select-none">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-4 pr-1">
+        {/* Date & Shift Section */}
+        <div className="min-w-0">
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Periode Waktu
+          </h5>
+          <div className="space-y-2.5">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Tanggal</label>
               <input
-                type="checkbox"
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                checked={clusterSelections.has(range)}
-                onChange={(e) => {
-                  setClusterSelections((prev) => {
-                    const next = new Set(prev);
-                    if (e.target.checked) next.add(range);
-                    else next.delete(range);
-                    return next;
-                  });
-                }}
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
                 disabled={loading}
               />
-              <span>{range}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+            </div>
 
-      {/* Journey Summary for selected vehicle */}
-      <div className="mt-4 p-3 bg-white/70 rounded-lg border border-gray-200">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-700">Ringkasan Perjalanan</span>
-          {selectedVehicle && (
-            <span className="text-[10px] text-gray-500">
-              Truck{' '}
-              {selectedVehicle.truckNumber ||
-                extractTruckNumber(selectedVehicle.id) ||
-                selectedVehicle.id}
-            </span>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Shift Kerja</label>
+              <select
+                value={shiftMode}
+                onChange={(e) => setShiftMode(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
+                disabled={loading}
+              >
+                <option value="day">Siang (06:00–16:00)</option>
+                <option value="night">Malam (16:00–06:00)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            {shiftMode === 'custom' && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Mulai</label>
+                  <input
+                    type="time"
+                    value={customStart}
+                    onChange={(e) => setCustomStart(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Selesai</label>
+                  <input
+                    type="time"
+                    value={customEnd}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200"></div>
+
+        {/* Cluster Filter Section */}
+        <div className="min-w-0">
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Filter Cluster
+          </h5>
+          <div className="grid grid-cols-2 gap-1.5">
+            {['1-199', '200-399', '400-599', '600-799', '800-999'].map((range) => (
+              <label
+                key={range}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs font-medium transition-all cursor-pointer select-none ${
+                  clusterSelections.has(range)
+                    ? 'bg-blue-50 border-blue-400 text-blue-700'
+                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-1 focus:ring-blue-500 flex-shrink-0"
+                  checked={clusterSelections.has(range)}
+                  onChange={(e) => {
+                    setClusterSelections((prev) => {
+                      const next = new Set(prev);
+                      if (e.target.checked) next.add(range);
+                      else next.delete(range);
+                      return next;
+                    });
+                  }}
+                  disabled={loading}
+                />
+                <span className="truncate">{range}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200"></div>
+
+        {/* Journey Summary Section */}
+        <div className="min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Ringkasan
+            </h5>
+            {selectedVehicle && (
+              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded flex-shrink-0">
+                T{selectedVehicle.truckNumber || extractTruckNumber(selectedVehicle.id) || '?'}
+              </span>
+            )}
+          </div>
+
+          {selectedVehicle && journeyStats ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
+                <span className="text-xs text-gray-600">Total Poin</span>
+                <span className="text-xs font-semibold text-gray-900">{journeyStats.points}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
+                <span className="text-xs text-gray-600">Jarak Tempuh</span>
+                <span className="text-xs font-semibold text-gray-900">
+                  {journeyStats.distanceKm.toFixed(2)} km
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
+                <span className="text-xs text-gray-600">Durasi</span>
+                <span className="text-xs font-semibold text-gray-900">
+                  {journeyStats.durationHrs ? journeyStats.durationHrs.toFixed(2) + ' jam' : '-'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
+                <span className="text-xs text-gray-600 truncate">Kec. Rata-rata</span>
+                <span className="text-xs font-semibold text-gray-900 flex-shrink-0">
+                  {journeyStats.avgSpeed ? journeyStats.avgSpeed.toFixed(1) + ' km/j' : '-'}
+                </span>
+              </div>
+              <div className="pt-1.5">
+                <div className="text-xs text-gray-600 mb-1">Waktu Perjalanan</div>
+                <div className="bg-gray-50 rounded px-2 py-1.5 text-xs text-gray-700 text-center break-words">
+                  {journeyStats.startT
+                    ? new Date(journeyStats.startT).toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '--:--'}
+                  {' → '}
+                  {journeyStats.endT
+                    ? new Date(journeyStats.endT).toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '--:--'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-4 text-center bg-gray-50 rounded-md">
+              <svg
+                className="w-8 h-8 text-gray-300 mb-1.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <p className="text-xs text-gray-500 leading-tight">
+                Pilih kendaraan di peta untuk
+                <br />
+                melihat ringkasan perjalanan
+              </p>
+            </div>
           )}
         </div>
-        {selectedVehicle && journeyStats ? (
-          <div className="text-xs text-gray-800 space-y-1">
-            <div className="flex justify-between">
-              <span>Poin</span>
-              <span>{journeyStats.points}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Jarak</span>
-              <span>{journeyStats.distanceKm.toFixed(2)} km</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Durasi</span>
-              <span>
-                {journeyStats.durationHrs ? journeyStats.durationHrs.toFixed(2) + ' jam' : '-'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Kecepatan Rata2</span>
-              <span>
-                {journeyStats.avgSpeed ? journeyStats.avgSpeed.toFixed(1) + ' km/j' : '-'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Waktu</span>
-              <span>
-                {journeyStats.startT ? new Date(journeyStats.startT).toLocaleTimeString() : '-'} —{' '}
-                {journeyStats.endT ? new Date(journeyStats.endT).toLocaleTimeString() : '-'}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="text-[11px] text-gray-500">
-            Pilih kendaraan untuk melihat ringkasan perjalanan.
-          </div>
-        )}
-      </div>
+        <div className="border-t border-gray-200"></div>
 
-      {/* Alerts summary */}
-      <div className="mt-2 p-3 bg-white/70 rounded-lg border border-gray-200">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-700">Alerts (Periode)</span>
+        {/* Alerts Section */}
+        <div className="min-w-0">
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Alerts
+          </h5>
+          <div className="bg-gray-50 rounded-md px-3 py-2.5 text-center">
+            {alertsLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs text-gray-600">Memuat...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-xl font-bold text-gray-900">{alertCount ?? '—'}</span>
+                <span className="text-xs text-gray-600">kejadian</span>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="text-xs text-gray-800">
-          {alertsLoading ? 'Memuat…' : alertCount == null ? '—' : `${alertCount} kejadian`}
+
+        <div className="border-t border-gray-200"></div>
+
+        {/* Tire Pressure Section */}
+        <div className="min-w-0 pb-2">
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Tekanan Ban
+          </h5>
+          <div className="w-full overflow-hidden">
+            <TirePressureDisplay
+              selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id}
+              tireData={selectedVehicle?.tireData}
+              showHeader={false}
+              className="w-full"
+            />
+          </div>
         </div>
       </div>
-
-      {/* Tire Pressure (same as live) */}
-      <div className="mt-3">
-        <TirePressureDisplay
-          selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id}
-          tireData={selectedVehicle?.tireData}
-        />
-      </div>
-    </>
+    </div>
   );
 
   const additionalControls = (

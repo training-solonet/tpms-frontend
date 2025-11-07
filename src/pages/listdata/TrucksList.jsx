@@ -42,7 +42,7 @@ function TruckActionMenu({ truck, onEdit, onDelete }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="relative z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="More options"
           >
             <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
@@ -428,7 +428,7 @@ const TrucksFormList = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-5">
             <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-indigo-100 rounded-lg">
@@ -482,6 +482,31 @@ const TrucksFormList = () => {
                       allTrucks.filter((t) => t.status === 'active' || t.status === 'operational')
                         .length
                     }
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-green-100 rounded-lg">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">Idle</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {allTrucks.filter((t) => t.status === 'idle').length}
                   </p>
                 </div>
               </div>
@@ -725,7 +750,9 @@ const TrucksFormList = () => {
                         </svg>
                         Columns
                         <svg
-                          className="w-4 h-4 group-open:rotate-180 transition-transform"
+                          //Pakai ini jika ingin ada animasi rotasi
+                          // className="w-4 h-4 group-open:rotate-180 transition-transform"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"

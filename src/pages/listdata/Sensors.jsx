@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { devicesApi, sensorsApi, trucksApi } from '../../services/api2';
 import TailwindLayout from '../../components/layout/TailwindLayout';
+import { Button } from '../../components/common/Button.jsx';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,7 @@ function SensorsActionMenu({ truck, onEdit, onDelete }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="relative z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="More options"
           >
             <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
@@ -125,7 +126,7 @@ const Sensors = () => {
   // Filters
   const [query, setQuery] = useState('');
   const [deviceFilter, setDeviceFilter] = useState('');
-  const [truckFilter, setTruckFilter] = useState('');
+  const [sensorFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   // Pagination
@@ -272,12 +273,12 @@ const Sensors = () => {
         (truck?.name || '').toLowerCase().includes(query.toLowerCase());
 
       const matchDevice = !deviceFilter || device?.id?.toString() === deviceFilter;
-      const matchTruck = !truckFilter || truck?.id?.toString() === truckFilter;
+      const matchTruck = !sensorFilter || truck?.id?.toString() === sensorFilter;
       const matchStatus = !statusFilter || sensor.status === statusFilter;
 
       return matchQuery && matchDevice && matchTruck && matchStatus;
     });
-  }, [sensors, query, deviceFilter, truckFilter, statusFilter, getSensorInfo]);
+  }, [sensors, query, deviceFilter, sensorFilter, statusFilter, getSensorInfo]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -352,7 +353,7 @@ const Sensors = () => {
 
   return (
     <TailwindLayout>
-      <div className="p-6 space-y-6">
+      <div className="h-[calc(100vh-80px)] overflow-y-auto p-6 space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600">
           <Link to="/" className="hover:text-indigo-600 transition-colors">
@@ -523,126 +524,104 @@ const Sensors = () => {
                   />
                 </div>
 
-                {/* Device Filter */}
-                <div className="relative">
-                  <select
-                    value={deviceFilter}
-                    onChange={(e) => setDeviceFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                                focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Devices</option>
-                    {devices.map((device) => (
-                      <option key={device.id} value={device.id}>
-                        {device.serial_number}
-                      </option>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[150px]">
+                      {devices.id || 'All Device'}
+                      <svg
+                        className="w-4 h-4 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[150px]">
+                    <DropdownMenuItem onClick={() => setDeviceFilter('')}>
+                      All Device
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {devices.map((d) => (
+                      <DropdownMenuItem key={d.id} onClick={() => setDeviceFilter(d.id)}>
+                        {d.sn || d.serial_number || `Device #${d.id}`}
+                      </DropdownMenuItem>
                     ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-                {/* Truck Filter */}
-                <div className="relative">
-                  <select
-                    value={truckFilter}
-                    onChange={(e) => setTruckFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                                focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Trucks</option>
-                    {trucks.map((truck) => (
-                      <option key={truck.id} value={truck.id}>
-                        {truck.name}
-                      </option>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[130px]">
+                      {statusFilter
+                        ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+                        : 'All Status'}
+                      <svg
+                        className="w-4 h-4 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setStatusFilter}>All Status</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {statusOptions.map((s) => (
+                      <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </DropdownMenuItem>
                     ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-
-                {/* Status Filter */}
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                                focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Status</option>
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Per Page Selector */}
-                <div className="relative">
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setPage(1);
-                    }}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                                focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value={10}>10 / page</option>
-                    <option value={25}>25 / page</option>
-                    <option value={50}>50 / page</option>
-                    <option value={100}>100 / page</option>
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[120px]">
+                      {pageSize} / page
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[120px]">
+                    {[10, 25, 50, 100].map((size) => (
+                      <DropdownMenuItem
+                        key={size}
+                        onClick={() => {
+                          setPageSize(size);
+                          setPage(1);
+                        }}
+                      >
+                        {size} / page
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
@@ -663,7 +642,9 @@ const Sensors = () => {
                       </svg>
                       Columns
                       <svg
-                        className="w-4 h-4 group-open:rotate-180 transition-transform"
+                        //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform"
+                        className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -707,17 +688,9 @@ const Sensors = () => {
                         return;
                       }
                       const csvContent = [
-                        [
-                          'No',
-                          'Serial Number',
-                          'Device',
-                          'Truck',
-                          'Tire Position',
-                          'Temperature',
-                          'Pressure',
-                          'Battery',
-                          'Status',
-                        ].join(','),
+                        ['No', 'Serial Number', 'Device', 'Truck', 'Tire Position', 'Status'].join(
+                          ','
+                        ),
                         ...filtered.map((s, i) => {
                           const { device, truck } = getSensorInfo(s);
                           return [
@@ -726,9 +699,6 @@ const Sensors = () => {
                             device?.sn || device?.serial_number || 'N/A',
                             truck?.name || 'Unassigned',
                             getTirePosition(s.tireNo || s.tire_no),
-                            s.tempValue || s.temp_value || '',
-                            s.tirepValue || s.tirep_value || s.tire_value || '',
-                            s.bat || '',
                             s.status || '',
                           ]
                             .map((field) => `"${String(field).replace(/"/g, '""')}"`)
@@ -886,24 +856,6 @@ const Sensors = () => {
                           Sensor #
                         </th>
                       )}
-                      <th
-                        scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Temperature
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Pressure
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Battery
-                      </th>
                       {visibleColumns.extype && (
                         <th
                           scope="col"
@@ -984,41 +936,6 @@ const Sensors = () => {
                               {sensor.sensorNo || sensor.sensor_no || '--'}
                             </td>
                           )}
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            {sensor.tempValue || sensor.temp_value ? (
-                              <span
-                                className={
-                                  parseFloat(sensor.tempValue || sensor.temp_value) > 60
-                                    ? 'text-red-600 font-medium'
-                                    : 'text-gray-900'
-                                }
-                              >
-                                {sensor.tempValue || sensor.temp_value}°C
-                              </span>
-                            ) : (
-                              '--'
-                            )}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm">
-                            {sensor.tirepValue || sensor.tirep_value || sensor.tire_value ? (
-                              <span
-                                className={
-                                  parseFloat(
-                                    sensor.tirepValue || sensor.tirep_value || sensor.tire_value
-                                  ) < 28
-                                    ? 'text-yellow-600 font-medium'
-                                    : 'text-gray-900'
-                                }
-                              >
-                                {sensor.tirepValue || sensor.tirep_value || sensor.tire_value} PSI
-                              </span>
-                            ) : (
-                              '--'
-                            )}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {sensor.bat ? `${sensor.bat}%` : '--'}
-                          </td>
                           {visibleColumns.extype && (
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                               {sensor.extype || '--'}

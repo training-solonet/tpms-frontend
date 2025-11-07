@@ -14,7 +14,7 @@ import FleetManagement from '../pages/FleetManagement';
 import FleetGroups from '../pages/FleetGroups';
 import Devices from '../pages/listdata/Devices';
 import Sensors from '../pages/listdata/Sensors';
-import VehicleDeviceStatus from '../pages/VehicleDeviceStatus';
+import VehicleDeviceStatus from '../pages/monitoring/VehicleDeviceStatus';
 import LiveTracking from '../pages/LiveTracking';
 import HistoryTracking from '../pages/HistoryTracking';
 import Analytics from '../pages/Analytics';
@@ -23,7 +23,7 @@ import Alerts from '../pages/Alerts';
 import Settings from '../pages/Settings';
 import TrucksFormList from '../pages/listdata/TrucksList';
 import TruckForm from '../pages/form/TruckForm';
-// Monitoring Pages with All Vehicles Design
+// Monitoring Pages - New Design
 import TirePressureMonitoring from '../pages/monitoring/TirePressureMonitoring';
 import TemperatureMonitoring from '../pages/monitoring/TemperatureMonitoring';
 import FuelMonitoring from '../pages/monitoring/FuelMonitoring';
@@ -173,15 +173,21 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Protected Routes - Telemetry (Old) - REDIRECT to Monitoring */}
-      <Route path="/telemetry/tires" element={<Navigate to="/monitoring/tires" replace />} />
-      <Route
+      {/* Protected Routes - Telemetry (OLD ROUTES - COMMENTED) */}
+      {/* <Route
+        path="/telemetry/tires"
+        element={<Navigate to="/monitoring/tires" replace />}
+      /> */}
+      {/* <Route
         path="/telemetry/temperature"
         element={<Navigate to="/monitoring/temperature" replace />}
-      />
-      <Route path="/telemetry/fuel" element={<Navigate to="/monitoring/fuel" replace />} />
+      /> */}
+      {/* <Route 
+        path="/telemetry/fuel" 
+        element={<Navigate to="/monitoring/fuel" replace />} 
+      /> */}
 
-      {/* Protected Routes - Monitoring (New Design) */}
+      {/* Protected Routes - Monitoring (NEW DESIGN) */}
       <Route
         path="/monitoring/tires"
         element={

@@ -34,14 +34,23 @@ export function DropdownMenu({ children }) {
       }
     };
 
+    const handleScroll = () => {
+      if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
+      // Listen to scroll on window and all scrollable parents
+      window.addEventListener('scroll', handleScroll, true);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
@@ -80,17 +89,58 @@ export function DropdownMenuTrigger({ children, asChild }) {
 
 // Content Container
 export function DropdownMenuContent({ children, className = '', align = 'end' }) {
-  const { isOpen } = useContext(DropdownContext);
+  const { isOpen, dropdownRef } = useContext(DropdownContext);
+  const contentRef = useRef(null);
+  const [position, setPosition] = useState({ top: 0, left: 0, placement: 'bottom' });
+
+  useEffect(() => {
+    if (isOpen && dropdownRef.current && contentRef.current) {
+      const triggerRect = dropdownRef.current.getBoundingClientRect();
+      const contentRect = contentRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      // Determine if dropdown should open upward or downward
+      const spaceBelow = viewportHeight - triggerRect.bottom;
+      const spaceAbove = triggerRect.top;
+      const dropdownHeight = contentRect.height || 200; // estimate if not rendered yet
+
+      let placement = 'bottom';
+      let top = triggerRect.bottom + 8; // mt-2 = 8px
+
+      // If not enough space below and more space above, open upward
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        placement = 'top';
+        top = triggerRect.top - dropdownHeight - 8;
+      }
+
+      // Calculate horizontal position
+      let left =
+        align === 'start' ? triggerRect.left : triggerRect.right - (contentRect.width || 224); // default 224px (w-56)
+
+      // Ensure dropdown doesn't overflow viewport horizontally
+      if (left + (contentRect.width || 224) > viewportWidth) {
+        left = viewportWidth - (contentRect.width || 224) - 16;
+      }
+      if (left < 16) {
+        left = 16;
+      }
+
+      setPosition({ top, left, placement });
+    }
+  }, [isOpen, align, dropdownRef]);
 
   if (!isOpen) return null;
 
-  const alignClass = align === 'start' ? 'left-0' : 'right-0';
-
   return (
     <div
-      className={`absolute ${alignClass} mt-2 origin-top-right rounded-md bg-white shadow-lg border border-gray-200 focus:outline-none z-50 transition-all duration-100 ease-out ${className}`}
+      ref={contentRef}
+      className={`fixed rounded-md bg-white shadow-lg border border-gray-200 focus:outline-none transition-all duration-100 ease-out ${className}`}
       style={{
+        top: `${position.top}px`,
+        left: `${position.left}px`,
         animation: 'fadeIn 0.15s ease-out',
+        zIndex: 9999,
       }}
     >
       <div className="py-1" role="menu" aria-orientation="vertical">

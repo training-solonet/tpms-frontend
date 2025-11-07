@@ -10,6 +10,14 @@ import {
 } from '@heroicons/react/24/outline';
 import { alertsApi } from '../services/api2';
 import fleetWebSocket from '../services/api2/websocket';
+import { Button } from '../components/common/Button.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from '../components/common/DropdownMenu.jsx';
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
@@ -138,37 +146,102 @@ const Alerts = () => {
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <FunnelIcon className="h-5 w-5 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">Filters:</span>
+                {/* <FunnelIcon className="h-5 w-5 text-gray-400" /> */}
+                {/* <span className="text-sm font-medium text-gray-700">Filters:</span> */}
               </div>
 
-              <select
-                value={filterSeverity}
-                onChange={(e) => setFilterSeverity(e.target.value)}
-                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-              >
-                <option value="">All Severities</option>
-                <option value="1">Low</option>
-                <option value="2">Medium</option>
-                <option value="4">High</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <FunnelIcon className="h-4 w-4 mr-2" />
+                    {filterSeverity === '1'
+                      ? 'Low'
+                      : filterSeverity === '2'
+                        ? 'Medium'
+                        : filterSeverity === '4'
+                          ? 'High'
+                          : 'All Severities'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('');
+                      setPage(1);
+                    }}
+                  >
+                    All Severities
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('1');
+                      setPage(1);
+                    }}
+                  >
+                    Low Severity
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('2');
+                      setPage(1);
+                    }}
+                  >
+                    Medium Severity
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('4');
+                      setPage(1);
+                    }}
+                  >
+                    High Severity
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              <select
-                value={filterResolved}
-                onChange={(e) => setFilterResolved(e.target.value)}
-                className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-              >
-                <option value="">All Alerts</option>
-                <option value="false">Active Only</option>
-                <option value="true">Resolved Only</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    {filterResolved === 'false'
+                      ? 'Active Only'
+                      : filterResolved === 'true'
+                        ? 'Resolved Only'
+                        : 'All Alerts'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterResolved('');
+                      setPage(1);
+                    }}
+                  >
+                    All Alerts
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterResolved('false');
+                      setPage(1);
+                    }}
+                  >
+                    Active Only
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterResolved('true');
+                      setPage(1);
+                    }}
+                  >
+                    Resolved Only
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              <button
-                onClick={loadAlerts}
-                className="ml-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
-              >
+              <Button onClick={loadAlerts} variant="default" size="sm" className="ml-auto">
                 Refresh
-              </button>
+              </Button>
             </div>
           </div>
 
