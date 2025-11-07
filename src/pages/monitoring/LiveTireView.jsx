@@ -104,22 +104,22 @@ export default function LiveTireView() {
   // Filter trucks based on search and status
   const filteredTrucks = trucks.filter((truck) => {
     // Search filter
-    const matchesSearch = 
+    const matchesSearch =
       truck.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       truck.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (!matchesSearch) return false;
 
     // Status filter
     if (statusFilter === 'all') return true;
-    
-    const criticalCount = truck.tpmsArray.filter(t => getTireStatus(t) === 'red').length;
-    const warningCount = truck.tpmsArray.filter(t => getTireStatus(t) === 'yellow').length;
-    
+
+    const criticalCount = truck.tpmsArray.filter((t) => getTireStatus(t) === 'red').length;
+    const warningCount = truck.tpmsArray.filter((t) => getTireStatus(t) === 'yellow').length;
+
     if (statusFilter === 'critical') return criticalCount > 0;
     if (statusFilter === 'warning') return warningCount > 0;
     if (statusFilter === 'normal') return criticalCount === 0 && warningCount === 0;
-    
+
     return true;
   });
 
@@ -201,7 +201,11 @@ export default function LiveTireView() {
         </div>
 
         {/* Position label */}
-        <div className={`text-center mt-1 ${isDouble ? 'text-[9px]' : 'text-[10px]'} font-medium text-gray-700`}>{position}</div>
+        <div
+          className={`text-center mt-1 ${isDouble ? 'text-[9px]' : 'text-[10px]'} font-medium text-gray-700`}
+        >
+          {position}
+        </div>
 
         {/* Tooltip on hover */}
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
@@ -286,16 +290,8 @@ export default function LiveTireView() {
               {/* Rear tires row 1 - Double tires (always show in dual format for 6x4 and 8x4) */}
               <div className="flex justify-between items-center mb-6">
                 <div className="flex gap-1.5">
-                  <TireDisplay
-                    tire={truck.tires.rearLeft1}
-                    position="RL1-I"
-                    isDouble={true}
-                  />
-                  <TireDisplay
-                    tire={truck.tires.rearLeft1}
-                    position="RL1-O"
-                    isDouble={true}
-                  />
+                  <TireDisplay tire={truck.tires.rearLeft1} position="RL1-I" isDouble={true} />
+                  <TireDisplay tire={truck.tires.rearLeft1} position="RL1-O" isDouble={true} />
                 </div>
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-xs text-gray-500 font-semibold bg-gray-100 px-3 py-1 rounded-full">
@@ -303,16 +299,8 @@ export default function LiveTireView() {
                   </div>
                 </div>
                 <div className="flex gap-1.5">
-                  <TireDisplay
-                    tire={truck.tires.rearRight1}
-                    position="RR1-I"
-                    isDouble={true}
-                  />
-                  <TireDisplay
-                    tire={truck.tires.rearRight1}
-                    position="RR1-O"
-                    isDouble={true}
-                  />
+                  <TireDisplay tire={truck.tires.rearRight1} position="RR1-I" isDouble={true} />
+                  <TireDisplay tire={truck.tires.rearRight1} position="RR1-O" isDouble={true} />
                 </div>
               </div>
 
@@ -393,8 +381,18 @@ export default function LiveTireView() {
                 <div className="text-2xl font-bold text-blue-900">{truck.tireCount}</div>
                 <div className="text-xs text-blue-700 font-medium">Total Tires</div>
               </div>
-              <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-8 h-8 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
@@ -404,12 +402,22 @@ export default function LiveTireView() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-green-900">
-                  {truck.tpmsArray.filter(t => getTireStatus(t) === 'green').length}
+                  {truck.tpmsArray.filter((t) => getTireStatus(t) === 'green').length}
                 </div>
                 <div className="text-xs text-green-700 font-medium">Normal</div>
               </div>
-              <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-8 h-8 text-green-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
@@ -419,12 +427,22 @@ export default function LiveTireView() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-yellow-900">
-                  {truck.tpmsArray.filter(t => getTireStatus(t) === 'yellow').length}
+                  {truck.tpmsArray.filter((t) => getTireStatus(t) === 'yellow').length}
                 </div>
                 <div className="text-xs text-yellow-700 font-medium">Low Pressure</div>
               </div>
-              <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="w-8 h-8 text-yellow-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
           </div>
@@ -434,23 +452,42 @@ export default function LiveTireView() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold text-red-900">
-                  {truck.tpmsArray.filter(t => getTireStatus(t) === 'red').length}
+                  {truck.tpmsArray.filter((t) => getTireStatus(t) === 'red').length}
                 </div>
                 <div className="text-xs text-red-700 font-medium">Critical</div>
               </div>
-              <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-8 h-8 text-red-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
         </div>
 
         {/* Detailed alerts - only show if there are issues */}
-        {truck.tpmsArray.filter(t => getTireStatus(t) !== 'green' && getTireStatus(t) !== 'gray').length > 0 && (
+        {truck.tpmsArray.filter((t) => getTireStatus(t) !== 'green' && getTireStatus(t) !== 'gray')
+          .length > 0 && (
           <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg p-4">
             <div className="flex items-start">
-              <svg className="w-5 h-5 text-yellow-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <svg
+                className="w-5 h-5 text-yellow-400 mt-0.5 mr-3"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-yellow-800 mb-2">Attention Required</h3>
@@ -459,13 +496,26 @@ export default function LiveTireView() {
                     const status = getTireStatus(tire);
                     if (status === 'green' || status === 'gray') return null;
                     return (
-                      <div key={idx} className="flex items-center text-xs text-yellow-800 bg-white rounded px-2 py-1.5">
-                        <span className={`w-2 h-2 rounded-full mr-2 ${
-                          status === 'red' ? 'bg-red-500' : status === 'orange' ? 'bg-orange-500' : 'bg-yellow-500'
-                        }`}></span>
+                      <div
+                        key={idx}
+                        className="flex items-center text-xs text-yellow-800 bg-white rounded px-2 py-1.5"
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full mr-2 ${
+                            status === 'red'
+                              ? 'bg-red-500'
+                              : status === 'orange'
+                                ? 'bg-orange-500'
+                                : 'bg-yellow-500'
+                          }`}
+                        ></span>
                         <span className="font-medium">{tire.tire_location}:</span>
                         <span className="ml-1">
-                          {status === 'red' ? 'Critical' : status === 'orange' ? 'Warning' : 'Low Pressure'}
+                          {status === 'red'
+                            ? 'Critical'
+                            : status === 'orange'
+                              ? 'Warning'
+                              : 'Low Pressure'}
                         </span>
                       </div>
                     );
@@ -525,8 +575,18 @@ export default function LiveTireView() {
             {/* Search Box */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </div>
               <input
@@ -542,7 +602,12 @@ export default function LiveTireView() {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               )}
@@ -568,7 +633,12 @@ export default function LiveTireView() {
                     : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:border-gray-300'
                 }`}
               >
-                Critical ({trucks.filter(t => t.tpmsArray.some(tire => getTireStatus(tire) === 'red')).length})
+                Critical (
+                {
+                  trucks.filter((t) => t.tpmsArray.some((tire) => getTireStatus(tire) === 'red'))
+                    .length
+                }
+                )
               </button>
               <button
                 onClick={() => setStatusFilter('warning')}
@@ -578,7 +648,12 @@ export default function LiveTireView() {
                     : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:border-gray-300'
                 }`}
               >
-                Warning ({trucks.filter(t => t.tpmsArray.some(tire => getTireStatus(tire) === 'yellow')).length})
+                Warning (
+                {
+                  trucks.filter((t) => t.tpmsArray.some((tire) => getTireStatus(tire) === 'yellow'))
+                    .length
+                }
+                )
               </button>
               <button
                 onClick={() => setStatusFilter('normal')}
@@ -588,9 +663,15 @@ export default function LiveTireView() {
                     : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:border-gray-300'
                 }`}
               >
-                Normal ({trucks.filter(t => 
-                  t.tpmsArray.every(tire => getTireStatus(tire) === 'green' || getTireStatus(tire) === 'gray')
-                ).length})
+                Normal (
+                {
+                  trucks.filter((t) =>
+                    t.tpmsArray.every(
+                      (tire) => getTireStatus(tire) === 'green' || getTireStatus(tire) === 'gray'
+                    )
+                  ).length
+                }
+                )
               </button>
             </div>
           </div>
@@ -598,8 +679,18 @@ export default function LiveTireView() {
           {/* Results Info */}
           {filteredTrucks.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-12 h-12 text-gray-400 mx-auto mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <p className="text-sm text-gray-600 font-medium">No trucks found</p>
               <p className="text-xs text-gray-500 mt-1">Try adjusting your search or filter</p>
@@ -610,193 +701,244 @@ export default function LiveTireView() {
               <div className="max-h-[500px] overflow-y-auto pr-2">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                   {paginatedTrucks.map((truck) => {
-              const isSelected = selectedTruck === truck.code;
-              const normalCount = truck.tpmsArray.filter(t => getTireStatus(t) === 'green').length;
-              const criticalCount = truck.tpmsArray.filter(t => getTireStatus(t) === 'red').length;
-              const warningCount = truck.tpmsArray.filter(t => getTireStatus(t) === 'yellow').length;
-              const hasIssues = criticalCount > 0 || warningCount > 0;
+                    const isSelected = selectedTruck === truck.code;
+                    const normalCount = truck.tpmsArray.filter(
+                      (t) => getTireStatus(t) === 'green'
+                    ).length;
+                    const criticalCount = truck.tpmsArray.filter(
+                      (t) => getTireStatus(t) === 'red'
+                    ).length;
+                    const warningCount = truck.tpmsArray.filter(
+                      (t) => getTireStatus(t) === 'yellow'
+                    ).length;
+                    const hasIssues = criticalCount > 0 || warningCount > 0;
 
-              return (
-                <button
-                  key={truck.code}
-                  onClick={() => setSelectedTruck(truck.code)}
-                  className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                    isSelected
-                      ? 'border-indigo-500 bg-indigo-50 shadow-lg scale-105'
-                      : hasIssues
-                        ? 'border-red-300 bg-red-50 hover:border-red-400 hover:shadow-md'
-                        : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-md'
-                  }`}
-                >
-                  {/* Status indicator badge */}
-                  {isSelected && (
-                    <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
-                      ACTIVE
-                    </div>
-                  )}
-                  {!isSelected && hasIssues && (
-                    <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow animate-pulse">
-                      ALERT
-                    </div>
-                  )}
-
-                  {/* Truck icon */}
-                  <div className={`flex items-center justify-center mb-2 ${
-                    isSelected ? 'text-indigo-600' : hasIssues ? 'text-red-500' : 'text-gray-400'
-                  }`}>
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                    </svg>
-                  </div>
-
-                  {/* Truck info */}
-                  <div className="text-center mb-2">
-                    <div className={`text-sm font-bold truncate ${
-                      isSelected ? 'text-indigo-900' : 'text-gray-900'
-                    }`}>
-                      {truck.code}
-                    </div>
-                    <div className="text-[10px] text-gray-500 truncate">{truck.name}</div>
-                  </div>
-
-                  {/* Tire status summary */}
-                  <div className="flex items-center justify-center gap-1.5 text-[10px]">
-                    {normalCount > 0 && (
-                      <div className="flex items-center gap-0.5 text-green-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                        <span className="font-semibold">{normalCount}</span>
-                      </div>
-                    )}
-                    {warningCount > 0 && (
-                      <div className="flex items-center gap-0.5 text-yellow-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                        <span className="font-semibold">{warningCount}</span>
-                      </div>
-                    )}
-                    {criticalCount > 0 && (
-                      <div className="flex items-center gap-0.5 text-red-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                        <span className="font-semibold">{criticalCount}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Total tire count */}
-                  <div className="text-center mt-2 pt-2 border-t border-gray-200">
-                    <span className={`text-[9px] font-medium ${
-                      isSelected ? 'text-indigo-700' : 'text-gray-500'
-                    }`}>
-                      {truck.tireCount} TIRES
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-                </div>
-              </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1}-{Math.min(endIndex, filteredTrucks.length)} of {filteredTrucks.length} vehicles
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {/* Previous Button */}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-
-                {/* Page Numbers */}
-                <div className="flex gap-1">
-                  {/* First page */}
-                  {currentPage > 3 && (
-                    <>
+                    return (
                       <button
-                        onClick={() => setCurrentPage(1)}
-                        className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        1
-                      </button>
-                      {currentPage > 4 && <span className="px-2 py-2 text-gray-400">...</span>}
-                    </>
-                  )}
-
-                  {/* Current page and neighbors */}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => {
-                      return page === currentPage || 
-                             page === currentPage - 1 || 
-                             page === currentPage + 1 ||
-                             (currentPage <= 2 && page <= 3) ||
-                             (currentPage >= totalPages - 1 && page >= totalPages - 2);
-                    })
-                    .map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                          currentPage === page
-                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        key={truck.code}
+                        onClick={() => setSelectedTruck(truck.code)}
+                        className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                          isSelected
+                            ? 'border-indigo-500 bg-indigo-50 shadow-lg scale-105'
+                            : hasIssues
+                              ? 'border-red-300 bg-red-50 hover:border-red-400 hover:shadow-md'
+                              : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-md'
                         }`}
                       >
-                        {page}
+                        {/* Status indicator badge */}
+                        {isSelected && (
+                          <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
+                            ACTIVE
+                          </div>
+                        )}
+                        {!isSelected && hasIssues && (
+                          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow animate-pulse">
+                            ALERT
+                          </div>
+                        )}
+
+                        {/* Truck icon */}
+                        <div
+                          className={`flex items-center justify-center mb-2 ${
+                            isSelected
+                              ? 'text-indigo-600'
+                              : hasIssues
+                                ? 'text-red-500'
+                                : 'text-gray-400'
+                          }`}
+                        >
+                          <svg
+                            className="w-8 h-8"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Truck info */}
+                        <div className="text-center mb-2">
+                          <div
+                            className={`text-sm font-bold truncate ${
+                              isSelected ? 'text-indigo-900' : 'text-gray-900'
+                            }`}
+                          >
+                            {truck.code}
+                          </div>
+                          <div className="text-[10px] text-gray-500 truncate">{truck.name}</div>
+                        </div>
+
+                        {/* Tire status summary */}
+                        <div className="flex items-center justify-center gap-1.5 text-[10px]">
+                          {normalCount > 0 && (
+                            <div className="flex items-center gap-0.5 text-green-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                              <span className="font-semibold">{normalCount}</span>
+                            </div>
+                          )}
+                          {warningCount > 0 && (
+                            <div className="flex items-center gap-0.5 text-yellow-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                              <span className="font-semibold">{warningCount}</span>
+                            </div>
+                          )}
+                          {criticalCount > 0 && (
+                            <div className="flex items-center gap-0.5 text-red-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                              <span className="font-semibold">{criticalCount}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Total tire count */}
+                        <div className="text-center mt-2 pt-2 border-t border-gray-200">
+                          <span
+                            className={`text-[9px] font-medium ${
+                              isSelected ? 'text-indigo-700' : 'text-gray-500'
+                            }`}
+                          >
+                            {truck.tireCount} TIRES
+                          </span>
+                        </div>
                       </button>
-                    ))}
-
-                  {/* Last page */}
-                  {currentPage < totalPages - 2 && (
-                    <>
-                      {currentPage < totalPages - 3 && <span className="px-2 py-2 text-gray-400">...</span>}
-                      <button
-                        onClick={() => setCurrentPage(totalPages)}
-                        className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        {totalPages}
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* Next Button */}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                {/* Jump to page */}
-                <div className="ml-2 flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Go to:</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                      const page = parseInt(e.target.value);
-                      if (page >= 1 && page <= totalPages) {
-                        setCurrentPage(page);
-                      }
-                    }}
-                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+                  <div className="text-sm text-gray-600">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredTrucks.length)} of{' '}
+                    {filteredTrucks.length} vehicles
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex gap-1">
+                      {/* First page */}
+                      {currentPage > 3 && (
+                        <>
+                          <button
+                            onClick={() => setCurrentPage(1)}
+                            className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            1
+                          </button>
+                          {currentPage > 4 && <span className="px-2 py-2 text-gray-400">...</span>}
+                        </>
+                      )}
+
+                      {/* Current page and neighbors */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter((page) => {
+                          return (
+                            page === currentPage ||
+                            page === currentPage - 1 ||
+                            page === currentPage + 1 ||
+                            (currentPage <= 2 && page <= 3) ||
+                            (currentPage >= totalPages - 1 && page >= totalPages - 2)
+                          );
+                        })
+                        .map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                              currentPage === page
+                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+
+                      {/* Last page */}
+                      {currentPage < totalPages - 2 && (
+                        <>
+                          {currentPage < totalPages - 3 && (
+                            <span className="px-2 py-2 text-gray-400">...</span>
+                          )}
+                          <button
+                            onClick={() => setCurrentPage(totalPages)}
+                            className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            {totalPages}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Jump to page */}
+                    <div className="ml-2 flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Go to:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={totalPages}
+                        value={currentPage}
+                        onChange={(e) => {
+                          const page = parseInt(e.target.value);
+                          if (page >= 1 && page <= totalPages) {
+                            setCurrentPage(page);
+                          }
+                        }}
+                        className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

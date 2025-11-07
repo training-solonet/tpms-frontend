@@ -2,7 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import { trucksApi } from '../../services/api2';
 import { Button } from '../../components/common/Button.jsx';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../../components/common/DropdownMenu.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '../../components/common/DropdownMenu.jsx';
 
 export default function TirePressureMonitoring() {
   const [data, setData] = useState([]);
@@ -341,8 +346,18 @@ export default function TirePressureMonitoring() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="justify-between min-w-[150px]">
                       {selectedTruck || 'All Trucks'}
-                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
@@ -363,8 +378,18 @@ export default function TirePressureMonitoring() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="justify-between min-w-[150px]">
                       {selectedStatus || 'All Status'}
-                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
@@ -398,8 +423,18 @@ export default function TirePressureMonitoring() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="justify-between min-w-[120px]">
                       {itemsPerPage} / page
-                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
@@ -451,31 +486,58 @@ export default function TirePressureMonitoring() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       No
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Truck
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Location
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Serial Number
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Pressure (PSI)
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Temperature (°C)
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Battery (%)
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Status
                     </th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+                    >
                       Last Update
                     </th>
                   </tr>
@@ -592,7 +654,10 @@ export default function TirePressureMonitoring() {
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination"
+                  >
                     {/* Previous button */}
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -600,8 +665,18 @@ export default function TirePressureMonitoring() {
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </button>
 
@@ -617,7 +692,7 @@ export default function TirePressureMonitoring() {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-                      
+
                       return (
                         <button
                           key={pageNum}
@@ -640,8 +715,18 @@ export default function TirePressureMonitoring() {
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </button>
                   </nav>
