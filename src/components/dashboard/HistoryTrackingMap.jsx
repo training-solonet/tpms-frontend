@@ -797,7 +797,9 @@ const HistoryTrackingMap = () => {
       <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-4 pr-1">
         {/* Date & Shift Section */}
         <div className="min-w-0">
-          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Periode Waktu</h5>
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Periode Waktu
+          </h5>
           <div className="space-y-2.5">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Tanggal</label>
@@ -853,7 +855,9 @@ const HistoryTrackingMap = () => {
 
         {/* Cluster Filter Section */}
         <div className="min-w-0">
-          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Filter Cluster</h5>
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Filter Cluster
+          </h5>
           <div className="grid grid-cols-2 gap-1.5">
             {['1-199', '200-399', '400-599', '600-799', '800-999'].map((range) => (
               <label
@@ -889,7 +893,9 @@ const HistoryTrackingMap = () => {
         {/* Journey Summary Section */}
         <div className="min-w-0">
           <div className="flex items-center justify-between mb-2">
-            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Ringkasan</h5>
+            <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Ringkasan
+            </h5>
             {selectedVehicle && (
               <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded flex-shrink-0">
                 T{selectedVehicle.truckNumber || extractTruckNumber(selectedVehicle.id) || '?'}
@@ -905,7 +911,9 @@ const HistoryTrackingMap = () => {
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
                 <span className="text-xs text-gray-600">Jarak Tempuh</span>
-                <span className="text-xs font-semibold text-gray-900">{journeyStats.distanceKm.toFixed(2)} km</span>
+                <span className="text-xs font-semibold text-gray-900">
+                  {journeyStats.distanceKm.toFixed(2)} km
+                </span>
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
                 <span className="text-xs text-gray-600">Durasi</span>
@@ -922,19 +930,41 @@ const HistoryTrackingMap = () => {
               <div className="pt-1.5">
                 <div className="text-xs text-gray-600 mb-1">Waktu Perjalanan</div>
                 <div className="bg-gray-50 rounded px-2 py-1.5 text-xs text-gray-700 text-center break-words">
-                  {journeyStats.startT ? new Date(journeyStats.startT).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  {journeyStats.startT
+                    ? new Date(journeyStats.startT).toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '--:--'}
                   {' → '}
-                  {journeyStats.endT ? new Date(journeyStats.endT).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  {journeyStats.endT
+                    ? new Date(journeyStats.endT).toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '--:--'}
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-4 text-center bg-gray-50 rounded-md">
-              <svg className="w-8 h-8 text-gray-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg
+                className="w-8 h-8 text-gray-300 mb-1.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
               </svg>
               <p className="text-xs text-gray-500 leading-tight">
-                Pilih kendaraan di peta untuk<br/>melihat ringkasan perjalanan
+                Pilih kendaraan di peta untuk
+                <br />
+                melihat ringkasan perjalanan
               </p>
             </div>
           )}
@@ -943,7 +973,9 @@ const HistoryTrackingMap = () => {
 
         {/* Alerts Section */}
         <div className="min-w-0">
-          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Alerts</h5>
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Alerts
+          </h5>
           <div className="bg-gray-50 rounded-md px-3 py-2.5 text-center">
             {alertsLoading ? (
               <div className="flex items-center justify-center gap-2">
@@ -963,7 +995,9 @@ const HistoryTrackingMap = () => {
 
         {/* Tire Pressure Section */}
         <div className="min-w-0 pb-2">
-          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Tekanan Ban</h5>
+          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+            Tekanan Ban
+          </h5>
           <div className="w-full overflow-hidden">
             <TirePressureDisplay
               selectedTruckId={resolveTruckUUID(selectedVehicle?.id) || selectedVehicle?.id}

@@ -82,13 +82,21 @@ const TirePressureDisplay = ({
         <div className={`flex justify-center ${gapClass}`}>
           <div className="flex flex-col items-center space-y-0.5 flex-1 min-w-0">
             <WheelFrontIcon size={24} color={colorHex(left)} />
-            <span className="text-[10px] font-medium leading-tight truncate w-full text-center">{labelPsi(left)}</span>
-            <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">{labelTemp(left)}</span>
+            <span className="text-[10px] font-medium leading-tight truncate w-full text-center">
+              {labelPsi(left)}
+            </span>
+            <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">
+              {labelTemp(left)}
+            </span>
           </div>
           <div className="flex flex-col items-center space-y-0.5 flex-1 min-w-0">
             <WheelFrontIcon size={24} color={colorHex(right)} />
-            <span className="text-[10px] font-medium leading-tight truncate w-full text-center">{labelPsi(right)}</span>
-            <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">{labelTemp(right)}</span>
+            <span className="text-[10px] font-medium leading-tight truncate w-full text-center">
+              {labelPsi(right)}
+            </span>
+            <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">
+              {labelTemp(right)}
+            </span>
           </div>
         </div>
       );

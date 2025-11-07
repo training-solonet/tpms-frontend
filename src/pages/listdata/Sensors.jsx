@@ -526,7 +526,7 @@ const Sensors = () => {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className= "justify-between min-w-[150px]">
+                    <Button variant="outline" className="justify-between min-w-[150px]">
                       {devices.id || 'All Device'}
                       <svg
                         className="w-4 h-4 ml-2"
@@ -543,7 +543,7 @@ const Sensors = () => {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align= 'start' className= "min-w-[150px]">
+                  <DropdownMenuContent align="start" className="min-w-[150px]">
                     <DropdownMenuItem onClick={() => setDeviceFilter('')}>
                       All Device
                     </DropdownMenuItem>
@@ -558,8 +558,8 @@ const Sensors = () => {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className= "justify-between min-w-[130px]">
-                      {statusFilter 
+                    <Button variant="outline" className="justify-between min-w-[130px]">
+                      {statusFilter
                         ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
                         : 'All Status'}
                       <svg
@@ -577,10 +577,8 @@ const Sensors = () => {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align= 'start' className= "min-w-[130px]">
-                    <DropdownMenuItem onClick={() => setStatusFilter}>
-                      All Status
-                    </DropdownMenuItem>
+                  <DropdownMenuContent align="start" className="min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setStatusFilter}>All Status</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {statusOptions.map((s) => (
                       <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
@@ -589,7 +587,6 @@ const Sensors = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              
 
                 {/* Per Page Selector */}
                 <DropdownMenu>
@@ -644,9 +641,9 @@ const Sensors = () => {
                         />
                       </svg>
                       Columns
-                      <svg                      
-                      //Pakai ini jika ingin ada animasi rotasi
-                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                      <svg
+                        //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform"
                         className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
@@ -691,14 +688,9 @@ const Sensors = () => {
                         return;
                       }
                       const csvContent = [
-                        [
-                          'No',
-                          'Serial Number',
-                          'Device',
-                          'Truck',
-                          'Tire Position',
-                          'Status',
-                        ].join(','),
+                        ['No', 'Serial Number', 'Device', 'Truck', 'Tire Position', 'Status'].join(
+                          ','
+                        ),
                         ...filtered.map((s, i) => {
                           const { device, truck } = getSensorInfo(s);
                           return [

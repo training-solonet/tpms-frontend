@@ -115,7 +115,8 @@ export function DropdownMenuContent({ children, className = '', align = 'end' })
       }
 
       // Calculate horizontal position
-      let left = align === 'start' ? triggerRect.left : triggerRect.right - (contentRect.width || 224); // default 224px (w-56)
+      let left =
+        align === 'start' ? triggerRect.left : triggerRect.right - (contentRect.width || 224); // default 224px (w-56)
 
       // Ensure dropdown doesn't overflow viewport horizontally
       if (left + (contentRect.width || 224) > viewportWidth) {

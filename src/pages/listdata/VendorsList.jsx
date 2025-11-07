@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  
 } from '../../components/common/DropdownMenu.jsx';
 
 function VendorActionMenu({ vendor, onEdit, onDelete }) {
@@ -33,7 +32,7 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    
+
     if (isOpen) {
       window.addEventListener('scroll', handleScroll, true);
     }
@@ -57,7 +56,7 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
       const dropdownHeight = dropdownRect.height || 150;
 
       let top = buttonRect.bottom + 8;
-      
+
       // If not enough space below and more space above, open upward
       if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
         top = buttonRect.top - dropdownHeight - 8;
@@ -92,7 +91,7 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
       </button>
 
       {isOpen && (
-        <div 
+        <div
           ref={dropdownRef}
           className="fixed w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
           style={{
@@ -557,8 +556,8 @@ export default function VendorsList() {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className = "justify-between w-[120px]">
-                        {pageSize} / Page
+                    <Button variant="outline" className="justify-between w-[120px]">
+                      {pageSize} / Page
                       <svg
                         className="ml-2 w-4 h-4"
                         fill="none"
@@ -574,9 +573,9 @@ export default function VendorsList() {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align= "start" className="w-[120px]">
-                      {[10, 25, 50, 100].map((size) => (
-                        <DropdownMenuItem
+                  <DropdownMenuContent align="start" className="w-[120px]">
+                    {[10, 25, 50, 100].map((size) => (
+                      <DropdownMenuItem
                         key={size}
                         onClick={() => {
                           setPageSize(Number(size));
@@ -607,9 +606,9 @@ export default function VendorsList() {
                         />
                       </svg>
                       Columns
-                      <svg                      
-                      //Pakai ini jika ingin ada animasi rotasi
-                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                      <svg
+                        //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform"
                         className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"

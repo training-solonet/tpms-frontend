@@ -506,10 +506,7 @@ const TrucksFormList = () => {
                 <div>
                   <p className="text-xs text-gray-600 font-medium">Idle</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {
-                      allTrucks.filter((t) => t.status === 'idle')
-                        .length
-                    }
+                    {allTrucks.filter((t) => t.status === 'idle').length}
                   </p>
                 </div>
               </div>
@@ -753,9 +750,9 @@ const TrucksFormList = () => {
                         </svg>
                         Columns
                         <svg
-                        //Pakai ini jika ingin ada animasi rotasi
-                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
-                        className="w-4 h-4"
+                          //Pakai ini jika ingin ada animasi rotasi
+                          // className="w-4 h-4 group-open:rotate-180 transition-transform"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"

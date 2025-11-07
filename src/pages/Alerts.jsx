@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { alertsApi } from '../services/api2';
 import fleetWebSocket from '../services/api2/websocket';
-import {Button} from '../components/common/Button.jsx';
+import { Button } from '../components/common/Button.jsx';
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -142,7 +142,6 @@ const Alerts = () => {
             </p>
           </div>
 
-
           {/* Filters */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex items-center gap-4 flex-wrap">
@@ -155,21 +154,47 @@ const Alerts = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
                     <FunnelIcon className="h-4 w-4 mr-2" />
-                    {filterSeverity === '1' ? 'Low' : filterSeverity === '2' ? 'Medium' : filterSeverity === '4' ? 'High' : 'All Severities'}
+                    {filterSeverity === '1'
+                      ? 'Low'
+                      : filterSeverity === '2'
+                        ? 'Medium'
+                        : filterSeverity === '4'
+                          ? 'High'
+                          : 'All Severities'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-48">
-                  <DropdownMenuItem onClick={() => { setFilterSeverity(''); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('');
+                      setPage(1);
+                    }}
+                  >
                     All Severities
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => { setFilterSeverity('1'); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('1');
+                      setPage(1);
+                    }}
+                  >
                     Low Severity
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setFilterSeverity('2'); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('2');
+                      setPage(1);
+                    }}
+                  >
                     Medium Severity
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setFilterSeverity('4'); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterSeverity('4');
+                      setPage(1);
+                    }}
+                  >
                     High Severity
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -178,29 +203,43 @@ const Alerts = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
-                    {filterResolved === 'false' ? 'Active Only' : filterResolved === 'true' ? 'Resolved Only' : 'All Alerts'}
+                    {filterResolved === 'false'
+                      ? 'Active Only'
+                      : filterResolved === 'true'
+                        ? 'Resolved Only'
+                        : 'All Alerts'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-48">
-                  <DropdownMenuItem onClick={() => { setFilterResolved(''); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterResolved('');
+                      setPage(1);
+                    }}
+                  >
                     All Alerts
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => { setFilterResolved('false'); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterResolved('false');
+                      setPage(1);
+                    }}
+                  >
                     Active Only
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setFilterResolved('true'); setPage(1); }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setFilterResolved('true');
+                      setPage(1);
+                    }}
+                  >
                     Resolved Only
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button
-                onClick={loadAlerts}
-                variant="default"
-                size="sm"
-                className="ml-auto"
-              >
+              <Button onClick={loadAlerts} variant="default" size="sm" className="ml-auto">
                 Refresh
               </Button>
             </div>

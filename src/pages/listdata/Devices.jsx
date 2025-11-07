@@ -106,7 +106,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
 
 const Devices = () => {
   // State
-  const [devices, setDevices] = useState([]);;
+  const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Use alert hook
@@ -202,10 +202,8 @@ const Devices = () => {
           : [];
 
       console.log('✅ Trucks data:', data);
-
     } catch (err) {
       console.error('❌ Error fetching trucks:', err);
-
     }
   };
 
@@ -455,7 +453,7 @@ const Devices = () => {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className= "justify-between min-w-[150px]">
+                    <Button variant="outline" className="justify-between min-w-[150px]">
                       {devices.id || 'All Device'}
                       <svg
                         className="w-4 h-4 ml-2"
@@ -472,7 +470,7 @@ const Devices = () => {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align= 'start' className= "min-w-[150px]">
+                  <DropdownMenuContent align="start" className="min-w-[150px]">
                     <DropdownMenuItem onClick={() => setDeviceFilter('')}>
                       All Device
                     </DropdownMenuItem>
@@ -487,8 +485,8 @@ const Devices = () => {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className= "justify-between min-w-[130px]">
-                      {statusFilter 
+                    <Button variant="outline" className="justify-between min-w-[130px]">
+                      {statusFilter
                         ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
                         : 'All Status'}
                       <svg
@@ -506,10 +504,8 @@ const Devices = () => {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align= 'start' className= "min-w-[130px]">
-                    <DropdownMenuItem onClick={() => setStatusFilter}>
-                      All Status
-                    </DropdownMenuItem>
+                  <DropdownMenuContent align="start" className="min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setStatusFilter}>All Status</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {statusOptions.map((s) => (
                       <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
@@ -518,7 +514,6 @@ const Devices = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              
 
                 {/* Per Page Selector */}
                 <DropdownMenu>
@@ -574,8 +569,8 @@ const Devices = () => {
                       </svg>
                       Columns
                       <svg
-                      //Pakai ini jika ingin ada animasi rotasi
-                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                        //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform"
                         className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
@@ -619,14 +614,7 @@ const Devices = () => {
                         return;
                       }
                       const csvContent = [
-                        [
-                          'No',
-                          'Serial Number',
-                          'Truck',
-                          'SIM 4G',
-                          'Status',
-                          'Installed',
-                        ].join(','),
+                        ['No', 'Serial Number', 'Truck', 'SIM 4G', 'Status', 'Installed'].join(','),
                         ...filtered.map((d, i) =>
                           [
                             i + 1,

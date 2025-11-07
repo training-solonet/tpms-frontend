@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import { driversApi } from '../../services/api2/index.js';
-import { Button }  from  '../../components/common/Button.jsx';
+import { Button } from '../../components/common/Button.jsx';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,8 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from  '../../components/common/DropdownMenu.jsx' ;
-
+} from '../../components/common/DropdownMenu.jsx';
 
 function DriverActionMenu({ driver, onEdit, onDelete }) {
   const [showTimestamp] = React.useState(false);
@@ -424,8 +423,8 @@ export default function DriversList() {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className = "justify-between w-[120px]">
-                        {pageSize} / Page
+                    <Button variant="outline" className="justify-between w-[120px]">
+                      {pageSize} / Page
                       <svg
                         className="ml-2 w-4 h-4"
                         fill="none"
@@ -441,9 +440,9 @@ export default function DriversList() {
                       </svg>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align= "start" className="w-[120px]">
-                      {[10, 25, 50, 100].map((size) => (
-                        <DropdownMenuItem
+                  <DropdownMenuContent align="start" className="w-[120px]">
+                    {[10, 25, 50, 100].map((size) => (
+                      <DropdownMenuItem
                         key={size}
                         onClick={() => {
                           setPageSize(Number(size));
@@ -455,7 +454,6 @@ export default function DriversList() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
@@ -477,7 +475,7 @@ export default function DriversList() {
                       Columns
                       <svg
                         //Pakai ini jika ingin ada animasi rotasi
-                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform"
                         className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"

@@ -1,6 +1,7 @@
 # 📊 Panduan Menampilkan Data dari Backend ke UI
 
 ## 🎯 Overview
+
 Panduan lengkap cara mengambil data dari Backend API dan menampilkannya di User Interface (UI) menggunakan React.
 
 ---
@@ -95,8 +96,8 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Buat axios instance
 const api2Instance = axios.create({
-  baseURL: API_BASE_URL,    // Base URL untuk semua request
-  timeout: 30000,            // Timeout 30 detik
+  baseURL: API_BASE_URL, // Base URL untuk semua request
+  timeout: 30000, // Timeout 30 detik
   headers: {
     'Content-Type': 'application/json',
   },
@@ -132,10 +133,7 @@ api2Instance.interceptors.response.use(
     }
 
     // Parse error message
-    const errorMessage = 
-      error.response?.data?.message || 
-      error.message || 
-      'An error occurred';
+    const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
 
     return Promise.reject({
       status: error.response?.status,
@@ -148,6 +146,7 @@ export default api2Instance;
 ```
 
 **Penjelasan:**
+
 - ✅ `baseURL`: URL dasar backend API
 - ✅ `interceptors.request`: Menambahkan JWT token otomatis ke setiap request
 - ✅ `interceptors.response`: Menangani error secara global dan redirect jika unauthorized
@@ -172,7 +171,7 @@ export const trucksApi = {
     try {
       // Buat query parameters
       const queryParams = new URLSearchParams();
-      
+
       if (params.page) queryParams.append('page', params.page);
       if (params.limit) queryParams.append('limit', params.limit);
       if (params.status) queryParams.append('status', params.status);
@@ -183,10 +182,10 @@ export const trucksApi = {
       const url = queryString ? `/trucks?${queryString}` : '/trucks';
 
       console.log('🚛 Fetching trucks from:', url);
-      
+
       // Panggil API
       const response = await api2Instance.get(url);
-      
+
       console.log('✅ Trucks loaded:', response);
       return response;
     } catch (error) {
@@ -232,6 +231,7 @@ export default trucksApi;
 ```
 
 **Penjelasan:**
+
 - ✅ Setiap fungsi mewakili satu endpoint API
 - ✅ Menggunakan `async/await` untuk asynchronous operations
 - ✅ Parameter query dibangun dengan `URLSearchParams`
@@ -263,11 +263,11 @@ export const useTrucks = (filters = {}) => {
   const fetchTrucks = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Panggil API
       const response = await trucksApi.getAll(filters);
-      
+
       // Update state dengan data dari response
       setTrucks(response.data?.trucks || []);
     } catch (err) {
@@ -286,16 +286,17 @@ export const useTrucks = (filters = {}) => {
   }, [fetchTrucks]);
 
   // Return state dan function
-  return { 
-    trucks,      // Data trucks
-    loading,     // Status loading
-    error,       // Error message (jika ada)
-    refetch: fetchTrucks  // Function untuk refresh data
+  return {
+    trucks, // Data trucks
+    loading, // Status loading
+    error, // Error message (jika ada)
+    refetch: fetchTrucks, // Function untuk refresh data
   };
 };
 ```
 
 **Penjelasan:**
+
 - ✅ `useState`: Menyimpan data, loading state, dan error
 - ✅ `useCallback`: Mencegah re-creation function yang tidak perlu
 - ✅ `useEffect`: Auto-fetch data saat component mount
@@ -339,7 +340,7 @@ const TrucksList = () => {
 
       // Extract data dari response
       const trucksData = response?.data?.trucks || [];
-      
+
       // Update state
       setTrucks(trucksData);
       setError('');
@@ -372,10 +373,7 @@ const TrucksList = () => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <p className="text-red-800">Error: {error}</p>
-        <button 
-          onClick={loadTrucks}
-          className="mt-2 px-4 py-2 bg-red-600 text-white rounded"
-        >
+        <button onClick={loadTrucks} className="mt-2 px-4 py-2 bg-red-600 text-white rounded">
           Retry
         </button>
       </div>
@@ -396,7 +394,7 @@ const TrucksList = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="px-4 py-2 border rounded"
         />
-        
+
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -434,11 +432,13 @@ const TrucksList = () => {
                 <td className="px-4 py-2 border">{truck.name}</td>
                 <td className="px-4 py-2 border">{truck.plate}</td>
                 <td className="px-4 py-2 border">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    truck.status === 'active' 
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      truck.status === 'active'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                  >
                     {truck.status}
                   </span>
                 </td>
@@ -450,9 +450,7 @@ const TrucksList = () => {
       </table>
 
       {/* Info */}
-      <div className="mt-4 text-sm text-gray-600">
-        Total: {trucks.length} trucks
-      </div>
+      <div className="mt-4 text-sm text-gray-600">Total: {trucks.length} trucks</div>
     </div>
   );
 };
@@ -486,7 +484,7 @@ const TrucksListSimple = () => {
   return (
     <div>
       <h1>Trucks List</h1>
-      
+
       {/* Filter */}
       <input
         placeholder="Search..."
@@ -494,7 +492,7 @@ const TrucksListSimple = () => {
       />
 
       {/* Display */}
-      {trucks.map(truck => (
+      {trucks.map((truck) => (
         <div key={truck.id}>
           {truck.name} - {truck.status}
         </div>
@@ -579,6 +577,7 @@ Component
 ### ✅ **DO's:**
 
 1. **Gunakan try-catch untuk error handling**
+
    ```javascript
    try {
      const data = await trucksApi.getAll();
@@ -589,17 +588,24 @@ Component
    ```
 
 2. **Tampilkan loading state**
+
    ```jsx
-   {loading && <div>Loading...</div>}
-   {!loading && <DataTable />}
+   {
+     loading && <div>Loading...</div>;
+   }
+   {
+     !loading && <DataTable />;
+   }
    ```
 
 3. **Validasi response data**
+
    ```javascript
    const trucks = response?.data?.trucks || [];
    ```
 
 4. **Gunakan useCallback untuk optimize**
+
    ```javascript
    const fetchData = useCallback(async () => {
      // fetch logic
@@ -610,18 +616,21 @@ Component
    ```javascript
    useEffect(() => {
      let cancelled = false;
-     
-     fetchData().then(data => {
+
+     fetchData().then((data) => {
        if (!cancelled) setData(data);
      });
-     
-     return () => { cancelled = true; };
+
+     return () => {
+       cancelled = true;
+     };
    }, []);
    ```
 
 ### ❌ **DON'Ts:**
 
 1. **Jangan panggil API di render function**
+
    ```javascript
    // ❌ WRONG
    function Component() {
@@ -631,20 +640,22 @@ Component
    ```
 
 2. **Jangan hardcode URLs**
+
    ```javascript
    // ❌ WRONG
    axios.get('http://localhost:3000/trucks');
-   
+
    // ✅ CORRECT
    api2Instance.get('/trucks');
    ```
 
 3. **Jangan abaikan error handling**
+
    ```javascript
    // ❌ WRONG
    const data = await trucksApi.getAll();
    setTrucks(data.trucks); // Crash jika error!
-   
+
    // ✅ CORRECT
    try {
      const data = await trucksApi.getAll();
@@ -665,17 +676,18 @@ Test API di browser console:
 import { trucksApi } from './services/api2';
 
 // 2. Test get all
-trucksApi.getAll()
-  .then(data => console.log('Trucks:', data))
-  .catch(err => console.error('Error:', err));
+trucksApi
+  .getAll()
+  .then((data) => console.log('Trucks:', data))
+  .catch((err) => console.error('Error:', err));
 
 // 3. Test dengan filter
-trucksApi.getAll({ status: 'active', limit: 10 })
-  .then(data => console.log('Active Trucks:', data));
+trucksApi
+  .getAll({ status: 'active', limit: 10 })
+  .then((data) => console.log('Active Trucks:', data));
 
 // 4. Test get by ID
-trucksApi.getById('truck-123')
-  .then(data => console.log('Truck Detail:', data));
+trucksApi.getById('truck-123').then((data) => console.log('Truck Detail:', data));
 ```
 
 ---
@@ -683,36 +695,41 @@ trucksApi.getById('truck-123')
 ## 🔍 Debugging Tips
 
 ### 1. **Periksa Network Tab**
-   - Buka DevTools → Network
-   - Lihat request URL, headers, dan response
+
+- Buka DevTools → Network
+- Lihat request URL, headers, dan response
 
 ### 2. **Tambahkan Console Logs**
-   ```javascript
-   console.log('📡 Request:', url, params);
-   console.log('✅ Response:', response);
-   console.log('❌ Error:', error);
-   ```
+
+```javascript
+console.log('📡 Request:', url, params);
+console.log('✅ Response:', response);
+console.log('❌ Error:', error);
+```
 
 ### 3. **Cek Response Structure**
-   ```javascript
-   console.log('Response structure:', {
-     success: response.success,
-     data: response.data,
-     pagination: response.data?.pagination
-   });
-   ```
+
+```javascript
+console.log('Response structure:', {
+  success: response.success,
+  data: response.data,
+  pagination: response.data?.pagination,
+});
+```
 
 ### 4. **Validasi Environment Variables**
-   ```javascript
-   console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL);
-   console.log('Token:', localStorage.getItem('authToken'));
-   ```
+
+```javascript
+console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL);
+console.log('Token:', localStorage.getItem('authToken'));
+```
 
 ---
 
 ## 📊 Response Format Contoh
 
 ### Success Response:
+
 ```json
 {
   "success": true,
@@ -741,6 +758,7 @@ trucksApi.getById('truck-123')
 ```
 
 ### Error Response:
+
 ```json
 {
   "success": false,
@@ -754,6 +772,7 @@ trucksApi.getById('truck-123')
 ## 🎯 Kesimpulan
 
 **Alur Lengkap:**
+
 1. **Component** → Panggil hook/API
 2. **Hook** → Manage state & lifecycle
 3. **API Service** → Build request & call axios
@@ -764,6 +783,7 @@ trucksApi.getById('truck-123')
 8. **Component** → Re-render dengan data baru
 
 **Key Points:**
+
 - ✅ Gunakan axios instance untuk konsistensi
 - ✅ Manfaatkan custom hooks untuk reusability
 - ✅ Handle loading, error, dan success states
