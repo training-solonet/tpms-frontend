@@ -9,8 +9,8 @@ import {
 import TailwindStatCard from './TailwindStatCard';
 import SimpleChartCard from './SimpleChartCard';
 // Use Backend 2 APIs
-import { dashboardApi, alertsApi, trucksApi } from '../../services/api2';
-import fleetWebSocket from '../../services/api2/websocket';
+import { dashboardApi, alertsApi, trucksApi } from 'services/management';
+import fleetWebSocket from 'services/management/websocket';
 
 const TailwindFleetOverview = () => {
   const [fleetStats, setFleetStats] = useState([]);

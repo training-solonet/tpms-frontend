@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { driversApi } from '../../services/api2/index.js';
+import { driversApi } from 'services/management';
 import { Button } from '../../components/common/Button.jsx';
 import {
   DropdownMenu,

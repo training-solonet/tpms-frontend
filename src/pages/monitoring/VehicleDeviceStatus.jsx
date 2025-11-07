@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import TruckImage from '../../components/common/TruckImage.jsx';
-import { trucksApi } from '../../services/api2/index.js';
+import { trucksApi } from 'services/management';
 import {
   SignalIcon,
   BoltIcon,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { devicesApi, trucksApi } from '../../services/api2';
+import { devicesApi, trucksApi } from 'services/management';
 import { useCRUD } from '../../hooks/useApi2';
 import { useAlert } from '../../hooks/useAlert';
 import AlertModal from '../../components/common/AlertModal';
@@ -31,7 +31,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuItem onClick={() => onEdit(devicesApi.id)} className="gap-3">
+          <DropdownMenuItem onClick={() => onEdit(device.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -146,11 +146,13 @@ const Devices = () => {
   useEffect(() => {
     fetchDevices();
     fetchTrucks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchDevices = async () => {
     try {
       setLoading(true);
+      console.log('📡 Fetching devices from API...');
       const response = await devicesApi.getAll();
       console.log('📥 Devices API response:', response);
 
@@ -164,25 +166,28 @@ const Devices = () => {
         data = response;
       }
 
-      console.log('✅ Devices data:', data.length, 'devices');
-
-      // Check field names in first device
-      if (data[0]) {
-        console.log('🔍 Device fields available:', Object.keys(data[0]));
-        console.log('🔍 First device sample:', data[0]);
-        console.log('🔍 Device sn:', data[0].sn);
-        console.log('🔍 Device serial_number:', data[0].serial_number);
-        console.log('🔍 Device sim_number:', data[0].sim_number);
-        console.log('🔍 Device sim_4g_number:', data[0].sim_4g_number);
-        console.log('🔍 Device bat1:', data[0].bat1);
-        console.log('🔍 Device bat2:', data[0].bat2);
-        console.log('🔍 Device bat3:', data[0].bat3);
-      }
-
+      console.log('✅ Devices data loaded:', data.length, 'devices');
       setDevices(data);
     } catch (err) {
       console.error('❌ Error fetching devices:', err);
-      alert(`Failed to load devices:\n${err.message}`);
+
+      // More detailed error handling
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+      const errorStatus = err.response?.status;
+
+      if (errorStatus === 404) {
+        console.warn('⚠️ Devices endpoint not found (404)');
+        showAlert.error(
+          'Devices API endpoint not found. Please check backend server.',
+          'API Error'
+        );
+      } else if (errorStatus === 500) {
+        console.error('� Server error (500)');
+        showAlert.error('Server error occurred. Please try again later.', 'Server Error');
+      } else {
+        showAlert.error(`Failed to load devices: ${errorMessage}`, 'Error');
+      }
+
       setDevices([]);
     } finally {
       setLoading(false);
@@ -278,6 +283,36 @@ const Devices = () => {
     });
   };
 
+  // Sort state
+  const [sortConfig, setSortConfig] = React.useState({
+    key: null,
+    direction: 'asc',
+  });
+
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      // Toggle between asc and desc for the same column
+      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      // New column, start with asc
+      setSortConfig({ key, direction: 'asc' });
+    }
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === 'asc' ? (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3l-6 8h12l-6-8z" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 17l6-8H4l6 8z" />
+        </svg>
+      );
+    }
+    return null; // No icon when not sorted
+  };
   return (
     <TailwindLayout>
       <div className="h-[calc(100vh-80px)] overflow-y-auto p-6 space-y-6">
@@ -505,7 +540,9 @@ const Devices = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="min-w-[130px]">
-                    <DropdownMenuItem onClick={() => setStatusFilter}>All Status</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('')}>
+                      All Status
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {statusOptions.map((s) => (
                       <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
@@ -742,57 +779,90 @@ const Devices = () => {
                       {visibleColumns.id && (
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('id')}
                         >
-                          ID
+                          <div className="flex items-center justify-center gap-2">
+                            ID
+                            {getSortIcon('id')}
+                          </div>
                         </th>
                       )}
                       <th
                         scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('sn')}
                       >
-                        Serial Number
+                        <div className="flex items-center justify-center gap-2">
+                          Serial Number
+                          {getSortIcon('sn')}
+                        </div>
                       </th>
                       <th
                         scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('truck')}
                       >
-                        Truck
+                        <div className="flex items-center justify-center gap-2">
+                          Truck
+                          {getSortIcon('truck')}
+                        </div>
                       </th>
                       <th
                         scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('sim_number')}
                       >
-                        SIM 4G Number
+                        <div className="flex items-center justify-center gap-2">
+                          SIM 4G Number
+                          {getSortIcon('sim_number')}
+                        </div>
                       </th>
                       <th
                         scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('status')}
                       >
-                        Status
+                        <div className="flex items-center justify-center gap-2">
+                          Status
+                          {getSortIcon('status')}
+                        </div>
                       </th>
                       <th
                         scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        onClick={() => handleSort('installed_at')}
                       >
-                        Installed
+                        <div className="flex items-center justify-center gap-2">
+                          Installed
+                          {getSortIcon('installed_at')}
+                        </div>
                       </th>
                       {visibleColumns.createdAt && (
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('created_at')}
                         >
-                          Created At
+                          <div className="flex items-center justify-center gap-2">
+                            Created At
+                            {getSortIcon('created_at')}
+                          </div>
                         </th>
                       )}
                       {visibleColumns.updatedAt && (
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort('updated_at')}
                         >
-                          Updated At
+                          <div className="flex items-center justify-center gap-2">
+                            Updated At
+                            {getSortIcon('updated_at')}
+                          </div>
                         </th>
                       )}
+
                       <th
                         scope="col"
                         className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -862,9 +932,9 @@ const Devices = () => {
                           <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-2">
                               <DevicesActionMenu
-                                Sensor={device}
+                                device={device}
                                 onEdit={handleEdit}
-                                onDelete={onDelete}
+                                onDelete={() => onDelete(device)}
                               />
                             </div>
                           </td>

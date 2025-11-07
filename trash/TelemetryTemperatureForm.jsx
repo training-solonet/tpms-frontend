@@ -1,7 +1,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 // Use Backend 2 API
-import { trucksApi } from '../services/api2';
+import { trucksApi } from 'services/management';
 
 function Input({ label, ...props }) {
   return (
@@ -29,53 +29,51 @@ function Select({ label, children, ...props }) {
   );
 }
 
-export default function TelemetryTiresForm() {
+export default function TelemetryTemperatureForm() {
+  // Load from backend if possible, fallback to dummy flattened hub data
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [clusters, setClusters] = React.useState([]);
 
   React.useEffect(() => {
     let mounted = true;
-    const loadData = async () => {
+    (async () => {
       try {
         setLoading(true);
-        console.log('📡 Loading tire pressure data from Backend 2...');
+        console.log('📡 Loading temperature data from Backend 2...');
 
         // Load trucks from Backend 2
         const res = await trucksApi.getAll();
-        console.log('✅ Trucks response for tires:', res);
+        console.log('✅ Trucks response for temperature:', res);
 
         const trucks = res?.data?.trucks || res?.data || [];
-
         if (!Array.isArray(trucks) || trucks.length === 0) {
           console.warn('No trucks data from Backend 2');
           if (mounted) setRows([]);
           return;
         }
+        console.log(`✅ Using ${trucks.length} trucks from Backend 2 for TelemetryTemperatureForm`);
 
-        console.log(`✅ Using ${trucks.length} trucks from Backend 2 for TelemetryTiresForm`);
-
-        // Build flattened rows focused on TPMS tire pressure sensor data
-        // Based on JSON protocol: cmd: "tpdata" with tireNo, tiprValue, tempValue, bat, exType
+        // Build flattened rows focused on Hub Temperature sensor data
+        // Based on JSON protocol: cmd: "hubdata" with tireNo (hub position), tempValue, bat, exType
         const flattened = [];
         for (const t of trucks) {
           try {
-            // Try to get real TPMS data from backend
-            let tpmsData = [];
+            // Try to get real Hub Temperature data from backend
+            let hubData = [];
 
-            // Check if backend provides TPMS data in expected format
-            if (t.sensors?.tpms && Array.isArray(t.sensors.tpms)) {
-              tpmsData = t.sensors.tpms;
-            } else if (t.tpmsData && Array.isArray(t.tpmsData)) {
-              tpmsData = t.tpmsData;
+            // Check if backend provides Hub data in expected format
+            if (t.sensors?.hub && Array.isArray(t.sensors.hub)) {
+              hubData = t.sensors.hub;
+            } else if (t.hubData && Array.isArray(t.hubData)) {
+              hubData = t.hubData;
             } else {
-              // Generate realistic TPMS data based on protocol specification
-              tpmsData = Array.from({ length: 6 }, (_, idx) => ({
-                tireNo: idx + 1,
-                tiprValue: Math.round((220 + Math.random() * 80) * 10) / 10, // 220-300 kPa (realistic truck tire pressure)
-                tempValue: Math.round((35 + Math.random() * 25) * 10) / 10, // 35-60°C (realistic tire temperature)
+              // Generate realistic Hub Temperature data based on protocol specification
+              hubData = Array.from({ length: 6 }, (_, idx) => ({
+                tireNo: idx + 1, // Hub position number (same as tire position)
+                tempValue: Math.round((65 + Math.random() * 35) * 10) / 10, // 65-100°C (realistic hub temperature)
                 bat: Math.floor(Math.random() * 5), // 0-4 battery level as per protocol
-                exType: Math.random() > 0.85 ? (Math.random() > 0.5 ? '1' : '3') : '', // Occasional exceptions
+                exType: Math.random() > 0.9 ? (Math.random() > 0.5 ? '1,3' : '3') : '', // Occasional brake pad abnormal or high temp
                 simNumber:
                   t.simNumber ||
                   `89860814262380084${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
@@ -86,11 +84,10 @@ export default function TelemetryTiresForm() {
             const driverName = t.driver?.name || '-';
             const clusterName = t.cluster || '-';
 
-            tpmsData.forEach((tpms, idx) => {
+            hubData.forEach((hub, idx) => {
               // Parse exception types according to protocol
-              const exceptionTypes = tpms.exType ? tpms.exType.split(',').map((e) => e.trim()) : [];
-              const hasHighPressure = exceptionTypes.includes('1');
-              const hasLowPressure = exceptionTypes.includes('2');
+              const exceptionTypes = hub.exType ? hub.exType.split(',').map((e) => e.trim()) : [];
+              const hasBrakePadAbnormal = exceptionTypes.includes('1');
               const hasHighTemp = exceptionTypes.includes('3');
               const hasSensorLost = exceptionTypes.includes('4');
               const hasLowBattery = exceptionTypes.includes('5');
@@ -98,50 +95,58 @@ export default function TelemetryTiresForm() {
               // Determine overall status based on exceptions
               let status = 'normal';
               if (hasSensorLost) status = 'critical';
-              else if (hasHighPressure || hasLowPressure || hasHighTemp || hasLowBattery)
-                status = 'warning';
+              else if (hasBrakePadAbnormal || hasHighTemp || hasLowBattery) status = 'warning';
+
+              const hubPositions = [
+                'Front Left',
+                'Front Right',
+                'Middle Left',
+                'Middle Right',
+                'Rear Left',
+                'Rear Right',
+              ];
 
               flattened.push({
                 truckId: t.id,
                 truckName: t.name || t.truckNumber || t.id,
                 cluster: clusterName,
                 driverName,
-                tireIndex: idx,
-                tireNo: tpms.tireNo || idx + 1,
-                position: `Tire ${tpms.tireNo || idx + 1}`,
-                // Core TPMS data according to protocol
-                tiprValue: tpms.tiprValue || 0, // Pressure in kPa
-                tempValue: tpms.tempValue || 0, // Temperature in Celsius
-                bat: tpms.bat || 0, // Battery level 0-4
-                exType: tpms.exType || '', // Exception types
-                simNumber: tpms.simNumber || '-',
-                lastUpdated: tpms.lastUpdate || new Date().toISOString(),
+                hubIndex: idx,
+                tireNo: hub.tireNo || idx + 1, // Hub position number
+                position: hubPositions[idx] || `Hub ${hub.tireNo || idx + 1}`,
+                // Core Hub Temperature data according to protocol
+                tempValue: hub.tempValue || 0, // Temperature in Celsius
+                bat: hub.bat || 0, // Battery level 0-4
+                exType: hub.exType || '', // Exception types
+                simNumber: hub.simNumber || '-',
+                lastUpdated: hub.lastUpdate || new Date().toISOString(),
                 // Status analysis based on protocol exceptions
                 status,
-                hasHighPressure,
-                hasLowPressure,
+                hasBrakePadAbnormal,
                 hasHighTemp,
                 hasSensorLost,
                 hasLowBattery,
                 // Human-readable status
-                pressureStatus: hasHighPressure ? 'high' : hasLowPressure ? 'low' : 'normal',
-                tempStatus: hasHighTemp ? 'high' : 'normal',
-                batteryStatus: hasLowBattery ? 'low' : tpms.bat > 2 ? 'good' : 'medium',
+                tempStatus: hasHighTemp ? 'high' : hub.tempValue > 85 ? 'elevated' : 'normal',
+                brakeStatus: hasBrakePadAbnormal ? 'abnormal' : 'normal',
+                batteryStatus: hasLowBattery ? 'low' : hub.bat > 2 ? 'good' : 'medium',
                 sensorStatus: hasSensorLost ? 'lost' : 'connected',
+                // Additional analysis for hub-specific conditions
+                criticalTemp: hub.tempValue > 95, // Critical hub temperature threshold
+                maintenanceNeeded: hasBrakePadAbnormal || hasHighTemp || hub.tempValue > 90,
               });
             });
           } catch (error) {
-            console.error(`Error processing TPMS data for truck ${t.id}:`, error);
+            console.error(`Error processing Hub Temperature data for truck ${t.id}:`, error);
             // Add error entry for this truck
             flattened.push({
               truckId: t.id,
               truckName: t.name || t.truckNumber || t.id,
               cluster: t.cluster || '-',
               driverName: t.driver?.name || '-',
-              tireIndex: 0,
+              hubIndex: 0,
               tireNo: 1,
               position: 'Error',
-              tiprValue: 0,
               tempValue: 0,
               bat: 0,
               exType: '4', // Sensor lost
@@ -149,23 +154,20 @@ export default function TelemetryTiresForm() {
               lastUpdated: new Date().toISOString(),
               status: 'error',
               hasError: true,
-              errorMessage: 'Failed to load TPMS data',
+              errorMessage: 'Failed to load Hub Temperature data',
             });
           }
         }
+
         if (mounted) {
           setRows(flattened);
           const cls = Array.from(new Set(trucks.map((tt) => tt.cluster).filter(Boolean)));
           setClusters(cls);
         }
-      } catch (error) {
-        console.error('Failed to load tire data:', error);
-        if (mounted) setRows([]);
       } finally {
         if (mounted) setLoading(false);
       }
-    };
-    loadData();
+    })();
     return () => {
       mounted = false;
     };
@@ -185,7 +187,7 @@ export default function TelemetryTiresForm() {
         r.truckName.toLowerCase().includes(q) ||
         String(r.tireNo).includes(q) ||
         r.driverName.toLowerCase().includes(q) ||
-        r.sensor.data.simNumber.toLowerCase().includes(q);
+        (r.simNumber || '').toLowerCase().includes(q);
       const matchesCluster = !cluster || r.cluster === cluster;
       return matchesQ && matchesCluster;
     });
@@ -207,10 +209,10 @@ export default function TelemetryTiresForm() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">
-              Telemetry - Tire Pressure (tpdata)
+              Telemetry - Hub Temperature (hubdata)
             </h1>
             <p className="text-sm text-gray-500">
-              Form edit data TPMS per ban berdasarkan protokol JSON
+              Form edit data suhu hub per ban sesuai protokol JSON
             </p>
           </div>
 
@@ -251,13 +253,10 @@ export default function TelemetryTiresForm() {
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">Truck</th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">Tire</th>
+                      <th className="px-3 py-2 text-left font-medium text-gray-600">Hub</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">SN</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">SIM</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">exType</th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-600">
-                        Pressure (kPa)
-                      </th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">Temp (°C)</th>
                       <th className="px-3 py-2 text-left font-medium text-gray-600">
                         Battery (0-4)
@@ -267,13 +266,13 @@ export default function TelemetryTiresForm() {
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
-                        <td className="px-3 py-6 text-gray-500" colSpan={8}>
+                        <td className="px-3 py-6 text-gray-500" colSpan={7}>
                           Loading...
                         </td>
                       </tr>
                     ) : pageData.length === 0 ? (
                       <tr>
-                        <td className="px-3 py-6 text-gray-500" colSpan={8}>
+                        <td className="px-3 py-6 text-gray-500" colSpan={7}>
                           No data
                         </td>
                       </tr>
@@ -294,7 +293,7 @@ export default function TelemetryTiresForm() {
                             </td>
                             <td className="px-3 py-2 w-48">
                               <div className="font-mono text-xs">
-                                TPMS-{String(r.tireNo).padStart(2, '0')}
+                                HUB-{String(r.tireNo).padStart(2, '0')}
                               </div>
                             </td>
                             <td className="px-3 py-2 w-56">
@@ -308,29 +307,25 @@ export default function TelemetryTiresForm() {
                                       key={ex}
                                       className={`px-1 py-0.5 rounded text-xs ${
                                         ex === '1'
-                                          ? 'bg-red-100 text-red-700' // High pressure
-                                          : ex === '2'
-                                            ? 'bg-blue-100 text-blue-700' // Low pressure
-                                            : ex === '3'
-                                              ? 'bg-orange-100 text-orange-700' // High temp
-                                              : ex === '4'
-                                                ? 'bg-gray-100 text-gray-700' // Sensor lost
-                                                : ex === '5'
-                                                  ? 'bg-yellow-100 text-yellow-700' // Low battery
-                                                  : 'bg-gray-100 text-gray-700'
+                                          ? 'bg-red-100 text-red-700' // Brake pad abnormal
+                                          : ex === '3'
+                                            ? 'bg-orange-100 text-orange-700' // High temp
+                                            : ex === '4'
+                                              ? 'bg-gray-100 text-gray-700' // Sensor lost
+                                              : ex === '5'
+                                                ? 'bg-yellow-100 text-yellow-700' // Low battery
+                                                : 'bg-gray-100 text-gray-700'
                                       }`}
                                     >
                                       {ex === '1'
-                                        ? 'High P'
-                                        : ex === '2'
-                                          ? 'Low P'
-                                          : ex === '3'
-                                            ? 'High T'
-                                            : ex === '4'
-                                              ? 'Lost'
-                                              : ex === '5'
-                                                ? 'Low Bat'
-                                                : ex}
+                                        ? 'Brake Abnormal'
+                                        : ex === '3'
+                                          ? 'High T'
+                                          : ex === '4'
+                                            ? 'Lost'
+                                            : ex === '5'
+                                              ? 'Low Bat'
+                                              : ex}
                                     </span>
                                   ))
                                 ) : (
@@ -339,11 +334,7 @@ export default function TelemetryTiresForm() {
                               </div>
                             </td>
                             <td className="px-3 py-2 w-40">
-                              <div className="font-medium">{r.tiprValue}</div>
-                              <div className="text-xs text-gray-500">{r.pressureStatus}</div>
-                            </td>
-                            <td className="px-3 py-2 w-40">
-                              <div className="font-medium">{r.tempValue}</div>
+                              <div className="font-medium">{r.tempValue}°C</div>
                               <div className="text-xs text-gray-500">{r.tempStatus}</div>
                             </td>
                             <td className="px-3 py-2 w-40">

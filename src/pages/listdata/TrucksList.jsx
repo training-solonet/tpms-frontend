@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
 } from '../../components/common/DropdownMenu.jsx';
 // Use Backend 2 APIs and Hooks
-import { trucksApi, driversApi, vendorsApi } from '../../services/api2/index.js';
+import { trucksApi, driversApi, vendorsApi } from 'services/management';
 import { useCRUD } from '../../hooks/useApi2.js';
 
 function Input({ label, icon, ...props }) {
@@ -1049,16 +1049,6 @@ const TrucksFormList = () => {
                         {getSortIcon('vin')}
                       </div>
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort('cluster')}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        Cluster
-                        {getSortIcon('cluster')}
-                      </div>
-                    </th>
                     {visibleColumns.createdAt && (
                       <th
                         scope="col"
@@ -1223,9 +1213,6 @@ const TrucksFormList = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-mono">
                           {truck.vin}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                          {truck.cluster}
                         </td>
                         {visibleColumns.createdAt && (
                           <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">

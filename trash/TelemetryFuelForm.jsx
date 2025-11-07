@@ -2,7 +2,7 @@
 import React from 'react';
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 // Use Backend 2 API
-import { trucksApi } from '../services/api2';
+import { trucksApi } from 'services/management';
 
 function Input({ label, ...props }) {
   return (

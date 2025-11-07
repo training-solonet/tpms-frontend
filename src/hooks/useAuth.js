@@ -1,7 +1,7 @@
 // src/hooks/useAuth.js
 import { useState, useEffect } from 'react';
 // Import authentication dari Backend 2 (BE2) - Master Data & Management
-import { authApi } from '../services/api2'; // Auth ada di BE2
+import { authApi } from 'services/management'; // Auth ada di BE2
 // Import connection utils jika diperlukan
 // import { connectionUtils } from '../services/utils/connectionUtils.js';
 

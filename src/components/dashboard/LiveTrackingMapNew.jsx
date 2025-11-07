@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'; // Impo
 import { TruckIcon, ClockIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'; // Import ikon-ikon UI
 import BaseTrackingMap from './BaseTrackingMap'; // Import komponen peta dasar
 import TirePressureDisplay from './TirePressureDisplay'; // Import komponen display tekanan ban
-import { tpmsAPI } from '../../services/api'; // BE1 TPMS data only
+import { tpmsAPI } from 'services/tracking'; // BE1 TPMS data only
 
 const LiveTrackingMapNew = () => {
   const [map, setMap] = useState(null); // State untuk menyimpan instance peta Leaflet
