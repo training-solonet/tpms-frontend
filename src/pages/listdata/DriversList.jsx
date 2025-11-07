@@ -2,43 +2,35 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import { driversApi } from '../../services/api2/index.js';
+import { Button }  from  '../../components/common/Button.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from  '../../components/common/DropdownMenu.jsx' ;
+
 
 function DriverActionMenu({ driver, onEdit, onDelete }) {
-  const [isOpen, setIsOpen] = React.useState(false);
   const [showTimestamp] = React.useState(false);
-  const menuRef = React.useRef(null);
-
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        title="More options"
-      >
-        <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button
-            onClick={() => {
-              onEdit(driver.id);
-              setIsOpen(false);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+            className="relative z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="More options"
           >
+            <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end">
+          <DropdownMenuItem onClick={() => onEdit(driversApi.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -47,17 +39,12 @@ function DriverActionMenu({ driver, onEdit, onDelete }) {
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
             </svg>
-            Edit Driver
-          </button>
-
-          <hr className="my-1" />
-
-          <button
-            onClick={() => {
-              onDelete(driver.id);
-              setIsOpen(false);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3"
+            Edit Vehicle
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => onDelete(driver.id)}
+            className="gap-3 text-red-600 hover:bg-red-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -67,10 +54,10 @@ function DriverActionMenu({ driver, onEdit, onDelete }) {
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
               />
             </svg>
-            Delete Driver
-          </button>
-        </div>
-      )}
+            Delete Vehicle
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {showTimestamp && (
         <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20">
@@ -78,27 +65,39 @@ function DriverActionMenu({ driver, onEdit, onDelete }) {
             <div className="flex justify-between">
               <span className="text-gray-500">Created:</span>
               <span className="text-gray-900 font-medium">
-                {driver.created_at ? new Date(driver.created_at).toLocaleString() : '-'}
+                {driver.createdAt && driver.createdAt !== '-'
+                  ? new Date(driver.createdAt).toLocaleString()
+                  : '-'}
               </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Created By:</span>
+              <span className="text-gray-900 font-medium">{driver.createdBy || '-'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Updated:</span>
               <span className="text-gray-900 font-medium">
-                {driver.updated_at ? new Date(driver.updated_at).toLocaleString() : '-'}
+                {driver.updatedAt && driver.updatedAt !== '-'
+                  ? new Date(driver.updatedAt).toLocaleString()
+                  : '-'}
               </span>
             </div>
-            {driver.deleted_at && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Updated By:</span>
+              <span className="text-gray-900 font-medium">{driver.updatedBy || '-'}</span>
+            </div>
+            {driver.deletedAt && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Deleted:</span>
                 <span className="text-red-600 font-medium">
-                  {new Date(driver.deleted_at).toLocaleString()}
+                  {new Date(driver.deletedAt).toLocaleString()}
                 </span>
               </div>
             )}
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -294,7 +293,7 @@ export default function DriversList() {
 
   return (
     <TailwindLayout>
-      <div className="p-6 space-y-6">
+      <div className="h-[calc(100vh-80px)] overflow-y-auto p-6 space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600">
           <Link to="/" className="hover:text-indigo-600 transition-colors">
@@ -423,36 +422,40 @@ export default function DriversList() {
                   />
                 </div>
 
-                <div>
-                  <div className="relative">
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className = "justify-between w-[120px]">
+                        {pageSize} / Page
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align= "start" className="w-[120px]">
+                      {[10, 25, 50, 100].map((size) => (
+                        <DropdownMenuItem
+                        key={size}
+                        onClick={() => {
+                          setPageSize(Number(size));
+                          setPage(1);
+                        }}
+                      >
+                        {size} / page
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
@@ -473,7 +476,9 @@ export default function DriversList() {
                       </svg>
                       Columns
                       <svg
-                        className="w-4 h-4 group-open:rotate-180 transition-transform"
+                        //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                        className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

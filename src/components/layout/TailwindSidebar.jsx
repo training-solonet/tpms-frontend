@@ -30,11 +30,11 @@ const navigation = [
     name: 'Monitoring',
     icon: ChartBarIcon,
     children: [
-      { name: 'Vehicle & IoT Status', href: '/fleet/status' },
+      // { name: 'Vehicle & IoT Status', href: '/fleet/status' },
       // { name: 'Live Tire View', href: '/monitoring/live-view' },
       { name: 'Tire Pressure', href: '/monitoring/tires' },
       { name: 'Temperature', href: '/monitoring/temperature' },
-      { name: 'Fuel Level', href: '/monitoring/fuel' },
+      // { name: 'Fuel Level', href: '/monitoring/fuel' },
     ],
   },
   {

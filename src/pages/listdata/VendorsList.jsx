@@ -2,11 +2,22 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import { vendorsApi } from '../../services/api2/index.js';
+import { Button } from '../../components/common/Button.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  
+} from '../../components/common/DropdownMenu.jsx';
 
 function VendorActionMenu({ vendor, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [showTimestamp] = React.useState(false);
+  const [position, setPosition] = React.useState({ top: 0, left: 0 });
   const menuRef = React.useRef(null);
+  const buttonRef = React.useRef(null);
+  const dropdownRef = React.useRef(null);
 
   React.useEffect(() => {
     const handleClickOutside = (event) => {
@@ -14,15 +25,65 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
         setIsOpen(false);
       }
     };
+
+    const handleScroll = () => {
+      if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    
+    if (isOpen) {
+      window.addEventListener('scroll', handleScroll, true);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (isOpen && buttonRef.current && dropdownRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const dropdownRect = dropdownRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      // Determine if dropdown should open upward or downward
+      const spaceBelow = viewportHeight - buttonRect.bottom;
+      const spaceAbove = buttonRect.top;
+      const dropdownHeight = dropdownRect.height || 150;
+
+      let top = buttonRect.bottom + 8;
+      
+      // If not enough space below and more space above, open upward
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        top = buttonRect.top - dropdownHeight - 8;
+      }
+
+      // Calculate horizontal position (align to right)
+      let left = buttonRect.right - 224; // 224px = w-56
+
+      // Ensure dropdown doesn't overflow viewport
+      if (left + 224 > viewportWidth) {
+        left = viewportWidth - 224 - 16;
+      }
+      if (left < 16) {
+        left = 16;
+      }
+
+      setPosition({ top, left });
+    }
+  }, [isOpen]);
 
   return (
     <div className="relative" ref={menuRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        className="relative z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors"
         title="More options"
       >
         <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
@@ -31,7 +92,15 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+        <div 
+          ref={dropdownRef}
+          className="fixed w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
+          style={{
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            zIndex: 9999,
+          }}
+        >
           <button
             onClick={() => {
               onEdit(vendor.id);
@@ -486,36 +555,39 @@ export default function VendorsList() {
                   />
                 </div>
 
-                <div>
-                  <div className="relative">
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer"
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className = "justify-between w-[120px]">
+                        {pageSize} / Page
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align= "start" className="w-[120px]">
+                      {[10, 25, 50, 100].map((size) => (
+                        <DropdownMenuItem
+                        key={size}
+                        onClick={() => {
+                          setPageSize(Number(size));
+                          setPage(1);
+                        }}
+                      >
+                        {size} / page
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
@@ -535,8 +607,10 @@ export default function VendorsList() {
                         />
                       </svg>
                       Columns
-                      <svg
-                        className="w-4 h-4 group-open:rotate-180 transition-transform"
+                      <svg                      
+                      //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                        className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

@@ -5,6 +5,7 @@ import { useCRUD } from '../../hooks/useApi2';
 import { useAlert } from '../../hooks/useAlert';
 import AlertModal from '../../components/common/AlertModal';
 import TailwindLayout from '../../components/layout/TailwindLayout';
+import { Button } from '../../components/common/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="relative z-50 p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title="More options"
           >
             <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
@@ -30,7 +31,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuItem onClick={() => onEdit(device.id)} className="gap-3">
+          <DropdownMenuItem onClick={() => onEdit(devicesApi.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -105,8 +106,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
 
 const Devices = () => {
   // State
-  const [devices, setDevices] = useState([]);
-  const [trucks, setTrucks] = useState([]);
+  const [devices, setDevices] = useState([]);;
   const [loading, setLoading] = useState(true);
 
   // Use alert hook
@@ -117,7 +117,7 @@ const Devices = () => {
 
   // Filters
   const [query, setQuery] = useState('');
-  const [truckFilter, setTruckFilter] = useState('');
+  const [truckFilter, setDeviceFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   // Pagination
@@ -202,10 +202,10 @@ const Devices = () => {
           : [];
 
       console.log('✅ Trucks data:', data);
-      setTrucks(data);
+
     } catch (err) {
       console.error('❌ Error fetching trucks:', err);
-      setTrucks([]);
+
     }
   };
 
@@ -270,18 +270,6 @@ const Devices = () => {
     window.location.href = `/device/${id}`;
   };
 
-  // Battery health indicator
-  const getBatteryHealth = (bat1, bat2, bat3) => {
-    const batteries = [bat1, bat2, bat3].filter((b) => b != null);
-    if (batteries.length === 0) return { status: 'unknown', color: 'gray', icon: '⚪' };
-
-    const avg = batteries.reduce((a, b) => a + b, 0) / batteries.length;
-
-    if (avg >= 70) return { status: 'Good', color: 'green', icon: '🟢' };
-    if (avg >= 40) return { status: 'Fair', color: 'yellow', icon: '🟡' };
-    return { status: 'Critical', color: 'red', icon: '🔴' };
-  };
-
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return '--';
@@ -294,7 +282,7 @@ const Devices = () => {
 
   return (
     <TailwindLayout>
-      <div className="p-6 space-y-6">
+      <div className="h-[calc(100vh-80px)] overflow-y-auto p-6 space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600">
           <Link to="/" className="hover:text-indigo-600 transition-colors">
@@ -465,95 +453,107 @@ const Devices = () => {
                   />
                 </div>
 
-                {/* Truck Filter */}
-                <div className="relative">
-                  <select
-                    value={truckFilter}
-                    onChange={(e) => setTruckFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Trucks</option>
-                    {trucks.map((truck) => (
-                      <option key={truck.id} value={truck.id}>
-                        {truck.name}
-                      </option>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className= "justify-between min-w-[150px]">
+                      {devices.id || 'All Device'}
+                      <svg
+                        className="w-4 h-4 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align= 'start' className= "min-w-[150px]">
+                    <DropdownMenuItem onClick={() => setDeviceFilter('')}>
+                      All Device
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {devices.map((d) => (
+                      <DropdownMenuItem key={d.id} onClick={() => setDeviceFilter(d.id)}>
+                        {d.sn || d.serial_number || `Device #${d.id}`}
+                      </DropdownMenuItem>
                     ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-                {/* Status Filter */}
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                                focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Status</option>
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </option>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className= "justify-between min-w-[130px]">
+                      {statusFilter 
+                        ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+                        : 'All Status'}
+                      <svg
+                        className="w-4 h-4 ml-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align= 'start' className= "min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setStatusFilter}>
+                      All Status
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {statusOptions.map((s) => (
+                      <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </DropdownMenuItem>
                     ))}
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              
 
                 {/* Per Page Selector */}
-                <div className="relative">
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
-                      setPage(1);
-                    }}
-                    className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                                focus:outline-none appearance-none cursor-pointer"
-                  >
-                    <option value={10}>10 / page</option>
-                    <option value={25}>25 / page</option>
-                    <option value={50}>50 / page</option>
-                    <option value={100}>100 / page</option>
-                  </select>
-                  <svg
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[120px]">
+                      {pageSize} / page
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[120px]">
+                    {[10, 25, 50, 100].map((size) => (
+                      <DropdownMenuItem
+                        key={size}
+                        onClick={() => {
+                          setPageSize(size);
+                          setPage(1);
+                        }}
+                      >
+                        {size} / page
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Column Toggle Dropdown */}
                 <div className="relative">
@@ -574,7 +574,9 @@ const Devices = () => {
                       </svg>
                       Columns
                       <svg
-                        className="w-4 h-4 group-open:rotate-180 transition-transform"
+                      //Pakai ini jika ingin ada animasi rotasi
+                        // className="w-4 h-4 group-open:rotate-180 transition-transform" 
+                        className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -622,9 +624,6 @@ const Devices = () => {
                           'Serial Number',
                           'Truck',
                           'SIM 4G',
-                          'Battery 1',
-                          'Battery 2',
-                          'Battery 3',
                           'Status',
                           'Installed',
                         ].join(','),
@@ -634,9 +633,6 @@ const Devices = () => {
                             d.sn || d.serial_number || '',
                             d.truck?.name || 'Unassigned',
                             d.sim_number || d.sim_4g_number || '',
-                            d.bat1 || '',
-                            d.bat2 || '',
-                            d.bat3 || '',
                             d.status || '',
                             d.installed_at || '',
                           ]
@@ -785,12 +781,6 @@ const Devices = () => {
                         scope="col"
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        Battery Status
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
                         Status
                       </th>
                       <th
@@ -825,7 +815,6 @@ const Devices = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {paginated.map((device, index) => {
-                      const batteryHealth = getBatteryHealth(device.bat1, device.bat2, device.bat3);
                       return (
                         <tr key={device.id} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -855,25 +844,6 @@ const Devices = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                             {device.sim_number || device.sim_4g_number || '--'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-xs space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-600">B1: {device.bat1 || '--'}%</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-600">B2: {device.bat2 || '--'}%</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-600">B3: {device.bat3 || '--'}%</span>
-                              </div>
-                              <div className="flex items-center gap-1 mt-1">
-                                <span>{batteryHealth.icon}</span>
-                                <span className={`text-${batteryHealth.color}-600 font-medium`}>
-                                  {batteryHealth.status}
-                                </span>
-                              </div>
-                            </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
