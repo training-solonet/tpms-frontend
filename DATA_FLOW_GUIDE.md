@@ -613,6 +613,7 @@ Component
    ```
 
 5. **Cleanup pada unmount**
+
    ```javascript
    useEffect(() => {
      let cancelled = false;
