@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import { trucksApi } from '../../services/api2';
+import { Button } from '../../components/common/Button.jsx';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../../components/common/DropdownMenu.jsx';
 
 export default function FuelMonitoring() {
   const [data, setData] = useState([]);
@@ -10,7 +12,7 @@ export default function FuelMonitoring() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTruck, setSelectedTruck] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Load data
@@ -130,10 +132,9 @@ export default function FuelMonitoring() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
-  // Unique trucks for filter
+  // Get unique trucks for filter dropdown
   const uniqueTrucks = useMemo(() => {
-    const trucks = [...new Set(data.map((item) => item.truckCode))];
-    return trucks.sort();
+    return [...new Set(data.map((item) => item.truckCode))].sort();
   }, [data]);
 
   // Reset page when filters change
@@ -297,124 +298,222 @@ export default function FuelMonitoring() {
           </div>
         </div>
 
-        {/* Table Card */}
-        <div className="bg-white shadow rounded-lg">
-          {/* Filters */}
-          <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              {/* Search */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+          {/* Main Table Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          {/* Table Header with Filters and Column Toggle */}
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex gap-4 flex-1 w-full flex-wrap">
+                {/* Search */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      className="w-4 h-4 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search trucks..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search trucks..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
 
-              {/* Truck Filter */}
-              <div className="relative">
-                <select
-                  value={selectedTruck}
-                  onChange={(e) => setSelectedTruck(e.target.value)}
-                  className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm
-                            focus:border-transparent focus:ring-2 focus:ring-indigo-500
-                            focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value="">All Trucks</option>
-                  {uniqueTrucks.map((truck) => (
-                    <option key={truck} value={truck}>
-                      {truck}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                {/* Truck Filter */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[150px]">
+                      {selectedTruck || 'All Trucks'}
+                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[150px] max-h-80 overflow-y-auto">
+                    <DropdownMenuItem onClick={() => setSelectedTruck('')}>
+                      All Trucks
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {uniqueTrucks.map((truck) => (
+                      <DropdownMenuItem key={truck} onClick={() => setSelectedTruck(truck)}>
+                        {truck}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Status Filter */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[130px]">
+                      {selectedStatus || 'All Status'}
+                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setSelectedStatus('')}>
+                      All Status
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSelectedStatus('Good')}>
+                      Good
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStatus('Medium')}>
+                      Medium
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStatus('Low')}>
+                      Low
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSelectedStatus('Critical')}>
+                      Critical
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Items Per Page */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[120px]">
+                      {itemsPerPage} / page
+                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[120px]">
+                    <DropdownMenuItem onClick={() => setItemsPerPage(10)}>
+                      10 / page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setItemsPerPage(25)}>
+                      25 / page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setItemsPerPage(50)}>
+                      50 / page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setItemsPerPage(100)}>
+                      100 / page
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Export Button */}
+                <Button onClick={() => {
+                      if (filteredData.length === 0) {
+                        alert('No data to export');
+                        return;
+                      }
+                      const csvContent = [
+                        ['Truck Code', 'Truck Name', 'Fuel Level (L)', 'Capacity (L)', 'Percentage (%)', 'Consumption (L/hr)', 'Efficiency (km/L)', 'Status', 'Last Update'].join(','),
+                        ...filteredData.map((item) =>
+                          [
+                            item.truckCode,
+                            item.truckName,
+                            item.fuelLevel.toFixed(1),
+                            item.fuelCapacity,
+                            item.fuelPercentage.toFixed(1),
+                              item.consumption.toFixed(2),
+                              item.efficiency.toFixed(2),
+                              getStatus(item),
+                              new Date(item.timestamp).toLocaleString(),
+                            ]
+                              .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+                              .join(',')
+                          ),
+                        ].join('\n');
+
+                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `fuel_monitoring_${new Date().toISOString().split('T')[0]}.csv`;
+                        link.click();
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      title="Export to CSV"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Export CSV
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Status Filter */}
-              <div className="relative">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm
-             focus:border-transparent focus:ring-2 focus:ring-indigo-500
-             focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value="">All Status</option>
-                  <option value="Good">Good</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                  <option value="Critical">Critical</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Per Page */}
-              <div className="relative">
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm
-             focus:border-transparent focus:ring-2 focus:ring-indigo-500
-             focus:outline-none appearance-none cursor-pointer"
-                >
-                  <option value={10}>10 per page</option>
-                  <option value={25}>25 per page</option>
-                  <option value={50}>50 per page</option>
-                  <option value={100}>100 per page</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Results Count */}
-              <div className="flex items-center text-sm text-gray-700">
-                Showing {filteredData.length} of {data.length} trucks
+                {/* Active Filters Display */}
+                {(searchTerm || selectedTruck || selectedStatus) && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-gray-600 font-medium">Active filters:</span>
+                    {searchTerm && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">
+                        Search: &quot;{searchTerm}&quot;
+                        <button
+                          onClick={() => setSearchTerm('')}
+                          className="hover:bg-indigo-200 rounded p-0.5"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    )}
+                    {selectedTruck && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">
+                        Truck: {selectedTruck}
+                        <button
+                          onClick={() => setSelectedTruck('')}
+                          className="hover:bg-indigo-200 rounded p-0.5"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    )}
+                    {selectedStatus && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">
+                        Status: {selectedStatus}
+                        <button
+                          onClick={() => setSelectedStatus('')}
+                          className="hover:bg-indigo-200 rounded p-0.5"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setSelectedTruck('');
+                        setSelectedStatus('');
+                      }}
+                      className="text-xs text-gray-500 hover:text-gray-700 underline ml-2"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
@@ -445,52 +544,62 @@ export default function FuelMonitoring() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      No
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Truck
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Fuel Level
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Capacity
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Percentage
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                      Consumption Rate
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                      Consumption
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Efficiency
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                       Last Update
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedData.map((truck) => {
+                  {paginatedData.map((truck, index) => {
                     const status = getStatus(truck);
                     return (
-                      <tr key={truck.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <tr key={truck.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {startIndex + index + 1}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{truck.truckCode}</div>
-                          <div className="text-sm text-gray-500">{truck.truckName}</div>
+                          <div className="text-xs text-gray-500">{truck.truckName}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {truck.fuelLevel.toFixed(1)} L
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {truck.fuelLevel.toFixed(1)} L
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {truck.fuelCapacity} L
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-700">{truck.fuelCapacity} L</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="shrink-0 h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 min-w-20 bg-gray-200 rounded-full overflow-hidden">
                               <div
-                                className={`h-full ${
+                                className={`h-full transition-all ${
                                   truck.fuelPercentage > 50
                                     ? 'bg-green-500'
                                     : truck.fuelPercentage > 25
@@ -502,22 +611,30 @@ export default function FuelMonitoring() {
                                 style={{ width: `${truck.fuelPercentage}%` }}
                               ></div>
                             </div>
-                            <span className="ml-2 text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-gray-900 min-w-[45px]">
                               {truck.fuelPercentage.toFixed(1)}%
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {truck.consumption.toFixed(2)} L/hr
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-700">{truck.consumption.toFixed(2)} L/hr</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {truck.efficiency.toFixed(2)} km/L
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-700">{truck.efficiency.toFixed(2)} km/L</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <StatusBadge status={status} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(truck.timestamp).toLocaleString()}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-xs text-gray-500">
+                            {new Date(truck.timestamp).toLocaleString('id-ID', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -528,25 +645,31 @@ export default function FuelMonitoring() {
           </div>
 
           {/* Pagination */}
-          {!loading && paginatedData.length > 0 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          {!loading && filteredData.length > 0 && (
+            <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200">
+              {/* Mobile Pagination */}
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Previous
                 </button>
+                <span className="text-sm text-gray-700 self-center">
+                  Page {currentPage} of {totalPages}
+                </span>
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                 </button>
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+
+              {/* Desktop Pagination */}
+              <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
                     Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
@@ -557,51 +680,54 @@ export default function FuelMonitoring() {
                   </p>
                 </div>
                 <div>
-                  <nav
-                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                    aria-label="Pagination"
-                  >
+                  <nav className="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px" aria-label="Pagination">
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <span className="sr-only">Previous</span>
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 19l-7-7 7-7"
-                        />
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
-                    <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                      Page {currentPage} of {totalPages}
-                    </span>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
+                            currentPage === pageNum
+                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
                     <button
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <span className="sr-only">Next</span>
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </nav>
@@ -610,7 +736,6 @@ export default function FuelMonitoring() {
             </div>
           )}
         </div>
-      </div>
     </TailwindLayout>
   );
 }

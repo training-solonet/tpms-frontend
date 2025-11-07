@@ -75,27 +75,27 @@ const TirePressureDisplay = ({
       reading ? `${Math.round(reading.temp_celsius ?? 0)}°C` : '--°C';
 
     // Helper to render a pair of icons (for dual or single)
-    const Pair = ({ leftTireNo, rightTireNo, gapClass = 'gap-20' }) => {
+    const Pair = ({ leftTireNo, rightTireNo, gapClass = 'gap-12' }) => {
       const left = tireData.find((t) => t.tire_no === leftTireNo);
       const right = tireData.find((t) => t.tire_no === rightTireNo);
       return (
         <div className={`flex justify-center ${gapClass}`}>
-          <div className="flex flex-col items-center space-y-1 w-16">
-            <WheelFrontIcon size={28} color={colorHex(left)} />
-            <span className="text-xs font-semibold leading-tight">{labelPsi(left)}</span>
-            <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(left)}</span>
+          <div className="flex flex-col items-center space-y-0.5 flex-1 min-w-0">
+            <WheelFrontIcon size={24} color={colorHex(left)} />
+            <span className="text-[10px] font-medium leading-tight truncate w-full text-center">{labelPsi(left)}</span>
+            <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">{labelTemp(left)}</span>
           </div>
-          <div className="flex flex-col items-center space-y-1 w-16">
-            <WheelFrontIcon size={28} color={colorHex(right)} />
-            <span className="text-xs font-semibold leading-tight">{labelPsi(right)}</span>
-            <span className="text-[11px] text-gray-500 leading-tight">{labelTemp(right)}</span>
+          <div className="flex flex-col items-center space-y-0.5 flex-1 min-w-0">
+            <WheelFrontIcon size={24} color={colorHex(right)} />
+            <span className="text-[10px] font-medium leading-tight truncate w-full text-center">{labelPsi(right)}</span>
+            <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">{labelTemp(right)}</span>
           </div>
         </div>
       );
     };
 
     return (
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex flex-col items-center space-y-3 w-full">
         {axleLayout.map((axle, idx) => {
           // Single tires per side (front or simple rear)
           if (axle.left.length === 1 && axle.right.length === 1) {
@@ -109,55 +109,55 @@ const TirePressureDisplay = ({
           }
           // Dual tires per side
           return (
-            <div key={`icons-${idx}`} className="flex justify-center gap-10">
-              <div className="flex gap-3">
-                <div className="flex flex-col items-center space-y-1 w-16">
+            <div key={`icons-${idx}`} className="flex justify-center gap-8 w-full">
+              <div className="flex gap-4 flex-1 justify-end">
+                <div className="flex flex-col items-center space-y-0.5 min-w-0">
                   <WheelFrontIcon
-                    size={28}
+                    size={24}
                     color={colorHex(tireData.find((t) => t.tire_no === axle.left[0]?.tireNo))}
                   />
-                  <span className="text-xs font-semibold leading-tight">
+                  <span className="text-[10px] font-medium leading-tight truncate w-full text-center">
                     {labelPsi(tireData.find((t) => t.tire_no === axle.left[0]?.tireNo))}
                   </span>
-                  <span className="text-[11px] text-gray-500 leading-tight">
+                  <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">
                     {labelTemp(tireData.find((t) => t.tire_no === axle.left[0]?.tireNo))}
                   </span>
                 </div>
-                <div className="flex flex-col items-center space-y-1 w-16">
+                <div className="flex flex-col items-center space-y-0.5 min-w-0">
                   <WheelFrontIcon
-                    size={28}
+                    size={24}
                     color={colorHex(tireData.find((t) => t.tire_no === axle.left[1]?.tireNo))}
                   />
-                  <span className="text-xs font-semibold leading-tight">
+                  <span className="text-[10px] font-medium leading-tight truncate w-full text-center">
                     {labelPsi(tireData.find((t) => t.tire_no === axle.left[1]?.tireNo))}
                   </span>
-                  <span className="text-[11px] text-gray-500 leading-tight">
+                  <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">
                     {labelTemp(tireData.find((t) => t.tire_no === axle.left[1]?.tireNo))}
                   </span>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <div className="flex flex-col items-center space-y-1 w-16">
+              <div className="flex gap-4 flex-1 justify-start">
+                <div className="flex flex-col items-center space-y-0.5 min-w-0">
                   <WheelFrontIcon
-                    size={28}
+                    size={24}
                     color={colorHex(tireData.find((t) => t.tire_no === axle.right[0]?.tireNo))}
                   />
-                  <span className="text-xs font-semibold leading-tight">
+                  <span className="text-[10px] font-medium leading-tight truncate w-full text-center">
                     {labelPsi(tireData.find((t) => t.tire_no === axle.right[0]?.tireNo))}
                   </span>
-                  <span className="text-[11px] text-gray-500 leading-tight">
+                  <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">
                     {labelTemp(tireData.find((t) => t.tire_no === axle.right[0]?.tireNo))}
                   </span>
                 </div>
-                <div className="flex flex-col items-center space-y-1 w-16">
+                <div className="flex flex-col items-center space-y-0.5 min-w-0">
                   <WheelFrontIcon
-                    size={28}
+                    size={24}
                     color={colorHex(tireData.find((t) => t.tire_no === axle.right[1]?.tireNo))}
                   />
-                  <span className="text-xs font-semibold leading-tight">
+                  <span className="text-[10px] font-medium leading-tight truncate w-full text-center">
                     {labelPsi(tireData.find((t) => t.tire_no === axle.right[1]?.tireNo))}
                   </span>
-                  <span className="text-[11px] text-gray-500 leading-tight">
+                  <span className="text-[9px] text-gray-500 leading-tight truncate w-full text-center">
                     {labelTemp(tireData.find((t) => t.tire_no === axle.right[1]?.tireNo))}
                   </span>
                 </div>
@@ -166,17 +166,17 @@ const TirePressureDisplay = ({
           );
         })}
         {/* Legend */}
-        <div className="flex justify-start w-full mt-2 text-xs text-gray-500 gap-4">
+        <div className="flex justify-start w-full mt-4 text-[9px] text-gray-500 gap-4">
           <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-green-500"></span>
+            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
             <span>Optimal</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+            <span className="w-2 h-2 rounded-full bg-yellow-500 shrink-0"></span>
             <span>Low</span>
           </div>
           <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-red-500"></span>
+            <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
             <span>High/Critical</span>
           </div>
         </div>
@@ -300,7 +300,7 @@ const TirePressureDisplay = ({
 
   if (!selectedTruckId || !truckInfo) {
     return (
-      <div className={`p-4 ${className}`}>
+      <div className={className}>
         <div className="text-center text-gray-500">
           <div className="mb-2">
             <svg
@@ -317,7 +317,7 @@ const TirePressureDisplay = ({
               />
             </svg>
           </div>
-          <p className="text-sm">Pilih kendaraan untuk melihat tekanan ban</p>
+          <p className="text-xs">Pilih kendaraan untuk melihat tekanan ban</p>
         </div>
       </div>
     );
@@ -488,7 +488,7 @@ const TirePressureDisplay = ({
   };
 
   return (
-    <div className={`p-4 ${className}`}>
+    <div className={className}>
       {showHeader && <Header />}
 
       {viewMode === 'visual' ? (
@@ -535,8 +535,8 @@ const TirePressureDisplay = ({
       )}
 
       {tireData.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-gray-200">
-          <p className="text-xs text-gray-500">
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <p className="text-[9px] text-gray-500 truncate">
             Update terakhir: {new Date(tireData[0].changed_at).toLocaleString('id-ID')}
           </p>
         </div>

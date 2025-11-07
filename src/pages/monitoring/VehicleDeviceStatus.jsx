@@ -1,8 +1,8 @@
 // src/pages/VehicleDeviceStatus.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import TailwindLayout from '../components/layout/TailwindLayout';
-import TruckImage from '../components/common/TruckImage.jsx';
-import { trucksApi } from '../services/api2';
+import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
+import TruckImage from '../../components/common/TruckImage.jsx';
+import { trucksApi } from '../../services/api2/index.js';
 import {
   SignalIcon,
   BoltIcon,
