@@ -31,7 +31,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuItem onClick={() => onEdit(device.id)} className="gap-3">
+          <DropdownMenuItem onClick={() => onEdit(devicesApi.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -540,9 +540,11 @@ const Devices = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="min-w-[130px]">
+
                     <DropdownMenuItem onClick={() => setStatusFilter('')}>
                       All Status
                     </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
                     {statusOptions.map((s) => (
                       <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
@@ -813,6 +815,7 @@ const Devices = () => {
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('sim_number')}
                       >
+
                         <div className="flex items-center justify-center gap-2">
                           SIM 4G Number
                           {getSortIcon('sim_number')}
@@ -827,6 +830,7 @@ const Devices = () => {
                           Status
                           {getSortIcon('status')}
                         </div>
+
                       </th>
                       <th
                         scope="col"

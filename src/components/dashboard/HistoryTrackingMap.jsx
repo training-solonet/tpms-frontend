@@ -870,7 +870,9 @@ const HistoryTrackingMap = () => {
               >
                 <input
                   type="checkbox"
+
                   className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-1 focus:ring-blue-500 shrink-0"
+
                   checked={clusterSelections.has(range)}
                   onChange={(e) => {
                     setClusterSelections((prev) => {
@@ -897,7 +899,9 @@ const HistoryTrackingMap = () => {
               Ringkasan
             </h5>
             {selectedVehicle && (
+
               <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded shrink-0">
+
                 T{selectedVehicle.truckNumber || extractTruckNumber(selectedVehicle.id) || '?'}
               </span>
             )}
@@ -923,13 +927,17 @@ const HistoryTrackingMap = () => {
               </div>
               <div className="flex items-center justify-between py-1.5 border-b border-gray-200">
                 <span className="text-xs text-gray-600 truncate">Kec. Rata-rata</span>
+
                 <span className="text-xs font-semibold text-gray-900 shrink-0">
+
                   {journeyStats.avgSpeed ? journeyStats.avgSpeed.toFixed(1) + ' km/j' : '-'}
                 </span>
               </div>
               <div className="pt-1.5">
                 <div className="text-xs text-gray-600 mb-1">Waktu Perjalanan</div>
+
                 <div className="bg-gray-50 rounded px-2 py-1.5 text-xs text-gray-700 text-center wrap-break-word">
+
                   {journeyStats.startT
                     ? new Date(journeyStats.startT).toLocaleTimeString('id-ID', {
                         hour: '2-digit',

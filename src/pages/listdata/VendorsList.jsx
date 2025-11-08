@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
+
 import { vendorsApi } from 'services/management';
+
 import { Button } from '../../components/common/Button.jsx';
 import {
   DropdownMenu,
@@ -13,8 +15,10 @@ import {
 function VendorActionMenu({ vendor, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [showTimestamp] = React.useState(false);
+
   const [position, setPosition] = React.useState(null);
   const [isReady, setIsReady] = React.useState(false);
+
   const menuRef = React.useRef(null);
   const buttonRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
@@ -45,6 +49,7 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
   }, [isOpen]);
 
   React.useEffect(() => {
+
     if (isOpen && buttonRef.current) {
       // Reset ready state when opening
       setIsReady(false);
@@ -96,6 +101,7 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
     } else {
       setPosition(null);
       setIsReady(false);
+
     }
   }, [isOpen]);
 
@@ -117,12 +123,14 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
           ref={dropdownRef}
           className="fixed w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
           style={{
+
             top: position ? `${position.top}px` : '-9999px',
             left: position ? `${position.left}px` : '-9999px',
             zIndex: 9999,
             visibility: isReady ? 'visible' : 'hidden',
             opacity: isReady ? 1 : 0,
             transition: isReady ? 'opacity 0.1s ease-out' : 'none',
+
           }}
         >
           <button

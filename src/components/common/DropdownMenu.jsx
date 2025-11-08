@@ -91,6 +91,7 @@ export function DropdownMenuTrigger({ children, asChild }) {
 export function DropdownMenuContent({ children, className = '', align = 'end' }) {
   const { isOpen, dropdownRef } = useContext(DropdownContext);
   const contentRef = useRef(null);
+
   const [position, setPosition] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -151,6 +152,7 @@ export function DropdownMenuContent({ children, className = '', align = 'end' })
     }
   }, [isOpen, align, dropdownRef]);
 
+
   if (!isOpen) return null;
 
   return (
@@ -164,6 +166,7 @@ export function DropdownMenuContent({ children, className = '', align = 'end' })
         visibility: isReady ? 'visible' : 'hidden',
         opacity: isReady ? 1 : 0,
         transition: isReady ? 'opacity 0.1s ease-out' : 'none',
+
       }}
     >
       <div className="py-1" role="menu" aria-orientation="vertical">

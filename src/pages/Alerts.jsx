@@ -8,8 +8,10 @@ import {
   ClockIcon,
   FunnelIcon,
 } from '@heroicons/react/24/outline';
+
 import { alertsApi } from 'services/management';
 import fleetWebSocket from 'services/management/websocket';
+
 import { Button } from '../components/common/Button.jsx';
 import {
   DropdownMenu,
