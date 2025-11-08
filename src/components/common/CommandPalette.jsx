@@ -4,9 +4,9 @@ import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 // Import dari BE1 untuk tracking
-// import { trucksAPI } from '../../services/api';
+// import { trucksAPI } from 'services/tracking';
 // Import dari BE2 untuk master data devices
-import { devicesApi } from '../../services/api2';
+import { devicesApi } from 'services/management';
 
 const debounce = (fn, ms) => {
   let t;

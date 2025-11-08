@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapIcon } from '@heroicons/react/24/outline';
 import 'leaflet/dist/leaflet.css';
-import { miningAreaApi } from '../../services/api2'; // BE2 untuk mining area master data
+import { miningAreaApi } from 'services/management'; // BE2 untuk mining area master data
 
 const BaseTrackingMap = ({
   children,

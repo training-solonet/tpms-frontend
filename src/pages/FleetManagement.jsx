@@ -3,7 +3,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import TailwindLayout from '../components/layout/TailwindLayout';
 import TruckImage from '../components/common/TruckImage';
 // Use Backend 2 APIs
-import { trucksApi, devicesApi, dashboardApi } from '../services/api2';
+import { trucksApi, devicesApi, dashboardApi } from 'services/management';
 import WheelFrontIcon from '../components/icons/WheelFrontIcon.jsx';
 
 const FleetManagement = () => {

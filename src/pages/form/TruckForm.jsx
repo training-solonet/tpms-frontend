@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { trucksApi, vendorsApi, driversApi } from '../../services/api2/index.js';
+import { trucksApi, vendorsApi, driversApi } from 'services/management';
 import { useCRUD } from '../../hooks/useApi2.js';
 
 function Input({ label, icon, ...props }) {
@@ -157,6 +157,17 @@ export default function TruckForm() {
       errors.push('Valid Year is required');
     }
 
+    // VIN validation: VINs are typically alphanumeric (no I, O, Q), commonly 17 chars
+    // Do not coerce VIN to number — it should be stored/sent as a string.
+    if (formData.vin) {
+      const vin = String(formData.vin).trim().toUpperCase();
+      // Basic VIN pattern: allow alphanumeric characters, length 8-17 (len can vary in some systems)
+      const vinPattern = /^[A-HJ-NPR-Z0-9]{8,17}$/i;
+      if (!vinPattern.test(vin)) {
+        errors.push('VIN must be alphanumeric (8-17 chars) and cannot contain I, O or Q');
+      }
+    }
+
     if (errors.length > 0) {
       alert('Please fix the following errors:\n\n' + errors.join('\n'));
       return false;
@@ -177,7 +188,8 @@ export default function TruckForm() {
         model: formData.model,
         year: parseInt(formData.year),
         type: formData.type,
-        vin: formData.vin,
+        // Normalize VIN: trim and uppercase, keep as string
+        vin: formData.vin ? String(formData.vin).trim().toUpperCase() : '',
         capacity: parseFloat(formData.capacity) || 0,
         vendor_id: formData.vendorId ? parseInt(formData.vendorId) : null,
         driver_id: formData.driverId ? parseInt(formData.driverId) : null,
@@ -237,7 +249,17 @@ export default function TruckForm() {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-gray-900 font-medium">Vendors</span>
+          <Link to="/trucks/new" className="hover:text-indigo-600 transition-colors">
+            Vehicles
+          </Link>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-900 font-medium">Add Vehicle</span>
         </nav>
 
         {/* Header */}

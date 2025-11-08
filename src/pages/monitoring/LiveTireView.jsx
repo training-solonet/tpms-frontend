@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { trucksApi } from '../../services/api2';
+import { trucksApi } from 'services/management';
 
 export default function LiveTireView() {
   const [trucks, setTrucks] = useState([]);

@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
 import AlertModal from '../../components/common/AlertModal.jsx';
-import { devicesApi, trucksApi } from '../../services/api2/index.js';
+import { devicesApi, trucksApi } from 'services/management';
 import { useCRUD } from '../../hooks/useApi2.js';
 import { useAlert } from '../../hooks/useAlert.js';
 
@@ -123,7 +123,8 @@ export default function DeviceForm() {
       }
     };
     loadData();
-  }, [id, isNew, showAlert]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isNew]); // Removed showAlert from dependencies to prevent infinite loop
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
@@ -167,15 +168,8 @@ export default function DeviceForm() {
             const message = response?.data?.message || 'Device has been created successfully!';
 
             showAlert.success(message, 'Success!', () => {
-              // Reset form for adding another device
-              setForm({
-                sn: '',
-                imei: '',
-                device_type: 'TPMS',
-                truck_id: '',
-                status: 'active',
-              });
-              navigate('/devices/new', { replace: true });
+              // Navigate back to devices list
+              navigate('/devices');
             });
           } else {
             throw new Error('Unexpected response format');
@@ -265,7 +259,9 @@ export default function DeviceForm() {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-gray-900 font-medium">Devices</span>
+          <Link to="/Devices" className="hover:text-indigo-600 transition-colors">
+            Devices
+          </Link>
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
