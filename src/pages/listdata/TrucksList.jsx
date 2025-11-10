@@ -222,6 +222,8 @@ const TrucksFormList = () => {
         console.log('🔍 truck.vendor_id:', truck.vendor_id);
         console.log('🔍 truck.fleet_group_id:', truck.fleet_group_id);
         console.log('🔍 truck.cluster:', truck.cluster);
+        console.log('🔍 truck.deleted_at:', truck.deleted_at);
+        console.log('🔍 truck.deletedAt:', truck.deletedAt);
       }
 
       // Backend 2 uses different field names
@@ -272,9 +274,31 @@ const TrucksFormList = () => {
     });
   }, [trucks, drivers, vendors]);
 
+  // Filter out soft-deleted trucks for display
+  const activeTrucks = React.useMemo(() => {
+    const filtered = allTrucks.filter((t) => {
+      const isDeleted = t.deletedAt || t.deleted_at;
+      if (isDeleted) {
+        console.log(
+          '🚫 Filtering out deleted truck:',
+          t.id,
+          'deleted_at:',
+          t.deletedAt || t.deleted_at
+        );
+      }
+      return !isDeleted;
+    });
+
+    console.log(
+      `📊 Total trucks: ${allTrucks.length}, Active trucks: ${filtered.length}, Deleted: ${allTrucks.length - filtered.length}`
+    );
+
+    return filtered;
+  }, [allTrucks]);
+
   const clusters = React.useMemo(
-    () => Array.from(new Set(allTrucks.map((t) => t.cluster).filter(Boolean))),
-    [allTrucks]
+    () => Array.from(new Set(activeTrucks.map((t) => t.cluster).filter(Boolean))),
+    [activeTrucks]
   );
 
   const handleSort = (key) => {
@@ -311,7 +335,7 @@ const TrucksFormList = () => {
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase();
-    let result = allTrucks.filter((t) => {
+    let result = activeTrucks.filter((t) => {
       const matchesQ =
         !q ||
         t.id.toLowerCase().includes(q) ||
@@ -350,7 +374,7 @@ const TrucksFormList = () => {
     }
 
     return result;
-  }, [allTrucks, query, cluster, vendorFilter, statusFilter, sortConfig, vendors]);
+  }, [activeTrucks, query, cluster, vendorFilter, statusFilter, sortConfig, vendors]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -370,14 +394,41 @@ const TrucksFormList = () => {
     )
       return;
     try {
+      console.log('🗑️ Soft-deleting vehicle with ID:', id);
+
       // Soft delete: update deleted_at field instead of hard delete
-      await updateTruck(id, { deleted_at: new Date().toISOString() });
-      console.log('✅ Vehicle soft-deleted successfully');
-      alert('Vehicle deleted successfully!');
-      await load();
+      const deleteData = { deleted_at: new Date().toISOString() };
+      console.log('📤 Sending delete payload:', deleteData);
+
+      const response = await updateTruck(id, deleteData);
+      console.log('✅ Delete response:', response);
+
+      // Verify the update was successful
+      if (response?.data?.success !== false) {
+        console.log('✅ Vehicle soft-deleted successfully');
+
+        // Instead of reloading all data, directly update state to remove the deleted truck
+        // This is more reliable since backend may not return deleted trucks in getAll()
+        setTrucks((prevTrucks) => {
+          const updated = prevTrucks.map((t) => {
+            if (t.id === id) {
+              console.log('🔄 Marking truck as deleted in state:', id);
+              return { ...t, deleted_at: deleteData.deleted_at, deletedAt: deleteData.deleted_at };
+            }
+            return t;
+          });
+          console.log('✅ State updated, truck marked as deleted');
+          return updated;
+        });
+
+        alert('Vehicle deleted successfully!');
+      } else {
+        throw new Error(response?.data?.message || 'Failed to delete vehicle');
+      }
     } catch (error) {
       console.error('❌ Failed to delete vehicle:', error);
-      const errorMsg = error.message || 'Unknown error';
+      console.error('❌ Error details:', error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
       alert('Failed to delete vehicle: ' + errorMsg);
     }
   };
@@ -460,7 +511,7 @@ const TrucksFormList = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-600 font-medium">Total Vehicles</p>
-                  <p className="text-2xl font-bold text-gray-900">{allTrucks.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{activeTrucks.length}</p>
                 </div>
               </div>
             </div>
@@ -485,8 +536,9 @@ const TrucksFormList = () => {
                   <p className="text-xs text-gray-600 font-medium">Active</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {
-                      allTrucks.filter((t) => t.status === 'active' || t.status === 'operational')
-                        .length
+                      activeTrucks.filter(
+                        (t) => t.status === 'active' || t.status === 'operational'
+                      ).length
                     }
                   </p>
                 </div>
@@ -512,7 +564,7 @@ const TrucksFormList = () => {
                 <div>
                   <p className="text-xs text-gray-600 font-medium">Idle</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {allTrucks.filter((t) => t.status === 'idle').length}
+                    {activeTrucks.filter((t) => t.status === 'idle').length}
                   </p>
                 </div>
               </div>
@@ -537,7 +589,7 @@ const TrucksFormList = () => {
                 <div>
                   <p className="text-xs text-gray-600 font-medium">Maintenance</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {allTrucks.filter((t) => t.status === 'maintenance').length}
+                    {activeTrucks.filter((t) => t.status === 'maintenance').length}
                   </p>
                 </div>
               </div>
