@@ -37,7 +37,7 @@ function Select({ label, icon, children, ...props }) {
         )}
         <select
           {...props}
-          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none bg-white cursor-pointer ${props.className || ''}`}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none bg-white cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500 ${props.className || ''}`}
         >
           {children}
         </select>
@@ -59,7 +59,12 @@ function Select({ label, icon, children, ...props }) {
 export default function DeviceForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  console.log('🔍 DeviceForm - URL param id:', id, 'type:', typeof id);
+
   const isNew = id === 'new';
+  const isEdit =
+    id && id !== 'new' && id !== undefined && id !== 'undefined' && !isNaN(parseInt(id));
 
   const [form, setForm] = React.useState({
     sn: '',
@@ -70,7 +75,7 @@ export default function DeviceForm() {
   });
 
   const [trucks, setTrucks] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(isEdit);
 
   // Use alert hook
   const { showAlert, alertState } = useAlert();
@@ -86,13 +91,37 @@ export default function DeviceForm() {
         console.log('📡 Loading device form data...');
 
         // Load trucks for dropdown (legacy endpoint still supported)
-        const trucksRes = await trucksApi.getAll().catch(() => ({ data: { trucks: [] } }));
-        const trucksArray = trucksRes?.data?.trucks || trucksRes?.data || [];
-        setTrucks(Array.isArray(trucksArray) ? trucksArray : []);
+        const trucksRes = await trucksApi.getAll().catch((err) => {
+          console.error('❌ Failed to load trucks:', err);
+          return { data: { trucks: [] } };
+        });
+        console.log('📥 Trucks response:', trucksRes);
+
+        // Handle different response formats
+        let trucksArray;
+        if (Array.isArray(trucksRes?.data?.trucks)) {
+          trucksArray = trucksRes.data.trucks;
+        } else if (Array.isArray(trucksRes?.data?.data)) {
+          trucksArray = trucksRes.data.data;
+        } else if (Array.isArray(trucksRes?.data)) {
+          trucksArray = trucksRes.data;
+        } else if (Array.isArray(trucksRes)) {
+          trucksArray = trucksRes;
+        } else {
+          trucksArray = [];
+        }
+
+        console.log('✅ Trucks loaded:', trucksArray.length, 'trucks');
+        if (trucksArray.length > 0) {
+          console.log('🔍 First truck sample:', trucksArray[0]);
+        }
+        setTrucks(trucksArray);
 
         // Load device data if editing
-        if (!isNew) {
-          const deviceRes = await devicesApi.getById(parseInt(id)); // Convert to Integer
+        if (isEdit && id && id !== 'undefined' && !isNaN(parseInt(id))) {
+          console.log('📡 Loading device data with ID:', id);
+          const deviceId = parseInt(id);
+          const deviceRes = await devicesApi.getById(deviceId);
           console.log('✅ Device data loaded:', deviceRes);
 
           // Handle different response formats
@@ -106,6 +135,7 @@ export default function DeviceForm() {
           }
 
           if (device) {
+            console.log('📝 Setting form data:', device);
             setForm({
               sn: device.sn || device.deviceSn || '',
               imei: device.sim_number || device.simNumber || device.imei || '', // Backend uses sim_number
@@ -113,6 +143,7 @@ export default function DeviceForm() {
               status: device.status || 'active',
               truck_id: device.truck_id?.toString() || device.truckId?.toString() || '', // Convert Integer to string for select
             });
+            console.log('✅ Form state updated');
           }
         }
       } catch (err) {
@@ -124,7 +155,7 @@ export default function DeviceForm() {
     };
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, isNew]); // Removed showAlert from dependencies to prevent infinite loop
+  }, [id, isEdit]); // Removed showAlert from dependencies to prevent infinite loop
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
@@ -195,7 +226,7 @@ export default function DeviceForm() {
           const updateData = {
             sim_number: form.imei.trim(),
             status: form.status,
-            // Note: truck_id and sn cannot be updated after creation
+            truck_id: parseInt(form.truck_id), // Allow truck_id update
           };
 
           console.log('📤 Update payload:', updateData);
@@ -503,13 +534,32 @@ export default function DeviceForm() {
                   }
                 >
                   <option value="">Select Vehicle *</option>
-                  {trucks.map((truck) => (
-                    <option key={truck.id} value={truck.id}>
-                      {truck.truckNumber || truck.truck_number} -{' '}
-                      {truck.plate || truck.plate_number}
+                  {trucks.length > 0 ? (
+                    trucks.map((truck) => (
+                      <option key={truck.id} value={truck.id}>
+                        {truck.name ||
+                          truck.truckNumber ||
+                          truck.truck_number ||
+                          `Truck ${truck.id}`}{' '}
+                        - {truck.plate_number || truck.plate || 'No Plate'}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      No vehicles available
                     </option>
-                  ))}
+                  )}
                 </Select>
+                {trucks.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠️ No trucks loaded. Please refresh or check your connection.
+                  </p>
+                )}
+                {!isNew && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    ℹ️ Vehicle assignment can be changed during edit.
+                  </p>
+                )}
               </div>
             </div>
           </div>
