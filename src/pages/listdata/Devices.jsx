@@ -31,7 +31,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuItem onClick={() => onEdit(device.id)} className="gap-3">
+          <DropdownMenuItem onClick={() => onEdit(devicesApi.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
