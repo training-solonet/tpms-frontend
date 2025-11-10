@@ -150,7 +150,6 @@ export function DropdownMenuContent({ children, className = '', align = 'end' })
       setIsReady(false);
     }
   }, [isOpen, align, dropdownRef]);
-
   if (!isOpen) return null;
 
   return (
