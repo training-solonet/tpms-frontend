@@ -13,7 +13,7 @@ import {
 import TailwindLayout from '../components/layout/TailwindLayout.jsx';
 import TruckImage from '../components/common/TruckImage.jsx';
 // Use Backend 2 APIs
-import { vendorsApi, trucksApi, dashboardApi } from '../services/api2';
+import { vendorsApi, trucksApi, dashboardApi } from 'services/management';
 
 const FleetGroups = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);

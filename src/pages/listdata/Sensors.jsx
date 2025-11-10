@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { devicesApi, sensorsApi, trucksApi } from '../../services/api2';
+import { devicesApi, sensorsApi, trucksApi } from 'services/management';
 import TailwindLayout from '../../components/layout/TailwindLayout';
 import { Button } from '../../components/common/Button.jsx';
 import {

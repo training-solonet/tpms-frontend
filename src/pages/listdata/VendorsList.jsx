@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { vendorsApi } from '../../services/api2/index.js';
+import { vendorsApi } from 'services/management';
 import { Button } from '../../components/common/Button.jsx';
 import {
   DropdownMenu,
@@ -13,7 +13,8 @@ import {
 function VendorActionMenu({ vendor, onEdit, onDelete }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [showTimestamp] = React.useState(false);
-  const [position, setPosition] = React.useState({ top: 0, left: 0 });
+  const [position, setPosition] = React.useState(null);
+  const [isReady, setIsReady] = React.useState(false);
   const menuRef = React.useRef(null);
   const buttonRef = React.useRef(null);
   const dropdownRef = React.useRef(null);
@@ -44,36 +45,57 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
   }, [isOpen]);
 
   React.useEffect(() => {
-    if (isOpen && buttonRef.current && dropdownRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const dropdownRect = dropdownRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
+    if (isOpen && buttonRef.current) {
+      // Reset ready state when opening
+      setIsReady(false);
 
-      // Determine if dropdown should open upward or downward
-      const spaceBelow = viewportHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
-      const dropdownHeight = dropdownRect.height || 150;
+      const calculatePosition = () => {
+        if (!buttonRef.current || !dropdownRef.current) return;
 
-      let top = buttonRect.bottom + 8;
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const dropdownRect = dropdownRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
 
-      // If not enough space below and more space above, open upward
-      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-        top = buttonRect.top - dropdownHeight - 8;
-      }
+        // Use actual dimensions from rendered dropdown
+        const dropdownHeight = dropdownRect.height;
+        const dropdownWidth = dropdownRect.width || 224;
 
-      // Calculate horizontal position (align to right)
-      let left = buttonRect.right - 224; // 224px = w-56
+        // Determine if dropdown should open upward or downward
+        const spaceBelow = viewportHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
 
-      // Ensure dropdown doesn't overflow viewport
-      if (left + 224 > viewportWidth) {
-        left = viewportWidth - 224 - 16;
-      }
-      if (left < 16) {
-        left = 16;
-      }
+        let top = buttonRect.bottom + 8;
 
-      setPosition({ top, left });
+        // If not enough space below and more space above, open upward
+        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+          top = buttonRect.top - dropdownHeight - 8;
+        }
+
+        // Calculate horizontal position (align to right)
+        let left = buttonRect.right - dropdownWidth;
+
+        // Ensure dropdown doesn't overflow viewport
+        if (left + dropdownWidth > viewportWidth) {
+          left = viewportWidth - dropdownWidth - 16;
+        }
+        if (left < 16) {
+          left = 16;
+        }
+
+        setPosition({ top, left });
+        setIsReady(true);
+      };
+
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          calculatePosition();
+        });
+      });
+    } else {
+      setPosition(null);
+      setIsReady(false);
     }
   }, [isOpen]);
 
@@ -95,9 +117,12 @@ function VendorActionMenu({ vendor, onEdit, onDelete }) {
           ref={dropdownRef}
           className="fixed w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1"
           style={{
-            top: `${position.top}px`,
-            left: `${position.left}px`,
+            top: position ? `${position.top}px` : '-9999px',
+            left: position ? `${position.left}px` : '-9999px',
             zIndex: 9999,
+            visibility: isReady ? 'visible' : 'hidden',
+            opacity: isReady ? 1 : 0,
+            transition: isReady ? 'opacity 0.1s ease-out' : 'none',
           }}
         >
           <button
@@ -378,8 +403,6 @@ export default function VendorsList() {
     { key: 'no', label: 'No', sortable: false },
     { key: 'id', label: 'ID', sortable: true },
     { key: 'name', label: 'Name', sortable: true },
-    { key: 'code', label: 'Code', sortable: true },
-    { key: 'description', label: 'Description', sortable: true },
     { key: 'address', label: 'Address', sortable: true },
     { key: 'phone', label: 'Phone', sortable: true },
     { key: 'email', label: 'Email', sortable: true },
@@ -654,22 +677,11 @@ export default function VendorsList() {
                       return;
                     }
                     const csvContent = [
-                      [
-                        'No',
-                        'Name',
-                        'Code',
-                        'Description',
-                        'Address',
-                        'Phone',
-                        'Email',
-                        'Contact Person',
-                      ].join(','),
+                      ['No', 'Name', 'Address', 'Phone', 'Email', 'Contact Person'].join(','),
                       ...filtered.map((v, i) =>
                         [
                           i + 1,
                           v.name || '',
-                          v.code || '',
-                          v.description || '',
                           v.address || '',
                           v.phone || '',
                           v.email || '',
@@ -825,7 +837,7 @@ export default function VendorsList() {
                             {vendor.name || vendor.name_vendor || '-'}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        {/* <td className="px-4 py-3 whitespace-nowrap">
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">
                             {vendor.code || '-'}
                           </span>
@@ -834,7 +846,7 @@ export default function VendorsList() {
                           <div className="text-sm text-gray-900 max-w-xs truncate">
                             {vendor.description || '-'}
                           </div>
-                        </td>
+                        </td> */}
                         <td className="px-4 py-3">
                           <div className="text-sm text-gray-900 max-w-xs truncate">
                             {vendor.address || '-'}

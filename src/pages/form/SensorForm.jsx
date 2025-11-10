@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { devicesApi } from '../../services/api2/index.js';
+import { devicesApi } from 'services/management';
 
 function Input({ label, icon, ...props }) {
   return (
@@ -60,8 +60,9 @@ export default function SensorForm() {
 
   const [form, setForm] = React.useState({
     device_id: '',
-    sensor_type: 'pressure',
-    position: '',
+    tireNo: 1,
+    sensorNo: '',
+    simNumber: '',
     sn: '',
     status: 'active',
   });
@@ -71,17 +72,11 @@ export default function SensorForm() {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  // Tire positions for TPMS sensors
-  const tirePositions = [
-    { value: 'FL', label: 'Front Left' },
-    { value: 'FR', label: 'Front Right' },
-    { value: 'RL1', label: 'Rear Left 1' },
-    { value: 'RR1', label: 'Rear Right 1' },
-    { value: 'RL2', label: 'Rear Left 2' },
-    { value: 'RR2', label: 'Rear Right 2' },
-    { value: 'RL3', label: 'Rear Left 3' },
-    { value: 'RR3', label: 'Rear Right 3' },
-  ];
+  // Tire positions for TPMS sensors (1-20 for typical mining trucks)
+  const tirePositions = Array.from({ length: 20 }, (_, i) => ({
+    value: i + 1,
+    label: `Tire ${i + 1}`,
+  }));
 
   // Load data
   React.useEffect(() => {
@@ -97,17 +92,17 @@ export default function SensorForm() {
 
         // Load sensor data if editing
         if (!isNew) {
-          // Note: We need to get sensor by ID - assuming it's available through getAllSensors
-          const sensorsRes = await devicesApi.getAllSensors();
-          const sensorsArray = sensorsRes?.data?.sensors || sensorsRes?.data || [];
-          const sensor = sensorsArray.find((s) => s.id === id || s.sensor_id === id);
+          // Get sensor by ID
+          const sensorRes = await devicesApi.getSensorById(parseInt(id));
+          const sensor = sensorRes?.data?.sensor || sensorRes?.data;
 
           if (sensor) {
             console.log('✅ Sensor data loaded:', sensor);
             setForm({
-              device_id: sensor.device_id || sensor.deviceId || '',
-              sensor_type: sensor.sensor_type || sensor.sensorType || 'pressure',
-              position: sensor.position || '',
+              device_id: sensor.device_id?.toString() || '',
+              tireNo: sensor.tireNo || sensor.tire_no || 1,
+              sensorNo: sensor.sensorNo || sensor.sensor_no || '',
+              simNumber: sensor.simNumber || sensor.sim_number || '',
               sn: sensor.sn || sensor.serial_number || '',
               status: sensor.status || 'active',
             });
@@ -131,8 +126,8 @@ export default function SensorForm() {
       setError(null);
 
       // Validation
-      if (!form.device_id || !form.sensor_type || !form.sn) {
-        alert('Device, Sensor Type, and Serial Number are required fields!');
+      if (!form.device_id || !form.sn || !form.tireNo) {
+        alert('Device, Serial Number, and Tire Number are required fields!');
         setSaving(false);
         return;
       }
@@ -140,17 +135,13 @@ export default function SensorForm() {
       console.log('💾 Saving sensor data...', form);
 
       const sensorData = {
-        device_id: form.device_id,
-        sensor_type: form.sensor_type,
-        position: form.position || undefined,
+        device_id: parseInt(form.device_id),
         sn: form.sn,
+        tireNo: parseInt(form.tireNo),
+        ...(form.sensorNo && { sensorNo: parseInt(form.sensorNo) }),
+        ...(form.simNumber && { simNumber: form.simNumber }),
         status: form.status,
       };
-
-      // Remove undefined fields
-      Object.keys(sensorData).forEach(
-        (key) => sensorData[key] === undefined && delete sensorData[key]
-      );
 
       let response;
       if (isNew) {
@@ -161,8 +152,9 @@ export default function SensorForm() {
         // Reset form for adding another sensor
         setForm({
           device_id: '',
-          sensor_type: 'pressure',
-          position: '',
+          tireNo: 1,
+          sensorNo: '',
+          simNumber: '',
           sn: '',
           status: 'active',
         });
@@ -170,7 +162,12 @@ export default function SensorForm() {
         navigate('/sensors/new', { replace: true });
       } else {
         console.log('🔄 Updating sensor:', id);
-        response = await devicesApi.updateSensor(id, sensorData);
+        // For update, we can only update tireNo and status
+        const updateData = {
+          tireNo: parseInt(form.tireNo),
+          status: form.status,
+        };
+        response = await devicesApi.updateSensor(parseInt(id), updateData);
         console.log('✅ Sensor updated successfully:', response);
         alert('Sensor updated successfully!');
         // Navigate back to devices list
@@ -214,7 +211,17 @@ export default function SensorForm() {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-gray-900 font-medium">Vendors</span>
+          <Link to="/Sensors" className="hover:text-indigo-600 transition-colors">
+            Sensors
+          </Link>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-900 font-medium">Add Vendors</span>
         </nav>
 
         {/* Header */}
@@ -331,6 +338,28 @@ export default function SensorForm() {
                 </div>
               </div>
               <div className="p-4 space-y-3">
+                {!isNew && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                    <p className="text-xs text-yellow-800 flex items-start gap-2">
+                      <svg
+                        className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>
+                        <strong>Note:</strong> Serial Number (SN), Sensor Number, and SIM Number
+                        cannot be changed after creation. Only Tire Number and Status can be
+                        updated.
+                      </span>
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   <Select
                     label="Parent Device *"
@@ -352,11 +381,11 @@ export default function SensorForm() {
                       </svg>
                     }
                   >
-                    <option value="">Select Device</option>
+                    <option value="">Select Device *</option>
                     {devices.map((device) => (
                       <option key={device.id} value={device.id}>
-                        {device.device_sn || device.deviceSn} -{' '}
-                        {device.device_type || device.deviceType}
+                        {device.sn || device.device_sn || device.deviceSn} (Truck:{' '}
+                        {device.truck?.name || device.truck?.plate || 'N/A'})
                       </option>
                     ))}
                   </Select>
@@ -366,6 +395,7 @@ export default function SensorForm() {
                     placeholder="e.g., SN123456"
                     value={form.sn}
                     onChange={(e) => update('sn', e.target.value)}
+                    disabled={!isNew}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -384,38 +414,11 @@ export default function SensorForm() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                   <Select
-                    label="Sensor Type *"
-                    value={form.sensor_type}
-                    onChange={(e) => update('sensor_type', e.target.value)}
-                    icon={
-                      <svg
-                        className="w-4 h-4 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                      </svg>
-                    }
-                  >
-                    <option value="pressure">🔵 Pressure Sensor</option>
-                    <option value="temperature">🌡️ Temperature Sensor</option>
-                    <option value="gps">📍 GPS Sensor</option>
-                    <option value="fuel">⛽ Fuel Sensor</option>
-                    <option value="vibration">📳 Vibration Sensor</option>
-                  </Select>
-
-                  <Select
-                    label="Position"
-                    value={form.position}
-                    onChange={(e) => update('position', e.target.value)}
+                    label="Tire Number *"
+                    value={form.tireNo}
+                    onChange={(e) => update('tireNo', e.target.value)}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -438,13 +441,59 @@ export default function SensorForm() {
                       </svg>
                     }
                   >
-                    <option value="">Select Position (Optional)</option>
                     {tirePositions.map((pos) => (
                       <option key={pos.value} value={pos.value}>
                         {pos.label}
                       </option>
                     ))}
                   </Select>
+
+                  <Input
+                    label="Sensor Number"
+                    placeholder="e.g., 1"
+                    type="number"
+                    value={form.sensorNo}
+                    onChange={(e) => update('sensorNo', e.target.value)}
+                    disabled={!isNew}
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                        />
+                      </svg>
+                    }
+                  />
+
+                  <Input
+                    label="SIM Number"
+                    placeholder="e.g., 628123456789"
+                    value={form.simNumber}
+                    onChange={(e) => update('simNumber', e.target.value)}
+                    disabled={!isNew}
+                    icon={
+                      <svg
+                        className="w-4 h-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        />
+                      </svg>
+                    }
+                  />
                 </div>
               </div>
             </div>

@@ -91,56 +91,78 @@ export function DropdownMenuTrigger({ children, asChild }) {
 export function DropdownMenuContent({ children, className = '', align = 'end' }) {
   const { isOpen, dropdownRef } = useContext(DropdownContext);
   const contentRef = useRef(null);
-  const [position, setPosition] = useState({ top: 0, left: 0, placement: 'bottom' });
+  const [position, setPosition] = useState(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (isOpen && dropdownRef.current && contentRef.current) {
-      const triggerRect = dropdownRef.current.getBoundingClientRect();
-      const contentRect = contentRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
+    if (isOpen && dropdownRef.current) {
+      // Reset ready state when opening
+      setIsReady(false);
 
-      // Determine if dropdown should open upward or downward
-      const spaceBelow = viewportHeight - triggerRect.bottom;
-      const spaceAbove = triggerRect.top;
-      const dropdownHeight = contentRect.height || 200; // estimate if not rendered yet
+      const calculatePosition = () => {
+        if (!dropdownRef.current || !contentRef.current) return;
 
-      let placement = 'bottom';
-      let top = triggerRect.bottom + 8; // mt-2 = 8px
+        const triggerRect = dropdownRef.current.getBoundingClientRect();
+        const contentRect = contentRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
 
-      // If not enough space below and more space above, open upward
-      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-        placement = 'top';
-        top = triggerRect.top - dropdownHeight - 8;
-      }
+        // Use actual dimensions from rendered content
+        const dropdownHeight = contentRect.height;
+        const dropdownWidth = contentRect.width;
 
-      // Calculate horizontal position
-      let left =
-        align === 'start' ? triggerRect.left : triggerRect.right - (contentRect.width || 224); // default 224px (w-56)
+        // Determine if dropdown should open upward or downward
+        const spaceBelow = viewportHeight - triggerRect.bottom;
+        const spaceAbove = triggerRect.top;
 
-      // Ensure dropdown doesn't overflow viewport horizontally
-      if (left + (contentRect.width || 224) > viewportWidth) {
-        left = viewportWidth - (contentRect.width || 224) - 16;
-      }
-      if (left < 16) {
-        left = 16;
-      }
+        let placement = 'bottom';
+        let top = triggerRect.bottom + 8; // mt-2 = 8px
 
-      setPosition({ top, left, placement });
+        // If not enough space below and more space above, open upward
+        if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+          placement = 'top';
+          top = triggerRect.top - dropdownHeight - 8;
+        }
+
+        // Calculate horizontal position
+        let left = align === 'start' ? triggerRect.left : triggerRect.right - dropdownWidth;
+
+        // Ensure dropdown doesn't overflow viewport horizontally
+        if (left + dropdownWidth > viewportWidth) {
+          left = viewportWidth - dropdownWidth - 16;
+        }
+        if (left < 16) {
+          left = 16;
+        }
+
+        setPosition({ top, left, placement });
+        setIsReady(true);
+      };
+
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          calculatePosition();
+        });
+      });
+    } else {
+      setPosition(null);
+      setIsReady(false);
     }
   }, [isOpen, align, dropdownRef]);
-
   if (!isOpen) return null;
 
   return (
     <div
       ref={contentRef}
-      className={`fixed rounded-md bg-white shadow-lg border border-gray-200 focus:outline-none transition-all duration-100 ease-out ${className}`}
+      className={`fixed rounded-md bg-white shadow-lg border border-gray-200 focus:outline-none ${className}`}
       style={{
-        top: `${position.top}px`,
-        left: `${position.left}px`,
-        animation: 'fadeIn 0.15s ease-out',
+        top: position ? `${position.top}px` : '-9999px',
+        left: position ? `${position.left}px` : '-9999px',
         zIndex: 9999,
+        visibility: isReady ? 'visible' : 'hidden',
+        opacity: isReady ? 1 : 0,
+        transition: isReady ? 'opacity 0.1s ease-out' : 'none',
       }}
     >
       <div className="py-1" role="menu" aria-orientation="vertical">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
-import { driversApi, vendorsApi } from '../../services/api2/index.js';
+import { driversApi, vendorsApi } from 'services/management';
 
 function Input({ label, icon, ...props }) {
   return (
@@ -83,8 +83,6 @@ export default function DriverForm() {
     status: 'aktif', // 'aktif' or 'nonaktif'
   });
   const [vendors, setVendors] = React.useState([]);
-  const [imageFile, setImageFile] = React.useState(null);
-  const [imagePreview, setImagePreview] = React.useState(null);
   const [loading, setLoading] = React.useState(isEdit);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -122,10 +120,6 @@ export default function DriverForm() {
               vendor_id: driver.vendor_id || driver.vendorId || '',
               status: driver.status || 'aktif',
             });
-            // Set image preview if exists
-            if (driver.image || driver.imageUrl) {
-              setImagePreview(driver.image || driver.imageUrl);
-            }
           } else {
             console.warn('⚠️ No driver data found in response');
             setError('Driver data not found');
@@ -143,76 +137,49 @@ export default function DriverForm() {
 
   const update = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const onSave = async () => {
     try {
       setSaving(true);
       setError(null);
       setValidationErrors([]);
 
-      // Validation
+      // Basic frontend validation
       if (!form.name || !form.license_number) {
         alert('Name and License Number are required fields!');
-        setSaving(false);
         return;
       }
 
-      console.log('💾 Saving driver data to Backend 2...', form);
+      // Build payload for API
+      const driverData = {
+        name: form.name,
+        phone: form.phone || '',
+        email: form.email || '',
+        license_number: form.license_number,
+        license_type: form.license_type || '',
+        license_expiry: form.license_expiry || '',
+        vendor_id: form.vendor_id
+          ? isNaN(parseInt(form.vendor_id))
+            ? form.vendor_id
+            : parseInt(form.vendor_id)
+          : null,
+        status: form.status || 'aktif',
+      };
 
-      // Use FormData if image is provided
-      let driverData;
-      if (imageFile) {
-        driverData = new FormData();
-        driverData.append('name', form.name);
-        if (form.phone) driverData.append('phone', form.phone);
-        if (form.email) driverData.append('email', form.email);
-        driverData.append('license_number', form.license_number);
-        if (form.license_type) driverData.append('license_type', form.license_type);
-        if (form.license_expiry) driverData.append('license_expiry', form.license_expiry);
-        if (form.vendor_id) driverData.append('vendor_id', form.vendor_id);
-        driverData.append('status', form.status);
-        driverData.append('image', imageFile);
-      } else {
-        // Use regular object if no image
-        driverData = {
-          name: form.name,
-          phone: form.phone || undefined,
-          email: form.email || undefined,
-          license_number: form.license_number,
-          license_type: form.license_type || undefined,
-          license_expiry: form.license_expiry || undefined,
-          vendor_id: form.vendor_id ? parseInt(form.vendor_id) : undefined,
-          status: form.status,
-        };
-
-        // Remove undefined fields
-        Object.keys(driverData).forEach(
-          (key) => driverData[key] === undefined && delete driverData[key]
-        );
-      }
+      // Remove undefined fields (keep nulls where explicit)
+      Object.keys(driverData).forEach((k) => {
+        if (driverData[k] === undefined) delete driverData[k];
+      });
 
       let response;
       if (isEdit) {
         // UPDATE existing driver
-        console.log('🔄 Updating driver:', id);
+        console.log('🔄 Updating driver:', id, driverData);
         response = await driversApi.update(id, driverData);
         console.log('✅ Driver updated successfully:', response);
         alert('Driver updated successfully!');
       } else {
         // CREATE new driver
-        console.log('➕ Creating new driver');
+        console.log('➕ Creating new driver', driverData);
         response = await driversApi.create(driverData);
         console.log('✅ Driver created successfully:', response);
         alert('Driver created successfully!');
@@ -223,12 +190,12 @@ export default function DriverForm() {
       console.error('❌ Failed to save driver:', err);
 
       // Handle validation errors from backend
-      if (err.data?.errors && Array.isArray(err.data.errors)) {
+      if (err?.data?.errors && Array.isArray(err.data.errors)) {
         setValidationErrors(err.data.errors);
         const errorMessages = err.data.errors.map((e) => `${e.field}: ${e.message}`).join('\n');
         alert(`Validation Error:\n${errorMessages}`);
       } else {
-        const errorMsg = err.message || err.data?.message || 'Unknown error';
+        const errorMsg = err.message || err?.data?.message || 'Unknown error';
         setError(errorMsg);
         alert(`Failed to save driver: ${errorMsg}`);
       }
@@ -253,7 +220,17 @@ export default function DriverForm() {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-gray-900 font-medium">Vendors</span>
+          <Link to="/drivers" className="hover:text-indigo-600 transition-colors">
+            Drivers
+          </Link>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-900 font-medium">Add Driver</span>
         </nav>
 
         {/* Header */}
@@ -670,48 +647,6 @@ export default function DriverForm() {
                           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                      <div>
-                        <h2 className="text-sm font-semibold text-gray-900">Driver Photo</h2>
-                        <p className="text-xs text-gray-600">Upload driver image</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 space-y-3">
-                    <div className="flex flex-col items-center">
-                      {imagePreview && (
-                        <img
-                          src={imagePreview}
-                          alt="Driver preview"
-                          className="w-32 h-32 rounded-full object-cover border-4 border-gray-200 mb-3"
-                        />
-                      )}
-                      <label className="w-full cursor-pointer">
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-400 transition-colors">
-                          <svg
-                            className="mx-auto h-8 w-8 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                          </svg>
-                          <p className="mt-2 text-xs text-gray-600">
-                            Click to upload or drag and drop
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
-                      </label>
                     </div>
                   </div>
                 </div>

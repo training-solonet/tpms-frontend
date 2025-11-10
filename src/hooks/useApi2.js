@@ -1,5 +1,5 @@
 /**
- * Custom React Hooks for Backend 2 API
+ * Custom React Hooks for Backend 2 API (Management & Master Data)
  * Provides easy-to-use hooks for data fetching and state management
  */
 
@@ -14,7 +14,7 @@ import {
   alertsApi,
   miningAreaApi,
   fleetApi,
-} from '../services/api2';
+} from 'services/management';
 
 /**
  * Hook for fetching trucks with filters
