@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { devicesApi, sensorsApi, trucksApi } from 'services/management';
+import { devicesApi, trucksApi } from 'services/management';
 import TailwindLayout from '../../components/layout/TailwindLayout';
 import { Button } from '../../components/common/Button.jsx';
 import {
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
 } from '../../components/common/DropdownMenu.jsx';
 
-function SensorsActionMenu({ truck, onEdit, onDelete }) {
+function SensorsActionMenu({ sensor, onEdit, onDelete }) {
   const [showTimestamp] = React.useState(false);
 
   return (
@@ -29,7 +29,7 @@ function SensorsActionMenu({ truck, onEdit, onDelete }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuItem onClick={() => onEdit(sensorsApi.id)} className="gap-3">
+          <DropdownMenuItem onClick={() => onEdit(sensor.id)} className="gap-3">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -44,7 +44,7 @@ function SensorsActionMenu({ truck, onEdit, onDelete }) {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={() => onDelete(sensorsApi.id)}
+            onClick={() => onDelete(sensor.id)}
             className="gap-3 text-red-600 hover:bg-red-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,32 +66,32 @@ function SensorsActionMenu({ truck, onEdit, onDelete }) {
             <div className="flex justify-between">
               <span className="text-gray-500">Created:</span>
               <span className="text-gray-900 font-medium">
-                {truck.createdAt && truck.createdAt !== '-'
-                  ? new Date(truck.createdAt).toLocaleString()
+                {sensor.createdAt && sensor.createdAt !== '-'
+                  ? new Date(sensor.createdAt).toLocaleString()
                   : '-'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Created By:</span>
-              <span className="text-gray-900 font-medium">{truck.createdBy || '-'}</span>
+              <span className="text-gray-900 font-medium">{sensor.createdBy || '-'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Updated:</span>
               <span className="text-gray-900 font-medium">
-                {truck.updatedAt && truck.updatedAt !== '-'
-                  ? new Date(truck.updatedAt).toLocaleString()
+                {sensor.updatedAt && sensor.updatedAt !== '-'
+                  ? new Date(sensor.updatedAt).toLocaleString()
                   : '-'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Updated By:</span>
-              <span className="text-gray-900 font-medium">{truck.updatedBy || '-'}</span>
+              <span className="text-gray-900 font-medium">{sensor.updatedBy || '-'}</span>
             </div>
-            {truck.deletedAt && (
+            {sensor.deletedAt && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Deleted:</span>
                 <span className="text-red-600 font-medium">
-                  {new Date(truck.deletedAt).toLocaleString()}
+                  {new Date(sensor.deletedAt).toLocaleString()}
                 </span>
               </div>
             )}
@@ -106,14 +106,18 @@ const handleEdit = (id) => {
 };
 
 const onDelete = async (id) => {
-  if (!confirm('Delete this sensors? This action cannot be undone.')) return;
+  if (!confirm('Delete this sensor? This action cannot be undone.')) return;
   try {
-    await id;
-    alert('sensors deleted successfully!');
+    console.log('🗑️ Deleting sensor:', id);
+    await devicesApi.deleteSensor(id);
+    console.log('✅ Sensor deleted successfully');
+    alert('Sensor deleted successfully!');
+    // Reload the sensors list
+    window.location.reload();
   } catch (error) {
-    console.error('❌ Failed to delete sensors:', error);
+    console.error('❌ Failed to delete sensor:', error);
     const errorMsg = error.message || 'Unknown error';
-    alert('Failed to delete sensors: ' + errorMsg);
+    alert('Failed to delete sensor: ' + errorMsg);
   }
 };
 const Sensors = () => {
@@ -177,21 +181,33 @@ const Sensors = () => {
 
       console.log('✅ Sensors data:', data.length, 'sensors');
 
-      // Check field names in first sensor
-      if (data[0]) {
-        console.log('🔍 Sensor fields available:', Object.keys(data[0]));
-        console.log('🔍 First sensor sample:', data[0]);
-        console.log('🔍 Sensor sn:', data[0].sn);
-        console.log('🔍 Sensor device_id:', data[0].device_id);
-        console.log('🔍 Sensor tireNo:', data[0].tireNo);
-        console.log('🔍 Sensor tire_no:', data[0].tire_no);
-        console.log('🔍 Sensor tempValue:', data[0].tempValue);
-        console.log('🔍 Sensor temp_value:', data[0].temp_value);
-        console.log('🔍 Sensor tirepValue:', data[0].tirepValue);
-        console.log('🔍 Sensor tirep_value:', data[0].tirep_value);
-        console.log('🔍 Sensor tire_value:', data[0].tire_value);
-        console.log('🔍 Sensor bat:', data[0].bat);
-        console.log('🔍 Sensor status:', data[0].status);
+      // Extract devices and trucks from included sensor data
+      const devicesFromSensors = [];
+      const trucksFromDevices = [];
+
+      data.forEach((sensor) => {
+        if (sensor.device && !devicesFromSensors.find((d) => d.id === sensor.device.id)) {
+          devicesFromSensors.push(sensor.device);
+
+          // Extract truck from device
+          if (
+            sensor.device.truck &&
+            !trucksFromDevices.find((t) => t.id === sensor.device.truck.id)
+          ) {
+            trucksFromDevices.push(sensor.device.truck);
+          }
+        }
+      });
+
+      console.log('🔍 Extracted devices from sensors:', devicesFromSensors.length);
+      console.log('🔍 Extracted trucks from devices:', trucksFromDevices.length);
+
+      // Update devices and trucks state with extracted data
+      if (devicesFromSensors.length > 0) {
+        setDevices(devicesFromSensors);
+      }
+      if (trucksFromDevices.length > 0) {
+        setTrucks(trucksFromDevices);
       }
 
       setSensors(data);
@@ -246,23 +262,66 @@ const Sensors = () => {
   // Get device and truck info for sensor
   const getSensorInfo = useCallback(
     (sensor) => {
-      // API may use sim_number field to link sensor to device
-      const device = devices.find(
-        (d) =>
-          d.sn === sensor.sim_number ||
-          d.serial_number === sensor.sim_number ||
-          d.sim_number === sensor.sim_number ||
-          d.id === sensor.device_id
-      );
-      const truck = device ? trucks.find((t) => t.id === device.truck_id) : null;
+      // First try to use included device data from sensor object
+      let device = sensor.device;
+      let truck = sensor.device?.truck;
+
+      // If not included, try to find from devices array
+      if (!device) {
+        device = devices.find(
+          (d) =>
+            d.id === sensor.device_id ||
+            d.id === sensor.deviceId ||
+            d.sn === sensor.sim_number ||
+            d.serial_number === sensor.sim_number ||
+            d.sim_number === sensor.sim_number
+        );
+      }
+
+      // If device found but no truck, try to find from trucks array
+      if (device && !truck) {
+        truck = trucks.find((t) => t.id === device.truck_id || t.id === device.truckId);
+      }
+
       return { device, truck };
     },
     [devices, trucks]
   );
 
+  // Sort state
+  const [sortConfig, setSortConfig] = React.useState({
+    key: null,
+    direction: 'asc',
+  });
+
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      // Toggle between asc and desc for the same column
+      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      // New column, start with asc
+      setSortConfig({ key, direction: 'asc' });
+    }
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === 'asc' ? (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3l-6 8h12l-6-8z" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 17l6-8H4l6 8z" />
+        </svg>
+      );
+    }
+    return null; // No icon when not sorted
+  };
+
   // Filter & Search
   const filtered = useMemo(() => {
-    return sensors.filter((sensor) => {
+    let result = sensors.filter((sensor) => {
       const { device, truck } = getSensorInfo(sensor);
 
       const matchQuery =
@@ -278,7 +337,69 @@ const Sensors = () => {
 
       return matchQuery && matchDevice && matchTruck && matchStatus;
     });
-  }, [sensors, query, deviceFilter, sensorFilter, statusFilter, getSensorInfo]);
+
+    // Apply sorting
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        const { device: aDevice, truck: aTruck } = getSensorInfo(a);
+        const { device: bDevice, truck: bTruck } = getSensorInfo(b);
+
+        let aVal, bVal;
+
+        // Handle different sort keys
+        switch (sortConfig.key) {
+          case 'id':
+            aVal = a.id;
+            bVal = b.id;
+            break;
+          case 'sn':
+            aVal = a.sn || '';
+            bVal = b.sn || '';
+            break;
+          case 'device':
+            aVal = aDevice?.sn || aDevice?.serial_number || '';
+            bVal = bDevice?.sn || bDevice?.serial_number || '';
+            break;
+          case 'truck':
+            aVal = aTruck?.name || aTruck?.truck_number || '';
+            bVal = bTruck?.name || bTruck?.truck_number || '';
+            break;
+          case 'tirePosition':
+            aVal = a.tire_no || 0;
+            bVal = b.tire_no || 0;
+            break;
+          case 'sensorNo':
+            aVal = a.sensor_no || '';
+            bVal = b.sensor_no || '';
+            break;
+          case 'created_at':
+            aVal = a.created_at && a.created_at !== '-' ? new Date(a.created_at).getTime() : 0;
+            bVal = b.created_at && b.created_at !== '-' ? new Date(b.created_at).getTime() : 0;
+            break;
+          default:
+            aVal = a[sortConfig.key];
+            bVal = b[sortConfig.key];
+        }
+
+        // Handle null/undefined values
+        if (aVal === null || aVal === undefined) aVal = '';
+        if (bVal === null || bVal === undefined) bVal = '';
+
+        // Compare values
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortConfig.direction === 'asc'
+            ? aVal.localeCompare(bVal)
+            : bVal.localeCompare(aVal);
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [sensors, query, deviceFilter, sensorFilter, statusFilter, getSensorInfo, sortConfig]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -820,40 +941,63 @@ const Sensors = () => {
                         <th
                           scope="col"
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          onClick={() => handleSort('id')}
                         >
-                          ID
+                          <div className="<flex items-center justify-center gap-2">
+                            ID
+                            {getSortIcon('id')}
+                          </div>
                         </th>
                       )}
                       <th
                         scope="col"
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        onClick={() => handleSort('sn')}
                       >
-                        Serial Number
+                        <div className="flex items-center justify-center gap-2">
+                          Serial Number
+                          {getSortIcon('sn')}
+                        </div>
                       </th>
                       <th
                         scope="col"
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        onClick={() => handleSort('device')}
                       >
-                        Device
+                        <div className="flex items-center justify-center gap-2">
+                          Device
+                          {getSortIcon('device')}
+                        </div>
                       </th>
                       <th
                         scope="col"
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        onClick={() => handleSort('truck')}
                       >
-                        Truck
+                        <div className="flex items-center justify-center gap-2">
+                          Truck
+                          {getSortIcon('truck')}
+                        </div>
                       </th>
                       <th
                         scope="col"
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        onClick={() => handleSort('tirePosition')}
                       >
-                        Tire Position
+                        <div className="flex items-center justify-center gap-2">
+                          Tire Position
+                          {getSortIcon('tirePosition')}
+                        </div>
                       </th>
                       {visibleColumns.sensorNo && (
                         <th
                           scope="col"
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          onClick={() => handleSort('sensorNo')}
                         >
-                          Sensor #
+                          <div className="flex items-center justify-center gap-2">
+                            Sensor #{getSortIcon('sensorNo')}
+                          </div>
                         </th>
                       )}
                       {visibleColumns.extype && (
@@ -874,8 +1018,12 @@ const Sensors = () => {
                         <th
                           scope="col"
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          onClick={() => handleSort('created_at')}
                         >
-                          Created At
+                          <div className="flex items-center justify-center gap-2">
+                            Created At
+                            {getSortIcon('created_at')}
+                          </div>
                         </th>
                       )}
                       <th
@@ -955,7 +1103,7 @@ const Sensors = () => {
                           )}
                           <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <SensorsActionMenu
-                              Sensor={sensor}
+                              sensor={sensor}
                               onEdit={handleEdit}
                               onDelete={onDelete}
                             />
@@ -968,52 +1116,113 @@ const Sensors = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
-                      Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to{' '}
-                      <span className="font-medium">
-                        {Math.min(page * pageSize, filtered.length)}
-                      </span>{' '}
-                      of <span className="font-medium">{filtered.length}</span> results
-                    </div>
-                    <div className="flex gap-2">
+              <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(page * pageSize, filtered.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{filtered.length}</span> results
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => setPage(1)}
+                        disabled={page === 1}
+                        className="px-3 py-2 text-sm font-medium border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="First page"
+                      >
+                        First
+                      </button>
                       <button
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Previous page"
                       >
-                        Previous
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
                       </button>
-                      {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                        const pageNum = i + 1;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setPage(pageNum)}
-                            className={`px-3 py-1 text-sm border rounded-md ${
-                              page === pageNum
-                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                : 'border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                      {totalPages > 5 && <span className="px-2">...</span>}
+
+                      {/* Page Numbers */}
+                      <div className="hidden sm:flex items-center">
+                        {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (page <= 3) {
+                            pageNum = i + 1;
+                          } else if (page >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = page - 2 + i;
+                          }
+
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setPage(pageNum)}
+                              className={`px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 transition-colors ${
+                                page === pageNum
+                                  ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 z-10'
+                                  : 'text-gray-700'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mobile: Show current page */}
+                      <div className="sm:hidden px-3 py-2 text-sm font-medium -ml-px border border-gray-300 bg-indigo-50 text-indigo-600">
+                        {page}
+                      </div>
+
                       <button
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Next page"
                       >
-                        Next
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        disabled={page === totalPages}
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Last page"
+                      >
+                        Last
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>

@@ -15,7 +15,7 @@ function Input({ label, icon, ...props }) {
         )}
         <input
           {...props}
-          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all ${props.className || ''}`}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all disabled:bg-gray-100 disabled:text-gray-600 disabled:cursor-not-allowed ${props.className || ''}`}
         />
       </div>
     </label>
@@ -34,7 +34,7 @@ function Select({ label, icon, children, ...props }) {
         )}
         <select
           {...props}
-          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none bg-white cursor-pointer ${props.className || ''}`}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-8 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all appearance-none bg-white cursor-pointer disabled:bg-gray-100 disabled:text-gray-600 disabled:cursor-not-allowed ${props.className || ''}`}
         >
           {children}
         </select>
@@ -84,6 +84,8 @@ export default function SensorForm() {
       try {
         setLoading(true);
         console.log('📡 Loading sensor form data...');
+        console.log('📌 Sensor ID from URL:', id);
+        console.log('📌 Is New?', isNew);
 
         // Load devices for dropdown
         const devicesRes = await devicesApi.getAll().catch(() => ({ data: [] }));
@@ -92,8 +94,16 @@ export default function SensorForm() {
 
         // Load sensor data if editing
         if (!isNew) {
+          // Validate ID
+          const sensorId = parseInt(id);
+          if (isNaN(sensorId) || sensorId <= 0) {
+            throw new Error(`Invalid sensor ID: ${id}`);
+          }
+
+          console.log('📌 Parsed Sensor ID:', sensorId);
+
           // Get sensor by ID
-          const sensorRes = await devicesApi.getSensorById(parseInt(id));
+          const sensorRes = await devicesApi.getSensorById(sensorId);
           const sensor = sensorRes?.data?.sensor || sensorRes?.data;
 
           if (sensor) {
@@ -106,6 +116,8 @@ export default function SensorForm() {
               sn: sensor.sn || sensor.serial_number || '',
               status: sensor.status || 'active',
             });
+          } else {
+            throw new Error('Sensor not found');
           }
         }
       } catch (err) {
@@ -162,11 +174,22 @@ export default function SensorForm() {
         navigate('/sensors/new', { replace: true });
       } else {
         console.log('🔄 Updating sensor:', id);
-        // For update, we can only update tireNo and status
+        // For update, allow changing device_id, tireNo, sensorNo, simNumber, and status
+        // Only Serial Number (sn) cannot be changed as it's the hardware identifier
         const updateData = {
+          device_id: parseInt(form.device_id),
           tireNo: parseInt(form.tireNo),
           status: form.status,
         };
+
+        // Add optional fields if they have values
+        if (form.sensorNo) {
+          updateData.sensorNo = parseInt(form.sensorNo);
+        }
+        if (form.simNumber) {
+          updateData.simNumber = form.simNumber;
+        }
+
         response = await devicesApi.updateSensor(parseInt(id), updateData);
         console.log('✅ Sensor updated successfully:', response);
         alert('Sensor updated successfully!');
@@ -221,7 +244,7 @@ export default function SensorForm() {
               clipRule="evenodd"
             />
           </svg>
-          <span className="text-gray-900 font-medium">Add Vendors</span>
+          <span className="text-gray-900 font-medium">Add Sensor</span>
         </nav>
 
         {/* Header */}
@@ -339,23 +362,23 @@ export default function SensorForm() {
               </div>
               <div className="p-4 space-y-3">
                 {!isNew && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
-                    <p className="text-xs text-yellow-800 flex items-start gap-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
+                    <p className="text-xs text-blue-800 flex items-start gap-2">
                       <svg
-                        className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0"
+                        className="w-4 h-4 text-blue-600 mt-0.5 shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
                         <path
                           fillRule="evenodd"
-                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                           clipRule="evenodd"
                         />
                       </svg>
                       <span>
-                        <strong>Note:</strong> Serial Number (SN), Sensor Number, and SIM Number
-                        cannot be changed after creation. Only Tire Number and Status can be
-                        updated.
+                        <strong>Edit Mode:</strong> You can change the Parent Device (to move sensor
+                        to another truck), Tire Position, Sensor Number, SIM Number, and Status.
+                        Only the Serial Number (hardware ID) cannot be changed.
                       </span>
                     </p>
                   </div>
@@ -454,7 +477,6 @@ export default function SensorForm() {
                     type="number"
                     value={form.sensorNo}
                     onChange={(e) => update('sensorNo', e.target.value)}
-                    disabled={!isNew}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"
@@ -477,7 +499,6 @@ export default function SensorForm() {
                     placeholder="e.g., 628123456789"
                     value={form.simNumber}
                     onChange={(e) => update('simNumber', e.target.value)}
-                    disabled={!isNew}
                     icon={
                       <svg
                         className="w-4 h-4 text-gray-400"

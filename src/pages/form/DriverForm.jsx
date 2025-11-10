@@ -68,8 +68,11 @@ function Select({ label, icon, children, ...props }) {
 export default function DriverForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  console.log('🔍 DriverForm - URL param id:', id, 'type:', typeof id);
+
   const isNew = id === 'new';
-  const isEdit = id && id !== 'new';
+  const isEdit = id && id !== 'new' && id !== undefined && id !== 'undefined';
 
   const [form, setForm] = React.useState({
     // Basic Info
@@ -100,8 +103,8 @@ export default function DriverForm() {
         setVendors(Array.isArray(vendorsArray) ? vendorsArray : []);
 
         // Load driver data if editing
-        if (isEdit) {
-          console.log('📡 Loading driver data from Backend 2...');
+        if (isEdit && id && id !== 'undefined') {
+          console.log('📡 Loading driver data from Backend 2 with ID:', id);
           const res = await driversApi.getById(id);
           console.log('✅ Driver response:', res);
 
@@ -173,7 +176,14 @@ export default function DriverForm() {
       let response;
       if (isEdit) {
         // UPDATE existing driver
-        console.log('🔄 Updating driver:', id, driverData);
+        console.log('🔄 Updating driver ID:', id);
+        console.log('🔄 Driver data:', driverData);
+
+        // Validate ID before update
+        if (!id || id === 'new') {
+          throw new Error('Invalid driver ID for update');
+        }
+
         response = await driversApi.update(id, driverData);
         console.log('✅ Driver updated successfully:', response);
         alert('Driver updated successfully!');
@@ -203,6 +213,20 @@ export default function DriverForm() {
       setSaving(false);
     }
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <TailwindLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+            <p className="text-gray-500 text-sm">Loading driver data...</p>
+          </div>
+        </div>
+      </TailwindLayout>
+    );
+  }
 
   return (
     <TailwindLayout>
@@ -336,6 +360,66 @@ export default function DriverForm() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Data Preview Card (Only show when editing and data loaded) */}
+            {isEdit && !loading && form.name && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-blue-600 shrink-0 mt-0.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                      Current Driver Data
+                    </h3>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                      <div>
+                        <span className="text-blue-700 font-medium">Name:</span>
+                        <span className="text-blue-900 ml-2">{form.name || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Phone:</span>
+                        <span className="text-blue-900 ml-2">{form.phone || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Email:</span>
+                        <span className="text-blue-900 ml-2">{form.email || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">License:</span>
+                        <span className="text-blue-900 ml-2">{form.license_number || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Type:</span>
+                        <span className="text-blue-900 ml-2">{form.license_type || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Status:</span>
+                        <span
+                          className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            form.status === 'aktif'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {form.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
