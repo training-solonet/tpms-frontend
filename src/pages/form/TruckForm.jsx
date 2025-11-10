@@ -157,14 +157,13 @@ export default function TruckForm() {
       errors.push('Valid Year is required');
     }
 
-    // VIN validation: VINs are typically alphanumeric (no I, O, Q), commonly 17 chars
-    // Do not coerce VIN to number — it should be stored/sent as a string.
+    // VIN validation: Allow all alphanumeric characters
     if (formData.vin) {
       const vin = String(formData.vin).trim().toUpperCase();
-      // Basic VIN pattern: allow alphanumeric characters, length 8-17 (len can vary in some systems)
-      const vinPattern = /^[A-HJ-NPR-Z0-9]{8,17}$/i;
+      // Allow all alphanumeric characters, length 8-17
+      const vinPattern = /^[A-Z0-9]{8,17}$/i;
       if (!vinPattern.test(vin)) {
-        errors.push('VIN must be alphanumeric (8-17 chars) and cannot contain I, O or Q');
+        errors.push('VIN must be alphanumeric (8-17 characters)');
       }
     }
 
@@ -250,7 +249,7 @@ export default function TruckForm() {
                 clipRule="evenodd"
               />
             </svg>
-            <Link to="/trucks/new" className="hover:text-indigo-600 transition-colors">
+            <Link to="/trucks/" className="hover:text-indigo-600 transition-colors">
               Vehicles
             </Link>
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -525,29 +524,6 @@ export default function TruckForm() {
                         </svg>
                       }
                     />
-                    <Input
-                      type="number"
-                      step="0.1"
-                      label="Capacity (tons)"
-                      value={formData.capacity}
-                      onChange={(e) => handleInputChange('capacity', e.target.value)}
-                      placeholder="e.g., 100"
-                      icon={
-                        <svg
-                          className="w-4 h-4 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-                          />
-                        </svg>
-                      }
-                    />
                   </div>
                 </div>
               </div>
@@ -681,64 +657,50 @@ export default function TruckForm() {
                       </svg>
                     }
                   >
-                    <option value="active">✅ Active</option>
-                    <option value="operational">🟢 Operational</option>
-                    <option value="idle">⏸️ Idle</option>
-                    <option value="maintenance">🔧 Maintenance</option>
-                    <option value="out-of-service">⛔ Out of Service</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
                   </Select>
 
                   <div className="pt-2 border-t border-gray-100">
                     <div
                       className={`p-3 rounded-md text-center ${
-                        formData.status === 'active' || formData.status === 'operational'
+                        formData.status === 'active'
                           ? 'bg-green-50 border border-green-200'
                           : formData.status === 'maintenance'
                             ? 'bg-yellow-50 border border-yellow-200'
-                            : formData.status === 'idle'
-                              ? 'bg-blue-50 border border-blue-200'
-                              : 'bg-red-50 border border-red-200'
+                            : 'bg-gray-50 border border-gray-200'
                       }`}
                     >
                       <div
                         className={`text-2xl mb-1 ${
-                          formData.status === 'active' || formData.status === 'operational'
+                          formData.status === 'active'
                             ? 'text-green-600'
                             : formData.status === 'maintenance'
                               ? 'text-yellow-600'
-                              : formData.status === 'idle'
-                                ? 'text-blue-600'
-                                : 'text-red-600'
+                              : 'text-gray-600'
                         }`}
                       >
-                        {formData.status === 'active' || formData.status === 'operational'
+                        {formData.status === 'active'
                           ? '✓'
                           : formData.status === 'maintenance'
                             ? '⚠'
-                            : formData.status === 'idle'
-                              ? '⏸'
-                              : '✕'}
+                            : '○'}
                       </div>
                       <p
                         className={`text-xs font-semibold ${
-                          formData.status === 'active' || formData.status === 'operational'
+                          formData.status === 'active'
                             ? 'text-green-700'
                             : formData.status === 'maintenance'
                               ? 'text-yellow-700'
-                              : formData.status === 'idle'
-                                ? 'text-blue-700'
-                                : 'text-red-700'
+                              : 'text-gray-700'
                         }`}
                       >
                         {formData.status === 'active'
                           ? 'Vehicle Active'
-                          : formData.status === 'operational'
-                            ? 'Vehicle Operational'
-                            : formData.status === 'maintenance'
-                              ? 'Under Maintenance'
-                              : formData.status === 'idle'
-                                ? 'Vehicle Idle'
-                                : 'Out of Service'}
+                          : formData.status === 'maintenance'
+                            ? 'Under Maintenance'
+                            : 'Vehicle Inactive'}
                       </p>
                     </div>
                   </div>

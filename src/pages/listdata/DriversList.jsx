@@ -38,7 +38,7 @@ function DriverActionMenu({ driver, onEdit, onDelete }) {
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
             </svg>
-            Edit Vehicle
+            Edit Driver
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -105,6 +105,7 @@ export default function DriversList() {
   const [drivers, setDrivers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [query, setQuery] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(25);
   const [error, setError] = React.useState('');
@@ -195,14 +196,17 @@ export default function DriversList() {
     let result = drivers.filter((v) => {
       const licenseNum = v.license_number || '';
       const licenseType = v.license_type || '';
-      return (
+      const matchQuery =
         !q ||
         (v.name || '').toLowerCase().includes(q) ||
         licenseNum.toLowerCase().includes(q) ||
         (v.telephone || v.phone || '').toLowerCase().includes(q) ||
         (v.email || '').toLowerCase().includes(q) ||
-        licenseType.toLowerCase().includes(q)
-      );
+        licenseType.toLowerCase().includes(q);
+
+      const matchStatus = !statusFilter || v.status === statusFilter;
+
+      return matchQuery && matchStatus;
     });
 
     // Apply sorting
@@ -212,7 +216,10 @@ export default function DriversList() {
         let bVal = b[sortConfig.key] || '';
 
         // Handle different field names
-        if (sortConfig.key === 'licenseNumber') {
+        if (sortConfig.key === 'phone') {
+          aVal = a.telephone || a.phone || '';
+          bVal = b.telephone || b.phone || '';
+        } else if (sortConfig.key === 'licenseNumber') {
           aVal = a.license_number || '';
           bVal = b.license_number || '';
         } else if (sortConfig.key === 'licenseType') {
@@ -242,7 +249,7 @@ export default function DriversList() {
     }
 
     return result;
-  }, [drivers, query, sortConfig]);
+  }, [drivers, query, statusFilter, sortConfig]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -250,7 +257,12 @@ export default function DriversList() {
   const end = start + pageSize;
   const paginatedDrivers = filtered.slice(start, end);
 
-  React.useEffect(() => setPage(1), [query, pageSize]);
+  // Get unique status options
+  const statusOptions = React.useMemo(() => {
+    return [...new Set(drivers.map((d) => d.status).filter(Boolean))];
+  }, [drivers]);
+
+  React.useEffect(() => setPage(1), [query, statusFilter, pageSize]);
 
   const onDelete = async (id) => {
     if (!window.confirm('Delete this driver?')) return;
@@ -331,7 +343,7 @@ export default function DriversList() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-100 rounded-lg">
@@ -374,8 +386,33 @@ export default function DriversList() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {drivers.filter((d) => !d.deleted_at).length}
+                <p className="text-2xl font-bold text-green-600">
+                  {drivers.filter((d) => d.status === 'active' || d.status === 'aktif').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Inactive</p>
+                <p className="text-2xl font-bold text-gray-600">
+                  {drivers.filter((d) => d.status !== 'active' && d.status !== 'aktif').length}
                 </p>
               </div>
             </div>
@@ -399,7 +436,7 @@ export default function DriversList() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Filtered</p>
-                <p className="text-2xl font-bold text-gray-900">{filtered.length}</p>
+                <p className="text-2xl font-bold text-blue-600">{filtered.length}</p>
               </div>
             </div>
           </div>
@@ -420,6 +457,41 @@ export default function DriversList() {
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
+
+                {/* Status Filter */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="justify-between min-w-[130px]">
+                      {statusFilter
+                        ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+                        : 'All Status'}
+                      <svg
+                        className="ml-2 w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setStatusFilter('')}>
+                      All Status
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {statusOptions.map((s) => (
+                      <DropdownMenuItem key={s} onClick={() => setStatusFilter(s)}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -567,14 +639,15 @@ export default function DriversList() {
                   Export
                 </button>
 
-                {query && (
+                {(query || statusFilter) && (
                   <button
                     onClick={() => {
                       setQuery('');
+                      setStatusFilter('');
                       setPage(1);
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                    title="Clear search"
+                    title="Clear all filters"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -797,7 +870,7 @@ export default function DriversList() {
 
               {/* Pagination */}
               <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-700">
                       Showing <span className="font-medium">{start + 1}</span> to{' '}
@@ -806,27 +879,102 @@ export default function DriversList() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      Previous
-                    </button>
+                  {totalPages > 1 && (
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => setPage(1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 text-sm font-medium border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="First page"
+                      >
+                        First
+                      </button>
+                      <button
+                        onClick={() => setPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Previous page"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
 
-                    <span className="text-sm text-gray-700">
-                      Page {currentPage} of {totalPages}
-                    </span>
+                      {/* Page Numbers */}
+                      <div className="hidden sm:flex items-center">
+                        {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
 
-                    <button
-                      onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      Next
-                    </button>
-                  </div>
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setPage(pageNum)}
+                              className={`px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 transition-colors ${
+                                currentPage === pageNum
+                                  ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 z-10'
+                                  : 'text-gray-700'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mobile: Show current page */}
+                      <div className="sm:hidden px-3 py-2 text-sm font-medium -ml-px border border-gray-300 bg-indigo-50 text-indigo-600">
+                        {currentPage}
+                      </div>
+
+                      <button
+                        onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Next page"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Last page"
+                      >
+                        Last
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </>

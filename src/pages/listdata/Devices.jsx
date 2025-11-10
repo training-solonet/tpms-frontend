@@ -40,7 +40,7 @@ function DevicesActionMenu({ device, onEdit, onDelete }) {
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
             </svg>
-            Edit Vehicle
+            Edit Device
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -123,6 +123,35 @@ const Devices = () => {
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+
+  // Sort state
+  const [sortConfig, setSortConfig] = React.useState({
+    key: null,
+    direction: 'asc',
+  });
+
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      setSortConfig({ key, direction: 'asc' });
+    }
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key === key) {
+      return sortConfig.direction === 'asc' ? (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3l-6 8h12l-6-8z" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 17l6-8H4l6 8z" />
+        </svg>
+      );
+    }
+    return null;
+  };
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState({
@@ -214,7 +243,7 @@ const Devices = () => {
 
   // Filter & Search
   const filtered = useMemo(() => {
-    return devices.filter((device) => {
+    let result = devices.filter((device) => {
       const matchQuery =
         !query ||
         // API shows 'sn' field for serial number
@@ -230,7 +259,71 @@ const Devices = () => {
 
       return matchQuery && matchTruck && matchStatus;
     });
-  }, [devices, query, truckFilter, statusFilter]);
+
+    // Apply sorting
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aVal, bVal;
+
+        switch (sortConfig.key) {
+          case 'id':
+            aVal = a.id;
+            bVal = b.id;
+            break;
+          case 'sn':
+            aVal = a.sn || a.serial_number || '';
+            bVal = b.sn || b.serial_number || '';
+            break;
+          case 'simNumber':
+            aVal = a.sim_number || a.sim_4g_number || '';
+            bVal = b.sim_number || b.sim_4g_number || '';
+            break;
+          case 'truck':
+            aVal = a.truck?.name || a.truck?.truck_number || '';
+            bVal = b.truck?.name || b.truck?.truck_number || '';
+            break;
+          case 'status':
+            aVal = a.status || '';
+            bVal = b.status || '';
+            break;
+          case 'createdAt':
+            aVal = a.created_at && a.created_at !== '-' ? new Date(a.created_at).getTime() : 0;
+            bVal = b.created_at && b.created_at !== '-' ? new Date(b.created_at).getTime() : 0;
+            break;
+          case 'updatedAt':
+            aVal = a.updated_at && a.updated_at !== '-' ? new Date(a.updated_at).getTime() : 0;
+            bVal = b.updated_at && b.updated_at !== '-' ? new Date(b.updated_at).getTime() : 0;
+            break;
+          case 'installed_at':
+            aVal =
+              a.installed_at && a.installed_at !== '-' ? new Date(a.installed_at).getTime() : 0;
+            bVal =
+              b.installed_at && b.installed_at !== '-' ? new Date(b.installed_at).getTime() : 0;
+            break;
+          default:
+            aVal = a[sortConfig.key] || '';
+            bVal = b[sortConfig.key] || '';
+        }
+
+        // Handle null/undefined values
+        if (aVal === null || aVal === undefined) aVal = '';
+        if (bVal === null || bVal === undefined) bVal = '';
+
+        // Compare values
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortConfig.direction === 'asc'
+            ? aVal.localeCompare(bVal)
+            : bVal.localeCompare(aVal);
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [devices, query, truckFilter, statusFilter, sortConfig]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -270,7 +363,7 @@ const Devices = () => {
   };
 
   const handleEdit = (id) => {
-    window.location.href = `/device/${id}`;
+    window.location.href = `/devices/${id}`;
   };
 
   // Format date
@@ -283,36 +376,6 @@ const Devices = () => {
     });
   };
 
-  // Sort state
-  const [sortConfig, setSortConfig] = React.useState({
-    key: null,
-    direction: 'asc',
-  });
-
-  const handleSort = (key) => {
-    if (sortConfig.key === key) {
-      // Toggle between asc and desc for the same column
-      setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
-    } else {
-      // New column, start with asc
-      setSortConfig({ key, direction: 'asc' });
-    }
-  };
-
-  const getSortIcon = (key) => {
-    if (sortConfig.key === key) {
-      return sortConfig.direction === 'asc' ? (
-        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 3l-6 8h12l-6-8z" />
-        </svg>
-      ) : (
-        <svg className="w-4 h-4 shrink-0 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 17l6-8H4l6 8z" />
-        </svg>
-      );
-    }
-    return null; // No icon when not sorted
-  };
   return (
     <TailwindLayout>
       <div className="h-[calc(100vh-80px)] overflow-y-auto p-6 space-y-6">
@@ -811,11 +874,11 @@ const Devices = () => {
                       <th
                         scope="col"
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSort('sim_number')}
+                        onClick={() => handleSort('simNumber')}
                       >
                         <div className="flex items-center justify-center gap-2">
                           SIM 4G Number
-                          {getSortIcon('sim_number')}
+                          {getSortIcon('simNumber')}
                         </div>
                       </th>
                       <th
@@ -946,52 +1009,113 @@ const Devices = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
-                      Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to{' '}
-                      <span className="font-medium">
-                        {Math.min(page * pageSize, filtered.length)}
-                      </span>{' '}
-                      of <span className="font-medium">{filtered.length}</span> results
-                    </div>
-                    <div className="flex gap-2">
+              <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{(page - 1) * pageSize + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(page * pageSize, filtered.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{filtered.length}</span> results
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => setPage(1)}
+                        disabled={page === 1}
+                        className="px-3 py-2 text-sm font-medium border border-gray-300 rounded-l-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="First page"
+                      >
+                        First
+                      </button>
                       <button
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Previous page"
                       >
-                        Previous
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
                       </button>
-                      {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                        const pageNum = i + 1;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setPage(pageNum)}
-                            className={`px-3 py-1 text-sm border rounded-md ${
-                              page === pageNum
-                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                : 'border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                      {totalPages > 5 && <span className="px-2">...</span>}
+
+                      {/* Page Numbers */}
+                      <div className="hidden sm:flex items-center">
+                        {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (page <= 3) {
+                            pageNum = i + 1;
+                          } else if (page >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = page - 2 + i;
+                          }
+
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setPage(pageNum)}
+                              className={`px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 transition-colors ${
+                                page === pageNum
+                                  ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 z-10'
+                                  : 'text-gray-700'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Mobile: Show current page */}
+                      <div className="sm:hidden px-3 py-2 text-sm font-medium -ml-px border border-gray-300 bg-indigo-50 text-indigo-600">
+                        {page}
+                      </div>
+
                       <button
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Next page"
                       >
-                        Next
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        disabled={page === totalPages}
+                        className="px-3 py-2 text-sm font-medium -ml-px border border-gray-300 rounded-r-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+                        title="Last page"
+                      >
+                        Last
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>
