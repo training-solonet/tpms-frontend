@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import TailwindLayout from '../../components/layout/TailwindLayout.jsx';
+import DatePicker from '../../components/common/DatePicker.jsx';
 import { driversApi, vendorsApi } from 'services/management';
 
 function Input({ label, icon, ...props }) {
@@ -564,27 +565,14 @@ export default function DriverForm() {
                           </svg>
                         }
                       />
-                      <Input
+                      <DatePicker
                         label="License Expiry"
-                        placeholder="YYYY-MM-DD"
-                        value={form.license_expiry}
-                        onChange={(e) => update('license_expiry', e.target.value)}
-                        type="date"
-                        icon={
-                          <svg
-                            className="w-4 h-4 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
+                        placeholder="Select expiry date"
+                        value={form.license_expiry ? new Date(form.license_expiry) : null}
+                        onChange={(date) =>
+                          update('license_expiry', date ? date.toISOString().split('T')[0] : '')
                         }
+                        minDate={new Date()}
                       />
                     </div>
                   </div>

@@ -1,16 +1,254 @@
-# tpms-frontend
+# Borneo Indobara - Truck Tracking & Fleet Management System
 
-Frontend
+A comprehensive web-based fleet management and real-time truck tracking system for PT Borneo Indobara. This application provides live vehicle tracking, tire pressure monitoring (TPMS), fuel monitoring, temperature monitoring, and complete fleet management capabilities.
 
-# React + Vite
+## Deskripsi Proyek
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Borneo Indobara Truck Tracking System adalah platform manajemen armada yang dirancang khusus untuk industri pertambangan dan transportasi. Sistem ini menyediakan:
 
-Currently, two official plugins are available:
+- **Real-time Tracking**: Pelacakan posisi kendaraan secara langsung menggunakan GPS
+- **TPMS Integration**: Monitoring tekanan ban dan suhu ban secara real-time
+- **Fleet Management**: Manajemen lengkap data kendaraan, driver, sensor, dan perangkat IoT
+- **Historical Tracking**: Riwayat perjalanan kendaraan dengan replay tracking
+- **Monitoring Dashboard**: Dashboard interaktif dengan visualisasi data dan statistik
+- **Alert System**: Sistem notifikasi untuk anomali dan peringatan kendaraan
+- **Multi-vendor Support**: Dukungan untuk multiple vendor dan grup armada
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Fitur Utama
 
-## Expanding the ESLint configuration
+### Live Tracking
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Peta real-time dengan marker kendaraan
+- Status kendaraan (aktif/idle/nonaktif)
+- Informasi detail kendaraan (driver, kecepatan, lokasi)
+- WebSocket integration untuk update real-time
+- Cluster markers untuk multiple vehicles
+
+### Monitoring System
+
+- **Tire Pressure Monitoring**: Monitor tekanan dan suhu 10 ban per kendaraan
+- **Fuel Monitoring**: Tracking konsumsi bahan bakar
+- **Temperature Monitoring**: Monitor suhu kendaraan
+- **Device Status**: Status koneksi dan kesehatan perangkat IoT
+
+### Fleet Management
+
+- **Vehicles (Trucks)**: CRUD lengkap untuk data kendaraan
+- **Drivers**: Manajemen data driver dengan lisensi
+- **Sensors (TPMS)**: Konfigurasi sensor ban per kendaraan
+- **Devices**: Manajemen perangkat IoT dan GPS
+- **Vendors**: Manajemen vendor dan kontraktor
+
+## Teknologi yang Digunakan
+
+### Frontend
+
+- **React 19** - UI Library
+- **React Router v7** - Navigation
+- **Vite 7** - Build tool & dev server
+- **Tailwind CSS v4** - Styling framework
+
+### Maps & Tracking
+
+- **Leaflet** - Interactive maps
+- **React Leaflet** - React bindings for Leaflet
+- **Leaflet Polyline Decorator** - Route decorations
+
+### State Management & API
+
+- **Axios** - HTTP client
+- **Socket.io Client** - WebSocket communication
+- **Custom hooks** - useAuth, useApi2, useAlert
+
+### Developer Tools
+
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+- **SWC** - Fast refresh
+
+## Instalasi
+
+### Prasyarat
+
+Pastikan Anda telah menginstal:
+
+- **Node.js** versi 22.18.0
+- **npm** atau **yarn**
+- **Git**
+
+### Langkah Instalasi
+
+1. **Clone repository**
+
+   ```bash
+   git clone https://github.com/JosinBahaswan/Truck-Tracking.git
+   cd borneo-indobara
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+   atau
+
+   ```bash
+   yarn install
+   ```
+
+3. **Konfigurasi Environment**
+
+   Buat file konfigurasi API di `src/services/management/config.js`:
+
+   ```javascript
+   export const API_CONFIG = {
+     baseURL: 'http://your-backend-api-url',
+     timeout: 10000,
+   };
+   ```
+
+   Konfigurasi WebSocket di `src/services/management/websocket.js`:
+
+   ```javascript
+   export const WS_CONFIG = {
+     url: 'ws://your-websocket-url',
+   };
+   ```
+
+4. **Jalankan Development Server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Aplikasi akan berjalan di `http://localhost:5173`
+
+5. **Build untuk Production**
+
+   ```bash
+   npm run build
+   ```
+
+   File build akan tersimpan di folder `dist/`
+
+6. **Preview Production Build**
+   ```bash
+   npm run preview
+   ```
+
+## 📁 Struktur Proyek
+
+```
+borneo-indobara/
+├── public/                     # Static assets
+├── src/
+│   ├── components/            # Reusable components
+│   │   ├── auth/             # Login components
+│   │   ├── common/           # Common UI components
+│   │   │   ├── DatePicker.jsx
+│   │   │   ├── Button.jsx
+│   │   │   ├── AlertModal.jsx
+│   │   │   └── ...
+│   │   ├── dashboard/        # Dashboard components
+│   │   ├── layout/           # Layout components
+│   │   └── icons/            # Custom icons
+│   ├── pages/                # Page components
+│   │   ├── Dashboard.jsx
+│   │   ├── LiveTracking.jsx
+│   │   ├── HistoryTracking.jsx
+│   │   ├── form/             # Form pages
+│   │   │   ├── TruckForm.jsx
+│   │   │   ├── DriverForm.jsx
+│   │   │   └── ...
+│   │   ├── listdata/         # List pages
+│   │   │   ├── TrucksList.jsx
+│   │   │   ├── DriversList.jsx
+│   │   │   └── ...
+│   │   └── monitoring/       # Monitoring pages
+│   ├── services/             # API services
+│   │   ├── management/       # Backend 2 APIs
+│   │   ├── tracking/         # Tracking APIs
+│   │   └── websocket/        # WebSocket services
+│   ├── hooks/                # Custom React hooks
+│   │   ├── useAuth.js
+│   │   ├── useApi2.js
+│   │   └── useAlert.js
+│   ├── routes/               # Route configuration
+│   ├── App.jsx               # Main App component
+│   └── main.jsx              # Entry point
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+└── README.md
+```
+
+## Screenshots
+
+### Live Tracking
+
+![Live Tracking](./screenshots/livetracking.png)
+_Peta real-time tracking kendaraan dengan marker dan status monitoring_
+
+### History Tracking
+
+![History Tracking](./screenshots/history.png)
+_Riwayat perjalanan kendaraan dengan data tracking lengkap_
+
+---
+
+### Fleet Management - List Data
+
+#### Vehicles List
+
+![Vehicles List](./screenshots/listvehicle.png)
+_Daftar kendaraan dengan informasi lengkap_
+
+#### Drivers List
+
+![Drivers List](./screenshots/listdriver.png)
+_Daftar pengemudi dengan data lisensi_
+
+#### Sensors List
+
+![Sensors List](./screenshots/listsensor.png)
+_Daftar sensor TPMS yang terpasang_
+
+#### Devices List
+
+![Devices List](./screenshots/listdevice.png)
+_Daftar perangkat IoT dan GPS tracker_
+
+#### Vendors List
+
+![Vendors List](./screenshots/listvendor.png)
+_Daftar vendor dan kontraktor_
+
+---
+
+### Forms - Create/Edit Data
+
+#### Add New Vehicle
+
+![New Vehicle Form](./screenshots/newvehicle.png)
+_Form input data kendaraan baru dengan DatePicker_
+
+#### Add New Driver
+
+![New Driver Form](./screenshots/newdriver.png)
+_Form input data pengemudi dengan informasi lisensi_
+
+#### Add New Sensor
+
+![New Sensor Form](./screenshots/newsensor.png)
+_Form konfigurasi sensor TPMS_
+
+#### Add New Device
+
+![New Device Form](./screenshots/newdevice.png)
+_Form registrasi perangkat IoT baru_
+
+#### Add New Vendor
+
+![New Vendor Form](./screenshots/newvendor.png)
+_Form registrasi vendor dan kontraktor_
