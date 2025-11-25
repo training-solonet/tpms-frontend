@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 /**
  * DatePicker Component
  * A custom date picker with calendar UI similar to the provided design
- * 
+ *
  * @param {Object} props
  * @param {Date} props.value - Selected date value
  * @param {Function} props.onChange - Callback when date is selected
@@ -48,7 +48,20 @@ export default function DatePicker({
   // Format date for display
   const formatDate = (date) => {
     if (!date) return '';
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const day = date.getDate();
     const month = months[date.getMonth()];
     const year = date.getFullYear();
@@ -140,8 +153,18 @@ export default function DatePicker({
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const days = getDaysInMonth(currentMonth);
@@ -149,12 +172,8 @@ export default function DatePicker({
 
   return (
     <div className="relative" ref={containerRef}>
-      {label && (
-        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-          {label}
-        </label>
-      )}
-      
+      {label && <label className="block text-xs font-medium text-gray-700 mb-1.5">{label}</label>}
+
       {/* Input Field */}
       <div className="relative">
         <input
@@ -193,22 +212,40 @@ export default function DatePicker({
               onClick={handlePrevMonth}
               className="p-1 hover:bg-gray-800 rounded transition-colors"
             >
-              <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-5 h-5 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
-            
-            <h3 className="text-sm font-semibold text-white">
-              {currentMonthYear}
-            </h3>
-            
+
+            <h3 className="text-sm font-semibold text-white">{currentMonthYear}</h3>
+
             <button
               type="button"
               onClick={handleNextMonth}
               className="p-1 hover:bg-gray-800 rounded transition-colors"
             >
-              <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-5 h-5 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>
@@ -216,10 +253,7 @@ export default function DatePicker({
           {/* Day Labels */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-              <div
-                key={day}
-                className="text-center text-xs font-medium text-gray-400 py-2"
-              >
+              <div key={day} className="text-center text-xs font-medium text-gray-400 py-2">
                 {day}
               </div>
             ))}
@@ -231,7 +265,7 @@ export default function DatePicker({
               const selected = isDateSelected(dayObj.date);
               const today = isToday(dayObj.date);
               const disabled = isDateDisabled(dayObj.date);
-              
+
               return (
                 <button
                   key={index}

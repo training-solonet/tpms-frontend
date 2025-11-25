@@ -569,7 +569,9 @@ export default function DriverForm() {
                         label="License Expiry"
                         placeholder="Select expiry date"
                         value={form.license_expiry ? new Date(form.license_expiry) : null}
-                        onChange={(date) => update('license_expiry', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) =>
+                          update('license_expiry', date ? date.toISOString().split('T')[0] : '')
+                        }
                         minDate={new Date()}
                       />
                     </div>
