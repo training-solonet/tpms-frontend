@@ -176,7 +176,9 @@ const Login = () => {
               <div className="space-y-1">
                 <p>
                   Username:{' '}
-                  <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin@tpms.com</code>
+                  <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">
+                    admin@tpms.com
+                  </code>
                 </p>
                 <p>
                   Password:{' '}
