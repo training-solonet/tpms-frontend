@@ -13,6 +13,7 @@ const Login = () => {
     username: '',
     password: '',
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -175,7 +176,9 @@ const Login = () => {
               <div className="space-y-1">
                 <p>
                   Username:{' '}
-                  <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">admin</code>
+                  <code className="bg-white px-2 py-1 rounded text-blue-600 font-mono">
+                    admin@tpms.com
+                  </code>
                 </p>
                 <p>
                   Password:{' '}
@@ -184,7 +187,7 @@ const Login = () => {
                   </code>
                 </p>
               </div>
-              <p className="mt-3 text-xs text-gray-500">Backend: {MANAGEMENT_CONFIG.baseURL}</p>
+              <p className="mt-3 text-xs text-gray-500"> Backend: {MANAGEMENT_CONFIG.baseURL}</p>
             </div>
           </div>
         </div>
